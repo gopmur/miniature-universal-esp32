@@ -1,0 +1,1 @@
+{"name":"My Svelte App","short_name":"SvelteApp","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#0d6efd","lang":"en","scope":"./","icons":[{"src":"/icons/icon-192.png","sizes":"192x192","type":"image/png"},{"src":"/icons/icon-512.png","sizes":"512x512","type":"image/png"}]}
