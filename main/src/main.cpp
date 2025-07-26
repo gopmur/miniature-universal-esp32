@@ -1,4 +1,4 @@
-  #include <string.h>
+#include <string.h>
 #include <algorithm>
 
 #include <freertos/FreeRTOS.h>
@@ -12,48 +12,18 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "http.hpp"
-
 #include "config.hpp"
+#include "http.h"
 
 class WebServer {
  private:
   httpd_handle_t server_instance;
 
-  static esp_err_t index_html_get(httpd_req_t *req) {
-    extern const char index_html_start[] asm("_binary_"
-                                             "index_html"
-                                             "_start");
-    extern const char index_html_file_end[] asm("_binary_"
-                                                "index_html"
-                                                "_end");
-    const size_t size = index_html_file_end - index_html_start;
-    esp_err_t res = httpd_resp_set_type(req, "text/html");
-    if (res) {
-      return res;
-    }
-    return httpd_resp_send(req, index_html_start, size);
-  };
-  DEFINE_FILE_GET_HANDLER(manifest_webmanifest, "application/manifest+json");
-  DEFINE_FILE_GET_HANDLER(registerSW_js, "application/javascript");
-  DEFINE_FILE_GET_HANDLER(sw_js, "application/javascript");
-  DEFINE_FILE_GET_HANDLER(workbox_5ffe50d4_js, "application/javascript");
-  DEFINE_FILE_GET_HANDLER(icon_192_png, "image/png");
-  DEFINE_FILE_GET_HANDLER(icon_512_png, "image/png");
-
  public:
   WebServer() {
     httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
-    REGISTER_FILE_URI(server_instance, index_html, "/");
-    REGISTER_FILE_URI(server_instance, manifest_webmanifest,
-                      "/manifest.webmanifest");
-    REGISTER_FILE_URI(server_instance, registerSW_js, "/registerSW.js");
-    REGISTER_FILE_URI(server_instance, sw_js, "/sw.js");
-    REGISTER_FILE_URI(server_instance, workbox_5ffe50d4_js,
-                      "/workbox-5ffe50d4.js");
-    REGISTER_FILE_URI(server_instance, icon_192_png, "/icons/icon-192.png");
-    REGISTER_FILE_URI(server_instance, icon_512_png, "/icons/icon-512.png");
+    http_server_register_assets(server_instance);
   }
 };
 
