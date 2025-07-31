@@ -1,4 +1,5 @@
 #include "cc.h"
+#include "lwip/err.h"
 
 #include "dns/packet/header.hpp"
 
@@ -27,4 +28,55 @@ DNSHeader::DNSHeader() {
   number_of_answers = 0;
   number_of_authority_rrs = 0;
   number_of_additional_rrs = 0;
+}
+
+int DNSHeader::copy(void* dest, int size, int* bytes_written) {
+  if (bytes_written)
+    *bytes_written = 0;
+  if (dest == nullptr) {
+    return ERR_ARG;
+  }
+  if (size < sizeof(DNSHeader)) {
+    return ERR_BUF;
+  }
+  this->hton();
+  if (bytes_written)
+    *bytes_written = sizeof(DNSHeader);
+  memcpy(this, dest, sizeof(DNSHeader));
+  this->ntoh();
+  return ERR_OK;
+}
+
+int DNSHeader::parse(void* src, int size, int* bytes_read) {
+  if (bytes_read)
+    *bytes_read = 0;
+  if (src == nullptr) {
+    return ERR_ARG;
+  }
+  if (size < sizeof(DNSHeader)) {
+    return ERR_BUF;
+  }
+  memcpy(this, src, sizeof(DNSHeader));
+  *bytes_read = sizeof(DNSHeader);
+  this->ntoh();
+  return ERR_OK;
+};
+
+uint16_t DNSHeader::get_transaction_id() {
+  return transaction_id;
+}
+DNSFlags DNSHeader::get_flags() {
+  return flags;
+}
+uint16_t DNSHeader::get_number_of_questions() {
+  return number_of_questions;
+}
+uint16_t DNSHeader::get_number_of_answers() {
+  return number_of_answers;
+}
+uint16_t DNSHeader::get_number_of_authority_rrs() {
+  return number_of_authority_rrs;
+}
+uint16_t DNSHeader::get_number_of_additional_rrs() {
+  return number_of_additional_rrs;
 }

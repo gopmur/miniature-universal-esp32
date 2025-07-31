@@ -5,8 +5,13 @@
 #include "dns/packet/question.hpp"
 
 struct DNSPacket {
+ private:
   DNSHeader header;
   DNSQuestion question;
   DNSAnswer answer;
-  DNSPacket(int name_len);
+
+ public:
+  void print();
+
+  int parse(char* buf, int size, int* bytes_read);
 };

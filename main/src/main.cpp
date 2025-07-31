@@ -9,7 +9,8 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
-// #include "lwip/inet.h"
+
+#include "lwip/inet.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -25,7 +26,7 @@ class WebServer {
   WebServer() {
     httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
-    http_server_register_assets(server_instance);
+    HTTP_SERVER_REGISTER_ASSETS(server_instance);
   }
 };
 
@@ -80,7 +81,7 @@ class App {
     setup_netif();
     setup_wifi();
     WebServer webserver;
-    // dns_service_start(inet_addr("192.168.4.1"));
+    dns_service_start(inet_addr("192.168.4.1"));
   }
 
  public:

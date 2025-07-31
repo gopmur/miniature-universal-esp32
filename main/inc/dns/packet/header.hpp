@@ -32,4 +32,14 @@ class DNSHeader {
 
  public:
   DNSHeader();
+
+  int copy(void* dest, int size, int* bytes_written);
+  int parse(void* src, int size, int* bytes_read);
+
+  uint16_t get_transaction_id();
+  DNSFlags get_flags();
+  uint16_t get_number_of_questions();
+  uint16_t get_number_of_answers();
+  uint16_t get_number_of_authority_rrs();
+  uint16_t get_number_of_additional_rrs();
 };

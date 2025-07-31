@@ -34,12 +34,12 @@ DNSAnswer::DNSAnswer() {
   ttl = 0;
   rdlength = 4;
   rdata = 0;
-  // Byte order of network may differ from
-  // byte order of host.
-  this->hton();
 }
 
 int DNSAnswer::copy(void* dest, int size, int* bytes_written) {
+  if (bytes_written == nullptr) {
+    return ERR_ARG;
+  }
   *bytes_written = 0;
   if (dest == nullptr) {
     return ERR_ARG;
@@ -55,25 +55,25 @@ int DNSAnswer::copy(void* dest, int size, int* bytes_written) {
 }
 
 uint16_t DNSAnswer::get_name_ref() {
-  return htons(name_ref);
+  return name_ref;
 }
 
 RRType DNSAnswer::get_rr_type() {
-  return static_cast<RRType>(htons(type));
+  return type;
 }
 
 RRClass DNSAnswer::get_rr_class() {
-  return static_cast<RRClass>(htons(clss));
+  return clss;
 }
 
 uint32_t DNSAnswer::get_ttl() {
-  return htonl(ttl);
+  return ttl;
 }
 
 uint16_t DNSAnswer::get_rdlength() {
-  return htons(rdlength);
+  return rdlength;
 }
 
 uint32_t DNSAnswer::get_rdata() {
-  return htonl(rdata);
+  return rdata;
 }
