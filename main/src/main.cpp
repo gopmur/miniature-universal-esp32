@@ -9,13 +9,13 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
-#include "lwip/inet.h"
+// #include "lwip/inet.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
 #include "config.hpp"
 #include "http.h"
-#include "dns.h"
+#include "dns.hpp"
 
 class WebServer {
  private:
@@ -80,7 +80,7 @@ class App {
     setup_netif();
     setup_wifi();
     WebServer webserver;
-    dns_service_start(inet_addr("192.168.4.1"));
+    // dns_service_start(inet_addr("192.168.4.1"));
   }
 
  public:
