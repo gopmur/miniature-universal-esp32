@@ -15,12 +15,12 @@ bool drop_packet(DNSPacket& packet) {
 }
 
 void set_dns_rcode(DNSPacket& packet, int parse_err) {
-  auto header = packet.get_header();
+  auto &header = packet.get_header();
   if (parse_err) {
     header.set_rcode(RCODE_SERVER_FAILURE);
-  } else if (header.get_number_of_questions() != 0 ||
+  } else if (header.get_number_of_questions() != 1 ||
              header.get_opcode() == OPCODE_IQUERY ||
-             header.get_opcode() == OPCODE_IQUERY) {
+             header.get_opcode() == OPCODE_STATUS) {
     header.set_rcode(RCODE_NOT_IMPLEMENTED);
   } else if (strcmp(packet.get_question().get_name(), "app.local") != 0) {
     header.set_rcode(RCODE_NAME_ERR);
@@ -31,6 +31,7 @@ void set_dns_rcode(DNSPacket& packet, int parse_err) {
 
 void make_dns_answer(DNSPacket& packet) {
   packet.get_header().set_number_of_answers(1);
+  packet.get_header().set_aa();
   packet.get_answer().set_rr_type(RRTYPE_A);
   packet.get_answer().set_rr_class(RRCLASS_IN);
   packet.get_answer().set_ttl(1);

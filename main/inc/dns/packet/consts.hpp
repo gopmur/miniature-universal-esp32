@@ -31,7 +31,7 @@ enum RRClass : uint16_t {
 enum Opcode : uint8_t {
   OPCODE_QUERY,
   OPCODE_IQUERY,
-  OPCODE_STATUE,
+  OPCODE_STATUS,
 };
 
 enum Rcode : uint8_t {
