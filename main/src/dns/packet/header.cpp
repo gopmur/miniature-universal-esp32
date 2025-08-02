@@ -30,7 +30,7 @@ DNSHeader::DNSHeader() {
   number_of_additional_rrs = 0;
 }
 
-int DNSHeader::copy(void* dest, int size, int* bytes_written) {
+int DNSHeader::copy(char* dest, int size, int* bytes_written) {
   if (bytes_written)
     *bytes_written = 0;
   if (dest == nullptr) {
@@ -47,7 +47,7 @@ int DNSHeader::copy(void* dest, int size, int* bytes_written) {
   return ERR_OK;
 }
 
-int DNSHeader::parse(void* src, int size, int* bytes_read) {
+int DNSHeader::parse(char* src, int size, int* bytes_read) {
   if (bytes_read)
     *bytes_read = 0;
   if (src == nullptr) {

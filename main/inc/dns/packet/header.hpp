@@ -33,8 +33,8 @@ class DNSHeader {
  public:
   DNSHeader();
 
-  int copy(void* dest, int size, int* bytes_written);
-  int parse(void* src, int size, int* bytes_read);
+  int copy(char* dest, int size, int* bytes_written);
+  int parse(char* src, int size, int* bytes_read);
 
   uint16_t get_transaction_id();
   DNSFlags get_flags();

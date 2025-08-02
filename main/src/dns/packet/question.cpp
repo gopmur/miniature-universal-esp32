@@ -39,9 +39,8 @@ int DNSQuestion::copy(char* dest, int size, int* bytes_written) {
 }
 
 int DNSQuestion::parse(char* src, int size, int* bytes_read) {
-  if (bytes_read) {
+  if (bytes_read)
     *bytes_read = 0;
-  }
   if (src == nullptr) {
     return ERR_ARG;
   }
@@ -56,17 +55,24 @@ int DNSQuestion::parse(char* src, int size, int* bytes_read) {
       return ERR_BUF;
     }
     memcpy(&this->name[src_index], &src[src_index], label_len + 1);
+    if (bytes_read)
+      *bytes_read += label_len + 1;
     src_index += label_len + 1;
   }
   name[src_index] = '\0';
-  printf("after while\n");
+  if (bytes_read)
+    (*bytes_read)++;
   src_index++;
   if (src_index + static_question_size - 1 >= size) {
     return ERR_BUF;
   }
   memcpy(&this->type, &src[src_index], sizeof(uint16_t));
+  if (bytes_read)
+    *bytes_read += 2;
   src_index += 2;
   memcpy(&this->clss, &src[src_index], sizeof(uint16_t));
+  if (bytes_read)
+    *bytes_read += 2;
   this->ntoh();
   return ERR_OK;
 }
