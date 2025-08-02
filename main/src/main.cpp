@@ -15,7 +15,7 @@
 #include "nvs_flash.h"
 
 #include "config.hpp"
-#include "http.h"
+#include "http.hpp"
 #include "dns.hpp"
 
 class WebServer {
@@ -26,7 +26,7 @@ class WebServer {
   WebServer() {
     httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
-    HTTP_SERVER_REGISTER_ASSETS(server_instance);
+    http_server_register_assets(server_instance);
   }
 };
 

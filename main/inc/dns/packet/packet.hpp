@@ -12,6 +12,6 @@ struct DNSPacket {
 
  public:
   void print();
-
+  
   int parse(char* buf, int size, int* bytes_read);
 };

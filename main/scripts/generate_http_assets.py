@@ -69,7 +69,7 @@ def generate_c_code(output_path: str, asset_uris: dict[str, str]):
     c_name = entry.name.replace(".", "_").replace("-", "_")
     output += f"DEFINE_FILE_GET_HANDLER({c_name}, \"{mimetypes.guess_type(entry.name[:-3])[0]}\")\n"
   
-  output += "void http_server_register_assets(httpd_handle_t http_server) {\n"
+  output += "inline void http_server_register_assets(httpd_handle_t http_server) {\n"
 
   entries = os.scandir(f"{output_path}/assets")
   for entry in entries:
@@ -97,5 +97,5 @@ if __name__ == "__main__":
   asset_uris: dict[str, str] = {}
   compress_assets(input_path, output_path, asset_uris)
   generated_code = generate_c_code(output_path, asset_uris)
-  with open(f"{output_path}/inc/http.h", "w") as http_h:
+  with open(f"{output_path}/inc/http.hpp", "w") as http_h:
     http_h.write(generated_code)
