@@ -1,4 +1,5 @@
 #include "cc.h"
+#include "esp_err.h"
 #include "lwip/err.h"
 
 #include "dns/packet/header.hpp"
@@ -34,32 +35,32 @@ int DNSHeader::copy(char* dest, int size, int* bytes_written) {
   if (bytes_written)
     *bytes_written = 0;
   if (dest == nullptr) {
-    return ERR_ARG;
+    return ESP_ERR_INVALID_ARG;
   }
   if (size < sizeof(DNSHeader)) {
-    return ERR_BUF;
+    return ESP_ERR_NO_MEM;
   }
   this->hton();
   if (bytes_written)
     *bytes_written = sizeof(DNSHeader);
   memcpy(this, dest, sizeof(DNSHeader));
   this->ntoh();
-  return ERR_OK;
+  return ESP_OK;
 }
 
 int DNSHeader::parse(char* src, int size, int* bytes_read) {
   if (bytes_read)
     *bytes_read = 0;
   if (src == nullptr) {
-    return ERR_ARG;
+    return ESP_ERR_INVALID_ARG;
   }
   if (size < sizeof(DNSHeader)) {
-    return ERR_BUF;
+    return ESP_ERR_NO_MEM;
   }
   memcpy(this, src, sizeof(DNSHeader));
   *bytes_read = sizeof(DNSHeader);
   this->ntoh();
-  return ERR_OK;
+  return ESP_OK;
 };
 
 uint16_t DNSHeader::get_transaction_id() {

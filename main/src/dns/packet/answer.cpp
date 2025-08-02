@@ -1,7 +1,8 @@
-#include "cc.h"
-#include "dns/packet/header.hpp"
-#include "lwip/err.h"
+#include <cstring>
 
+#include "cc.h"
+
+#include "dns/packet/header.hpp"
 #include "dns/packet/answer.hpp"
 
 void DNSAnswer::hton() {
@@ -38,20 +39,20 @@ DNSAnswer::DNSAnswer() {
 
 int DNSAnswer::copy(void* dest, int size, int* bytes_written) {
   if (bytes_written == nullptr) {
-    return ERR_ARG;
+    return ESP_ERR_INVALID_ARG;
   }
   *bytes_written = 0;
   if (dest == nullptr) {
-    return ERR_ARG;
+    return ESP_ERR_INVALID_ARG;
   }
   if (size < sizeof(DNSAnswer)) {
-    return ERR_BUF;
+    return ESP_ERR_NO_MEM;
   }
   *bytes_written = sizeof(DNSAnswer);
   this->hton();
   memcpy(this, dest, sizeof(DNSAnswer));
   this->ntoh();
-  return ERR_OK;
+  return ESP_OK;
 }
 
 uint16_t DNSAnswer::get_name_ref() {

@@ -1,6 +1,10 @@
-#include "dns/packet/question.hpp"
+#include "cc.h"
+
+#include "esp_err.h"
+
+#include <cstring>
 #include "dns/packet/consts.hpp"
-#include "lwip/err.h"
+#include "dns/packet/question.hpp"
 
 DNSQuestion::DNSQuestion() {
   name[0] = '\0';
@@ -42,17 +46,17 @@ int DNSQuestion::parse(char* src, int size, int* bytes_read) {
   if (bytes_read)
     *bytes_read = 0;
   if (src == nullptr) {
-    return ERR_ARG;
+    return ESP_ERR_INVALID_ARG;
   }
   int src_index = 0;
-  int static_question_size = sizeof(DNSQuestion) - NAME_MAX_LEN;
+  int static_question_size = 2 * sizeof(uint16_t);
   if (size < static_question_size) {
-    return ERR_BUF;
+    return ESP_ERR_NO_MEM;
   }
   char label_len;
   while ((label_len = src[src_index])) {
     if (src_index + label_len + 1 >= size) {
-      return ERR_BUF;
+      return ESP_ERR_NO_MEM;
     }
     memcpy(&this->name[src_index], &src[src_index], label_len + 1);
     if (bytes_read)
@@ -64,7 +68,7 @@ int DNSQuestion::parse(char* src, int size, int* bytes_read) {
     (*bytes_read)++;
   src_index++;
   if (src_index + static_question_size - 1 >= size) {
-    return ERR_BUF;
+    return ESP_ERR_NO_MEM;
   }
   memcpy(&this->type, &src[src_index], sizeof(uint16_t));
   if (bytes_read)
@@ -74,7 +78,7 @@ int DNSQuestion::parse(char* src, int size, int* bytes_read) {
   if (bytes_read)
     *bytes_read += 2;
   this->ntoh();
-  return ERR_OK;
+  return ESP_OK;
 }
 
 char* DNSQuestion::get_name() {
