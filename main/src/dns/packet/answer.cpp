@@ -2,8 +2,10 @@
 
 #include "cc.h"
 
-#include "dns/packet/header.hpp"
 #include "dns/packet/answer.hpp"
+#include "dns/packet/consts.hpp"
+#include "dns/packet/header.hpp"
+#include "lwip/sockets.h"
 
 void DNSAnswer::hton() {
   name_ref = htons(name_ref);
@@ -11,7 +13,6 @@ void DNSAnswer::hton() {
   clss = static_cast<RRClass>(htons(clss));
   ttl = htonl(ttl);
   rdlength = htons(rdlength);
-  rdata = htonl(rdata);
 }
 
 void DNSAnswer::ntoh() {
@@ -29,15 +30,15 @@ DNSAnswer::DNSAnswer() {
   // are used. references are started with two 1 bits.
   // For more information please
   // refer to RFC 1035
-  name_ref = 0xc000 | sizeof(DNSHeader);
-  type = RRType_A;
-  clss = RRClass_IN;
+  name_ref = 0xc000 | DNSHeader::STATIC_SIZE;
+  type = RRTYPE_A;
+  clss = RRCLASS_IN;
   ttl = 0;
   rdlength = 4;
   rdata = 0;
 }
 
-int DNSAnswer::copy(void* dest, int size, int* bytes_written) {
+int DNSAnswer::copy(char* dest, int size, int* bytes_written) {
   if (bytes_written == nullptr) {
     return ESP_ERR_INVALID_ARG;
   }
@@ -45,12 +46,23 @@ int DNSAnswer::copy(void* dest, int size, int* bytes_written) {
   if (dest == nullptr) {
     return ESP_ERR_INVALID_ARG;
   }
-  if (size < sizeof(DNSAnswer)) {
+  if (size < DNSAnswer::STATIC_SIZE) {
     return ESP_ERR_NO_MEM;
   }
-  *bytes_written = sizeof(DNSAnswer);
+  *bytes_written = DNSAnswer::STATIC_SIZE;
+  int dest_index = 0;
   this->hton();
-  memcpy(this, dest, sizeof(DNSAnswer));
+  memcpy(&dest[dest_index], &name_ref, sizeof(uint16_t));
+  dest_index += sizeof(uint16_t);
+  memcpy(&dest[dest_index], &type, sizeof(RRType));
+  dest_index += sizeof(RRType);
+  memcpy(&dest[dest_index], &clss, sizeof(RRClass));
+  dest_index += sizeof(RRClass);
+  memcpy(&dest[dest_index], &ttl, sizeof(uint32_t));
+  dest_index += sizeof(uint32_t);
+  memcpy(&dest[dest_index], &rdlength, sizeof(uint16_t));
+  dest_index += sizeof(uint16_t);
+  memcpy(&dest[dest_index], &rdata, sizeof(uint32_t));
   this->ntoh();
   return ESP_OK;
 }
@@ -77,4 +89,17 @@ uint16_t DNSAnswer::get_rdlength() {
 
 uint32_t DNSAnswer::get_rdata() {
   return rdata;
+}
+
+void DNSAnswer::set_rr_type(RRType rr_type) {
+  this->type = rr_type;
+}
+void DNSAnswer::set_rr_class(RRClass rr_class) {
+  this->clss = rr_class;
+}
+void DNSAnswer::set_ttl(uint32_t ttl) {
+  this->ttl = ttl;
+}
+void DNSAnswer::set_rdata(const char* address) {
+  inet_pton(AF_INET, address, &this->rdata);
 }

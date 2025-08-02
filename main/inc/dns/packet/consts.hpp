@@ -3,27 +3,42 @@
 #include <cstdint>
 
 enum RRType : uint16_t {
-  RRType_A = 1,
-  RRType_NS,
-  RRType_MD,
-  RRType_MF,
-  RRType_CNAME,
-  RRType_SOA,
-  RRType_MB,
-  RRType_MG,
-  RRType_MR,
-  RRType_NULL,
-  RRType_WKS,
-  RRType_PTR,
-  RRType_HINFO,
-  RRType_MINFO,
-  RRType_MX,
-  RRType_TXT,
+  RRTYPE_A = 1,
+  RRTYPE_NS,
+  RRTYPE_MD,
+  RRTYPE_MF,
+  RRTYPE_CNAME,
+  RRTYPE_SOA,
+  RRTYPE_MB,
+  RRTYPE_MG,
+  RRTYPE_MR,
+  RRTYPE_NULL,
+  RRTYPE_WKS,
+  RRTYPE_PTR,
+  RRTYPE_HINFO,
+  RRTYPE_MINFO,
+  RRTYPE_MX,
+  RRTYPE_TXT,
 };
 
 enum RRClass : uint16_t {
-  RRClass_IN = 1,
-  RRClass_CS,
-  RRClass_CH,
-  RRClass_HS,
+  RRCLASS_IN = 1,
+  RRCLASS_CS,
+  RRCLASS_CH,
+  RRCLASS_HS,
+};
+
+enum Opcode : uint8_t {
+  OPCODE_QUERY,
+  OPCODE_IQUERY,
+  OPCODE_STATUE,
+};
+
+enum Rcode : uint8_t {
+  RCODE_NO_ERR,
+  RCODE_FORMAT_ERR,
+  RCODE_SERVER_FAILURE,
+  RCODE_NAME_ERR,
+  RCODE_NOT_IMPLEMENTED,
+  RCODE_REFUSED,
 };

@@ -7,18 +7,47 @@ int DNSPacket::parse(char* src, int size, int* bytes_read) {
   if (src == nullptr) {
     return ERR_ARG;
   }
-  if (size < sizeof(DNSHeader)) {
-    return ERR_BUF;
-  };
-  int bytes_read_part = 0;
+  int bytes_read_section = 0;
   int src_index = 0;
-  int ret = header.parse(&src[src_index], size, &bytes_read_part);
+  int ret = header.parse(&src[src_index], size, &bytes_read_section);
   if (ret)
     return ret;
-  src_index += bytes_read_part;
-  ret = question.parse(&src[src_index], size - bytes_read_part, &bytes_read_part);
+  src_index += bytes_read_section;
+  if (bytes_read)
+    *bytes_read += bytes_read_section;
+  ret = question.parse(&src[src_index], size - bytes_read_section,
+                       &bytes_read_section);
   return ret;
 }
+
+int DNSPacket::copy(char* dest, int size, int* bytes_written) {
+  if (bytes_written)
+    *bytes_written = 0;
+  if (dest == nullptr) {
+    return ERR_ARG;
+  };
+  int bytes_written_section = 0;
+  int dest_index = 0;
+  int ret = header.copy(&dest[dest_index], size, &bytes_written_section);
+  *bytes_written += bytes_written_section;
+  dest_index += bytes_written_section;
+  if (ret) {
+    return ret;
+  }
+
+  ret = question.copy(&dest[dest_index], size - *bytes_written,
+                      &bytes_written_section);
+  dest_index += bytes_written_section;
+  *bytes_written += bytes_written_section;
+  if (ret) {
+    return ret;
+  }
+
+  ret = answer.copy(&dest[dest_index], size - *bytes_written,
+                    &bytes_written_section);
+  *bytes_written += bytes_written_section;
+  return ret;
+};
 
 void DNSPacket::print() {
   printf("transaction id: 0x%x\n", this->header.get_transaction_id());
@@ -33,4 +62,14 @@ void DNSPacket::print() {
   printf("class:          0x%x\n", this->question.get_class());
   printf("======================================\n");
   printf("\n");
+}
+
+DNSHeader& DNSPacket::get_header() {
+  return header;
+}
+DNSQuestion& DNSPacket::get_question() {
+  return question;
+}
+DNSAnswer& DNSPacket::get_answer() {
+  return answer;
 }

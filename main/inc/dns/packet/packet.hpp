@@ -12,6 +12,11 @@ struct DNSPacket {
 
  public:
   void print();
-  
+
   int parse(char* buf, int size, int* bytes_read);
+  int copy(char* dest, int size, int* bytes_written);
+
+  DNSHeader& get_header();
+  DNSQuestion& get_question();
+  DNSAnswer& get_answer();
 };

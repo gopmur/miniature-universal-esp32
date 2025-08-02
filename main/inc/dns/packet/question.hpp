@@ -14,6 +14,8 @@ class DNSQuestion {
   void ntoh();
 
  public:
+  static constexpr int STATIC_SIZE = 2 * sizeof(uint16_t);
+
   DNSQuestion();
 
   char* get_name();

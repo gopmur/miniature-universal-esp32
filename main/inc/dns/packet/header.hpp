@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "dns/packet/consts.hpp"
 
 union DNSFlags {
   struct {
@@ -31,15 +32,29 @@ class DNSHeader {
   void ntoh();
 
  public:
+  static constexpr int STATIC_SIZE = sizeof(DNSFlags) + sizeof(uint16_t) * 5;
+
   DNSHeader();
 
   int copy(char* dest, int size, int* bytes_written);
   int parse(char* src, int size, int* bytes_read);
 
-  uint16_t get_transaction_id();
-  DNSFlags get_flags();
-  uint16_t get_number_of_questions();
-  uint16_t get_number_of_answers();
-  uint16_t get_number_of_authority_rrs();
-  uint16_t get_number_of_additional_rrs();
+  uint16_t get_transaction_id() const;
+  DNSFlags get_flags() const;
+  uint16_t get_number_of_questions() const;
+  uint16_t get_number_of_answers() const;
+  uint16_t get_number_of_authority_rrs() const;
+  uint16_t get_number_of_additional_rrs() const;
+  bool is_query() const;
+  bool is_response() const;
+  Opcode get_opcode() const;
+  Rcode get_rcode() const;
+
+  void set_number_of_answers(uint16_t number_of_questions);
+  void set_rcode(Rcode rcode);
+  void set_opcode(Opcode opcode);
+  void set_query();
+  void set_response();
+  void set_aa();
+  void clear_aa();
 };

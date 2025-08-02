@@ -8,13 +8,29 @@
 
 DNSQuestion::DNSQuestion() {
   name[0] = '\0';
-  type = RRType_A;
-  clss = RRClass_IN;
+  type = RRTYPE_A;
+  clss = RRCLASS_IN;
 }
 
 void DNSQuestion::hton() {
   type = htons(type);
   clss = htons(clss);
+  char c = 0;
+  char label_len = 0;
+  char label_len_index = 0;
+  int name_index = 0;
+  while ((c = name[name_index])) {
+    if (c == '.') {
+      name[label_len_index] = label_len;
+      label_len = 0;
+      label_len_index = name_index;
+      name_index++;
+      continue;
+    }
+    name_index++;
+    label_len++;
+  }
+  name[label_len_index] = label_len;
 }
 
 void DNSQuestion::ntoh() {
@@ -29,16 +45,28 @@ void DNSQuestion::ntoh() {
 }
 
 int DNSQuestion::copy(char* dest, int size, int* bytes_written) {
-  // if (bytes_written)
-  //   *bytes_written = 0;
-  // if (dest == nullptr) {
-  //   return ERR_ARG;
-  // }
-  // int static_question_size = sizeof(DNSQuestion) - sizeof(char*) -
-  // sizeof(int); int dynamic_question_size = strlen(); int question_size =
-  // static_question_size + dynamic_question_size; if (size < question_size) {
-  //   return ERR_BUF;
-  // }
+  if (bytes_written)
+    *bytes_written = 0;
+  if (dest == nullptr) {
+    return ESP_ERR_INVALID_ARG;
+  }
+  int dest_index = 0;
+
+  int dynamic_question_size = strlen(this->name) + 1;
+  int question_size = DNSQuestion::STATIC_SIZE + dynamic_question_size;
+  if (size < question_size) {
+    return ESP_ERR_NO_MEM;
+  }
+  this->hton();
+  strcpy(&dest[dest_index], this->name);
+  dest_index += dynamic_question_size;
+  memcpy(&dest[dest_index], &this->type, sizeof(uint16_t));
+  dest_index += sizeof(uint16_t);
+  memcpy(&dest[dest_index], &this->clss, sizeof(uint16_t));
+  this->ntoh();
+  if (bytes_written)
+    *bytes_written = question_size;
+  this->ntoh();
   return 0;
 }
 
@@ -49,8 +77,7 @@ int DNSQuestion::parse(char* src, int size, int* bytes_read) {
     return ESP_ERR_INVALID_ARG;
   }
   int src_index = 0;
-  int static_question_size = 2 * sizeof(uint16_t);
-  if (size < static_question_size) {
+  if (size < DNSQuestion::STATIC_SIZE) {
     return ESP_ERR_NO_MEM;
   }
   char label_len;
@@ -67,7 +94,7 @@ int DNSQuestion::parse(char* src, int size, int* bytes_read) {
   if (bytes_read)
     (*bytes_read)++;
   src_index++;
-  if (src_index + static_question_size - 1 >= size) {
+  if (src_index + DNSQuestion::STATIC_SIZE - 1 >= size) {
     return ESP_ERR_NO_MEM;
   }
   memcpy(&this->type, &src[src_index], sizeof(uint16_t));
