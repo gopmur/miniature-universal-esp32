@@ -20,22 +20,24 @@ bool DNSService::drop_packet(DNSPacket& packet) {
 
 void DNSService::set_dns_rcode(DNSPacket& packet, int parse_err) {
   auto& header = packet.get_header();
+  auto& question = packet.get_question();
   if (parse_err) {
     header.set_rcode(RCODE_SERVER_FAILURE);
   } else if (header.get_number_of_questions() != 1 ||
              header.get_opcode() == OPCODE_IQUERY ||
-             header.get_opcode() == OPCODE_STATUS) {
+             header.get_opcode() == OPCODE_STATUS ||
+             question.get_type() != RRTYPE_A) {
     header.set_rcode(RCODE_NOT_IMPLEMENTED);
-  } else if (strcmp(packet.get_question().get_name(), "app.local") != 0) {
+  } else if (strcmp(packet.get_question().get_name(), "app.lan") != 0) {
     header.set_rcode(RCODE_NAME_ERR);
   } else {
     header.set_rcode(RCODE_NO_ERR);
+    packet.print();
   }
 }
 
 void DNSService::make_dns_answer(DNSPacket& packet) {
   packet.get_header().set_number_of_answers(1);
-  packet.get_header().set_aa();
   packet.get_answer().set_rr_type(RRTYPE_A);
   packet.get_answer().set_rr_class(RRCLASS_IN);
   packet.get_answer().set_ttl(1);
@@ -45,7 +47,9 @@ void DNSService::make_dns_answer(DNSPacket& packet) {
 void DNSService::make_dns_response(DNSPacket& packet, int parse_err) {
   packet.get_header().set_response();
   set_dns_rcode(packet, parse_err);
-  make_dns_answer(packet);
+  if (packet.get_header().get_rcode() == RCODE_NO_ERR) {
+    make_dns_answer(packet);
+  }
 }
 
 void DNSService::start() {
@@ -71,12 +75,10 @@ void DNSService::start() {
              &client_address_len);
 
     int ret = packet.parse(buf, BUFFER_SIZE, nullptr);
-    packet.print();
     if (drop_packet(packet)) {
       continue;
     }
     make_dns_response(packet, ret);
-    packet.print();
     int answer_size;
     packet.copy(buf, BUFFER_SIZE, &answer_size);
     sendto(sock, buf, answer_size, 0, (struct sockaddr*)&client_address,

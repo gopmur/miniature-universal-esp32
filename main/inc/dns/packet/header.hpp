@@ -56,5 +56,6 @@ class DNSHeader {
   void set_query();
   void set_response();
   void set_aa();
+  void set_ra();
   void clear_aa();
 };

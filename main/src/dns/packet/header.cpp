@@ -121,3 +121,6 @@ void DNSHeader::set_aa() {
 void DNSHeader::clear_aa() {
   this->flags.b.AA = 0;
 }
+void DNSHeader::set_ra() {
+  this->flags.b.RA = 1;
+}
