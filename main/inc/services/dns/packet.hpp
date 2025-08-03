@@ -1,8 +1,8 @@
 #pragma once
 
-#include "dns/packet/answer.hpp"
-#include "dns/packet/header.hpp"
-#include "dns/packet/question.hpp"
+#include "services/dns/packet/answer.hpp"
+#include "services/dns/packet/header.hpp"
+#include "services/dns/packet/question.hpp"
 
 struct DNSPacket {
  private:

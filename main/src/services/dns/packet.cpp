@@ -1,4 +1,4 @@
-#include "dns/packet/packet.hpp"
+#include "services/dns/packet.hpp"
 #include "lwip/err.h"
 
 int DNSPacket::parse(char* src, int size, int* bytes_read) {

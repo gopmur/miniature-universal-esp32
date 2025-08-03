@@ -1,10 +1,10 @@
+#include <cstring>
 #include "cc.h"
 
 #include "esp_err.h"
 
-#include <cstring>
-#include "dns/packet/consts.hpp"
-#include "dns/packet/question.hpp"
+#include "services/dns/packet/consts.hpp"
+#include "services/dns/packet/question.hpp"
 
 DNSQuestion::DNSQuestion() {
   name[0] = '\0';

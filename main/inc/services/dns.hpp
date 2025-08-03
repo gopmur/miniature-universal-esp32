@@ -2,7 +2,7 @@
 
 #include <sys/types.h>
 
-#include "dns/packet/packet.hpp"
+#include "services/dns/packet.hpp"
 
 class DNSService {
  private:

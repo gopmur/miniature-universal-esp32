@@ -3,10 +3,8 @@
 
 #include <freertos/FreeRTOS.h>
 
-#include "dns/service.hpp"
 #include "esp_err.h"
 #include "esp_event.h"
-#include "esp_http_server.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
@@ -14,20 +12,8 @@
 #include "nvs_flash.h"
 
 #include "config.hpp"
-#include "dns/service.cpp"
-#include "http.hpp"
-
-class HTTPService {
- private:
-  httpd_handle_t server_instance;
-
- public:
-  void start() {
-    httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
-    ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
-    http_server_register_assets(server_instance);
-  }
-};
+#include "services/dns.hpp"
+#include "services/http.hpp"
 
 class App {
  private:

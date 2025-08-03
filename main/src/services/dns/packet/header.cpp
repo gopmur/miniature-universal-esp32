@@ -3,7 +3,7 @@
 #include "cc.h"
 #include "esp_err.h"
 
-#include "dns/packet/header.hpp"
+#include "services/dns/packet/header.hpp"
 
 void DNSHeader::hton() {
   transaction_id = htons(transaction_id);

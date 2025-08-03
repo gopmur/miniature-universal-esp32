@@ -5,10 +5,10 @@
 #include "esp_err.h"
 #include "lwip/sockets.h"
 
-#include "dns/packet/consts.hpp"
-#include "dns/packet/packet.hpp"
+#include "services/dns/packet/consts.hpp"
+#include "services/dns/packet.hpp"
 
-#include "dns/service.hpp"
+#include "services/dns.hpp"
 
 DNSService::DNSService(const char* iface_address) {
   inet_pton(AF_INET, iface_address, &this->iface_address);

@@ -97,5 +97,5 @@ if __name__ == "__main__":
   asset_uris: dict[str, str] = {}
   compress_assets(input_path, output_path, asset_uris)
   generated_code = generate_c_code(output_path, asset_uris)
-  with open(f"{output_path}/inc/http.hpp", "w") as http_h:
+  with open(f"{output_path}/inc/http_assets.hpp", "w") as http_h:
     http_h.write(generated_code)

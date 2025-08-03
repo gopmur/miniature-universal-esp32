@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "dns/packet/consts.hpp"
+#include "services/dns/packet/consts.hpp"
 
 union DNSFlags {
   struct {

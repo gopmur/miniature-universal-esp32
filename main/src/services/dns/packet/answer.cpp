@@ -1,11 +1,11 @@
 #include <cstring>
 
 #include "cc.h"
-
-#include "dns/packet/answer.hpp"
-#include "dns/packet/consts.hpp"
-#include "dns/packet/header.hpp"
 #include "lwip/sockets.h"
+
+#include "services/dns/packet/answer.hpp"
+#include "services/dns/packet/consts.hpp"
+#include "services/dns/packet/header.hpp"
 
 void DNSAnswer::hton() {
   name_ref = htons(name_ref);
