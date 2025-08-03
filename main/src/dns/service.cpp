@@ -1,21 +1,25 @@
-#include <stdlib.h>
-#include <cstdint>
-
 #include <arpa/inet.h>
+#include <stdlib.h>
 #include "cc.h"
-#include "dns/packet/consts.hpp"
-#include "dns/packet/packet.hpp"
+
 #include "esp_err.h"
 #include "lwip/sockets.h"
 
-#include "helper.hpp"
+#include "dns/packet/consts.hpp"
+#include "dns/packet/packet.hpp"
 
-bool drop_packet(DNSPacket& packet) {
+#include "dns/service.hpp"
+
+DNSService::DNSService(const char* iface_address) {
+  inet_pton(AF_INET, iface_address, &this->iface_address);
+}
+
+bool DNSService::drop_packet(DNSPacket& packet) {
   return packet.get_header().is_response();
 }
 
-void set_dns_rcode(DNSPacket& packet, int parse_err) {
-  auto &header = packet.get_header();
+void DNSService::set_dns_rcode(DNSPacket& packet, int parse_err) {
+  auto& header = packet.get_header();
   if (parse_err) {
     header.set_rcode(RCODE_SERVER_FAILURE);
   } else if (header.get_number_of_questions() != 1 ||
@@ -29,7 +33,7 @@ void set_dns_rcode(DNSPacket& packet, int parse_err) {
   }
 }
 
-void make_dns_answer(DNSPacket& packet) {
+void DNSService::make_dns_answer(DNSPacket& packet) {
   packet.get_header().set_number_of_answers(1);
   packet.get_header().set_aa();
   packet.get_answer().set_rr_type(RRTYPE_A);
@@ -38,15 +42,13 @@ void make_dns_answer(DNSPacket& packet) {
   packet.get_answer().set_rdata("192.168.4.1");
 }
 
-void make_dns_response(DNSPacket& packet, int parse_err) {
+void DNSService::make_dns_response(DNSPacket& packet, int parse_err) {
   packet.get_header().set_response();
   set_dns_rcode(packet, parse_err);
   make_dns_answer(packet);
 }
 
-void answer_dns_question() {}
-
-void dns_service_start(in_addr_t iface_address) {
+void DNSService::start() {
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in sock_addres = {};

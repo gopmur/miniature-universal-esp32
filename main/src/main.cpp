@@ -16,7 +16,7 @@
 
 #include "config.hpp"
 #include "http.hpp"
-#include "dns.hpp"
+#include "dns/service.cpp"
 
 class WebServer {
  private:
@@ -81,7 +81,8 @@ class App {
     setup_netif();
     setup_wifi();
     WebServer webserver;
-    dns_service_start(inet_addr("192.168.4.1"));
+    auto dns_service = DNSService("192.168.4.1");
+    dns_service.start();
   }
 
  public:
