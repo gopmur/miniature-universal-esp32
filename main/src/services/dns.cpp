@@ -3,10 +3,11 @@
 #include "cc.h"
 
 #include "esp_err.h"
+#include "freertos/idf_additions.h"
 #include "lwip/sockets.h"
 
-#include "services/dns/packet/consts.hpp"
 #include "services/dns/packet.hpp"
+#include "services/dns/packet/consts.hpp"
 
 #include "services/dns.hpp"
 
@@ -52,11 +53,11 @@ void DNSService::make_dns_response(DNSPacket& packet, int parse_err) {
   }
 }
 
-void DNSService::start() {
+[[noreturn]] void DNSService::provider(DNSService* service) {
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in sock_addres = {};
-  sock_addres.sin_addr.s_addr = iface_address;
+  sock_addres.sin_addr.s_addr = service->iface_address;
   sock_addres.sin_port = htons(53);
   sock_addres.sin_family = AF_INET;
 
@@ -66,7 +67,7 @@ void DNSService::start() {
   constexpr int BUFFER_SIZE = 64;
   static char buf[BUFFER_SIZE];
 
-  DNSPacket packet;
+  static DNSPacket packet;
 
   while (true) {
     struct sockaddr_in client_address;
@@ -75,13 +76,18 @@ void DNSService::start() {
              &client_address_len);
 
     int ret = packet.parse(buf, BUFFER_SIZE, nullptr);
-    if (drop_packet(packet)) {
+    if (service->drop_packet(packet)) {
       continue;
     }
-    make_dns_response(packet, ret);
+    service->make_dns_response(packet, ret);
     int answer_size;
     packet.copy(buf, BUFFER_SIZE, &answer_size);
     sendto(sock, buf, answer_size, 0, (struct sockaddr*)&client_address,
            client_address_len);
   }
+};
+
+void DNSService::start() {
+  xTaskCreate(reinterpret_cast<void (*)(void*)>(DNSService::provider),
+              "DNS service", 4096, this, 2, nullptr);
 }

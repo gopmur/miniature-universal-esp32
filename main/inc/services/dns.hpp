@@ -12,6 +12,7 @@ class DNSService {
   void set_dns_rcode(DNSPacket& packet, int parse_err);
   void make_dns_answer(DNSPacket& packet);
   void make_dns_response(DNSPacket& packet, int parse_err);
+  [[noreturn]] static void provider(DNSService* service);
 
  public:
   DNSService(const char* iface_address);
