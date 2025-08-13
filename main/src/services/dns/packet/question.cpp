@@ -17,7 +17,7 @@ void DNSQuestion::hton() {
   clss = htons(clss);
   char c = 0;
   char label_len = 0;
-  char label_len_index = 0;
+  int label_len_index = 0;
   int name_index = 0;
   while ((c = name[name_index])) {
     if (c == '.') {
