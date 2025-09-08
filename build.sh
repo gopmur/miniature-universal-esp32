@@ -1,9 +1,27 @@
 #! /bin/bash
 
 export IDF_TOOLCHAIN=clang
-rm -rf ./build/generated
-python ./main/scripts/generate_http_assets.py ./main/assets ./build/generated
-if [[ -z "$IDF_PATH" ]]; then
+
+function build_web_app() {
+  cd app/hexa-webapp
+  git pull
+  bun i
+  bun run build
+  cd ../..
+}
+
+function generate_assets() {
+  rm -rf ./build/generated
+  python ./main/scripts/generate_http_assets.py ./app/hexa-webapp/dist ./build/generated
+}
+
+function build_firmware() {
+  if [[ -z "$IDF_PATH" ]]; then
   source "$HOME/esp/v5.4.2/esp-idf/export.sh"
-fi
-idf.py build
+  fi
+  idf.py build
+}
+
+build_web_app
+generate_assets
+build_firmware
