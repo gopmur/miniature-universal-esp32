@@ -1,0 +1,5 @@
+BasedOnStyle: Chromium
+IndentWidth: 2
+UseTab: ForIndentation
+FixNamespaceComments: false
+NamespaceIndentation: All
