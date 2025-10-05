@@ -2,9 +2,12 @@
 
 #include <sys/types.h>
 
+#include "config.hpp"
+#include "freertos/idf_additions.h"
+#include "service.hpp"
 #include "services/dns/packet.hpp"
 
-class DNSService {
+class DnsService : Service<4096> {
  private:
   in_addr_t iface_address;
 
@@ -12,10 +15,10 @@ class DNSService {
   void set_dns_rcode(DNSPacket& packet, int parse_err);
   void make_dns_answer(DNSPacket& packet);
   void make_dns_response(DNSPacket& packet, int parse_err);
-  [[noreturn]] static void provider(DNSService* service);
+  static void main(DnsService* service);
 
  public:
-  DNSService(const char* iface_address);
+  DnsService(const char* iface_address);
 
   void start();
 };

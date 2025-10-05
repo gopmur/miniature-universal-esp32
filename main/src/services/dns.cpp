@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "cc.h"
 
+#include "config.hpp"
 #include "esp_err.h"
 #include "freertos/idf_additions.h"
 #include "lwip/sockets.h"
@@ -11,15 +12,15 @@
 
 #include "services/dns.hpp"
 
-DNSService::DNSService(const char* iface_address) {
+DnsService::DnsService(const char* iface_address) {
   inet_pton(AF_INET, iface_address, &this->iface_address);
 }
 
-bool DNSService::drop_packet(DNSPacket& packet) {
+bool DnsService::drop_packet(DNSPacket& packet) {
   return packet.get_header().is_response();
 }
 
-void DNSService::set_dns_rcode(DNSPacket& packet, int parse_err) {
+void DnsService::set_dns_rcode(DNSPacket& packet, int parse_err) {
   auto& header = packet.get_header();
   auto& question = packet.get_question();
   if (parse_err) {
@@ -37,7 +38,7 @@ void DNSService::set_dns_rcode(DNSPacket& packet, int parse_err) {
   }
 }
 
-void DNSService::make_dns_answer(DNSPacket& packet) {
+void DnsService::make_dns_answer(DNSPacket& packet) {
   packet.get_header().set_number_of_answers(1);
   packet.get_answer().set_rr_type(RRTYPE_A);
   packet.get_answer().set_rr_class(RRCLASS_IN);
@@ -45,7 +46,7 @@ void DNSService::make_dns_answer(DNSPacket& packet) {
   packet.get_answer().set_rdata("192.168.4.1");
 }
 
-void DNSService::make_dns_response(DNSPacket& packet, int parse_err) {
+void DnsService::make_dns_response(DNSPacket& packet, int parse_err) {
   packet.get_header().set_response();
   set_dns_rcode(packet, parse_err);
   if (packet.get_header().get_rcode() == RCODE_NO_ERR) {
@@ -53,7 +54,7 @@ void DNSService::make_dns_response(DNSPacket& packet, int parse_err) {
   }
 }
 
-[[noreturn]] void DNSService::provider(DNSService* service) {
+void DnsService::main(DnsService* service) {
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in sock_addres = {};
@@ -87,7 +88,9 @@ void DNSService::make_dns_response(DNSPacket& packet, int parse_err) {
   }
 };
 
-void DNSService::start() {
-  xTaskCreate(reinterpret_cast<void (*)(void*)>(DNSService::provider),
-              "DNS service", 4096, this, 2, nullptr);
+void DnsService::start() {
+  priority = config::service::dns::priority;
+  this->thread_id = xTaskCreateStatic(
+      reinterpret_cast<void (*)(void*)>(main), "dns_service", stack_size, this,
+      config::service::stm_uart::priority, stack, &tcb);
 }

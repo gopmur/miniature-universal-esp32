@@ -12,8 +12,10 @@
 #include "nvs_flash.h"
 
 #include "config.hpp"
+#include "context.hpp"
 #include "services/dns.hpp"
 #include "services/http.hpp"
+#include "services/stm_uart.hpp"
 
 class App {
  private:
@@ -65,8 +67,9 @@ class App {
     setup_flash();
     setup_netif();
     setup_wifi();
-    HTTPService().start();
-    DNSService("192.168.4.1").start();
+    // context::init();
+    context::http_service.start();
+    context::dns_service.start();
   }
 
  public:
