@@ -3,6 +3,11 @@
 #include "hal/uart_types.h"
 
 namespace config {
+
+  namespace pins {
+    
+  }
+
   namespace wifi {
     constexpr auto ssid = "Gopmur ESP-32";
     constexpr auto password = "12345678";
@@ -31,6 +36,9 @@ namespace config {
       constexpr auto stack_size = 1024;
     }
 
-    namespace led {}
+    namespace led {
+      constexpr auto priority = 2;
+      constexpr auto stack_size = 2048;
+    }
   }
 }

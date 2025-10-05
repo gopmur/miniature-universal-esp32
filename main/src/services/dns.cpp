@@ -92,5 +92,5 @@ void DnsService::start() {
   priority = config::service::dns::priority;
   this->thread_id = xTaskCreateStatic(
       reinterpret_cast<void (*)(void*)>(main), "dns_service", stack_size, this,
-      config::service::stm_uart::priority, stack, &tcb);
+      config::service::dns::priority, stack, &tcb);
 }

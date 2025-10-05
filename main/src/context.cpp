@@ -1,11 +1,13 @@
 #include "context.hpp"
 #include "freertos/idf_additions.h"
 #include "messages.hpp"
+#include "services/led.hpp"
 
 namespace context {
 
 HttpService http_service;
 DnsService dns_service("192.168.4.1");
+LedService led_service;
 // StmUartService stm_uart_service(config::stm_uart::port,
 //                                 config::stm_uart::data_bits,
 //                                 config::stm_uart::parity,

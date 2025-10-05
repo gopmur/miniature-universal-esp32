@@ -70,6 +70,7 @@ class App {
     // context::init();
     context::http_service.start();
     context::dns_service.start();
+    context::led_service.start();
   }
 
  public:
