@@ -2,8 +2,6 @@
 
 #include <sys/types.h>
 
-#include "config.hpp"
-#include "freertos/idf_additions.h"
 #include "service.hpp"
 #include "services/dns/packet.hpp"
 

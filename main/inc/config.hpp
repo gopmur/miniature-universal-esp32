@@ -4,9 +4,7 @@
 
 namespace config {
 
-  namespace pins {
-    
-  }
+  namespace pins {}
 
   namespace wifi {
     constexpr auto ssid = "Gopmur ESP-32";
@@ -39,6 +37,7 @@ namespace config {
     namespace led {
       constexpr auto priority = 2;
       constexpr auto stack_size = 2048;
+      constexpr auto queue_len = 2;
     }
   }
 }
