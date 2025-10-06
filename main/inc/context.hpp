@@ -13,7 +13,7 @@ void init();
 extern HttpService http_service;
 extern DnsService dns_service;
 extern LedService led_service;
-// extern StmUartService stm_uart_service;
+extern StmUartService stm_uart_service;
 
 // extern QueueHandle_t http_to_stm_uart_queue;
 // extern QueueHandle_t stm_uart_to_http_queue;
