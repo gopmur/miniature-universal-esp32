@@ -5,7 +5,7 @@
 #include "service.hpp"
 
 class StmUartService : public Service<config::service::stm_uart::stack_size> {
- private:
+  private:
   const uart_port_t port;
   const uart_word_length_t data_bits;
   const uart_parity_t parity;
@@ -17,7 +17,7 @@ class StmUartService : public Service<config::service::stm_uart::stack_size> {
 
   static void main(StmUartService* service);
 
- public:
+  public:
   StmUartService(uart_port_t port,
                  uart_word_length_t data_bits,
                  uart_parity_t parity,

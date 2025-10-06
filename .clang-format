@@ -1,5 +1,11 @@
 BasedOnStyle: Chromium
 IndentWidth: 2
-UseTab: ForIndentation
+UseTab: Never
 FixNamespaceComments: false
 NamespaceIndentation: All
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+IndentPPDirectives: BeforeHash
+AccessModifierOffset: 0

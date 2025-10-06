@@ -3,8 +3,6 @@
 #include "driver/uart.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
-#include "messages.hpp"
-#include "portmacro.h"
 
 StmUartService::StmUartService(uart_port_t port,
                                uart_word_length_t data_bits,
@@ -31,7 +29,10 @@ void StmUartService::main(StmUartService* self) {
 }
 
 void StmUartService::start() {
-  uart_set_pin(this->port, this->tx_pin, this->rx_pin, UART_PIN_NO_CHANGE,
+  uart_set_pin(this->port,
+               this->tx_pin,
+               this->rx_pin,
+               UART_PIN_NO_CHANGE,
                UART_PIN_NO_CHANGE);
 
 #pragma clang diagnostic push
@@ -48,7 +49,12 @@ void StmUartService::start() {
   uart_param_config(this->port, &uart_config);
   uart_driver_install(this->port, this->buffer_size * 2, 0, 0, nullptr, 0);
   priority = config::service::dns::priority;
-  this->thread_id = xTaskCreateStatic(
-      reinterpret_cast<void (*)(void*)>(StmUartService::main), "dns_service",
-      stack_size, this, config::service::stm_uart::priority, stack, &tcb);
+  this->thread_id =
+      xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(StmUartService::main),
+                        "dns_service",
+                        stack_size,
+                        this,
+                        config::service::stm_uart::priority,
+                        stack,
+                        &tcb);
 }
