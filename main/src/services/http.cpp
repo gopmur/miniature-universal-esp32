@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdio>
 
 #include "services/http.hpp"
 
@@ -64,12 +65,12 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-                      HttpService::LOG_TAG,
-                      "Start response transmission failed");
   UartPacket uart_packet;
   uart_packet.type = UartPacketType::START;
   context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start response transmission failed");
   return ESP_OK;
 }
 

@@ -1,6 +1,8 @@
 #include "services/stm_uart.hpp"
+#include <cstdio>
 #include "config.hpp"
 #include "driver/uart.h"
+#include "esp_err.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
 #include "portmacro.h"
@@ -12,7 +14,7 @@ StmUartService::StmUartService(uart_port_t port,
                                int tx_pin,
                                int rx_pin,
                                int baud_rate,
-                               int buffer_size)
+                               int rx_buffer_size)
     : port(port),
       data_bits(data_bits),
       parity(parity),
@@ -20,7 +22,7 @@ StmUartService::StmUartService(uart_port_t port,
       tx_pin(tx_pin),
       rx_pin(rx_pin),
       baud_rate(baud_rate),
-      buffer_size(buffer_size) {}
+      rx_buffer_size(rx_buffer_size) {}
 
 void StmUartService::main(StmUartService* self) {
   while (true) {
@@ -33,11 +35,11 @@ void StmUartService::main(StmUartService* self) {
 }
 
 void StmUartService::start() {
-  uart_set_pin(this->port,
-               this->tx_pin,
-               this->rx_pin,
-               UART_PIN_NO_CHANGE,
-               UART_PIN_NO_CHANGE);
+  ESP_ERROR_CHECK(uart_set_pin(this->port,
+                               this->tx_pin,
+                               this->rx_pin,
+                               UART_PIN_NO_CHANGE,
+                               UART_PIN_NO_CHANGE));
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-field-initializers"
@@ -50,12 +52,13 @@ void StmUartService::start() {
       .rx_flow_ctrl_thresh = 0,
   };
 #pragma clang diagnostic pop
-  uart_param_config(this->port, &uart_config);
-  uart_driver_install(this->port, this->buffer_size * 2, 0, 0, nullptr, 0);
+  ESP_ERROR_CHECK(uart_param_config(this->port, &uart_config));
+  ESP_ERROR_CHECK(
+      uart_driver_install(this->port, this->rx_buffer_size, 0, 0, nullptr, 0));
   priority = config::service::dns::priority;
   this->thread_id =
       xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(StmUartService::main),
-                        "dns_service",
+                        "stm_uart_service",
                         stack_size,
                         this,
                         config::service::stm_uart::priority,

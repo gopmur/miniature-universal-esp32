@@ -1,6 +1,4 @@
 #include "context.hpp"
-#include "freertos/idf_additions.h"
-#include "messages.hpp"
 #include "services/led.hpp"
 
 namespace context {
@@ -15,11 +13,6 @@ namespace context {
                                   config::stm_uart::tx_pin,
                                   config::stm_uart::rx_pin,
                                   config::stm_uart::baud_rate,
-                                  config::stm_uart::buffer_size);
+                                  config::stm_uart::rx_buffer_size);
 
-  void init() {
-    // context::http_to_stm_uart_queue =
-    //     xQueueCreate(4, sizeof(HttpToStmUartMessages));
-  }
-
-}  // namespace context
+}

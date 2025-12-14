@@ -15,7 +15,7 @@ class StmUartService : public Service<config::service::stm_uart::stack_size> {
   const int tx_pin;
   const int rx_pin;
   const int baud_rate;
-  const int buffer_size;
+  const int rx_buffer_size;
 
   static void main(StmUartService* service);
 
