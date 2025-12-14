@@ -3,6 +3,7 @@
 #include "driver/uart.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
+#include "portmacro.h"
 
 StmUartService::StmUartService(uart_port_t port,
                                uart_word_length_t data_bits,
@@ -23,8 +24,11 @@ StmUartService::StmUartService(uart_port_t port,
 
 void StmUartService::main(StmUartService* self) {
   while (true) {
-    uart_write_bytes(self->port, "Hello\n", 6);
-    vTaskDelay(1000);
+    auto uart_packet = self->queue.receive(portMAX_DELAY);
+    if (!uart_packet)
+      continue;
+    auto tx_buffer = uart_packet->get_raw();
+    uart_write_bytes(self->port, tx_buffer.data(), tx_buffer.size());
   }
 }
 

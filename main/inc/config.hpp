@@ -16,7 +16,7 @@ namespace config {
   namespace stm_uart {
     constexpr auto port = UART_NUM_1;
     constexpr auto baud_rate = 115200;
-    constexpr auto buffer_size = 1024;
+    constexpr auto buffer_size = 4096;
     constexpr auto tx_pin = 17;
     constexpr auto rx_pin = 16;
     constexpr auto data_bits = UART_DATA_8_BITS;
@@ -26,17 +26,17 @@ namespace config {
 
   namespace service {
     namespace stm_uart {
-      constexpr auto stack_size = 2048;
+      constexpr auto stack_size = 4096;
       constexpr auto priority = 2;
     }
     namespace dns {
       constexpr auto priority = 2;
-      constexpr auto stack_size = 1024;
+      constexpr auto stack_size = 4096;
     }
 
     namespace led {
       constexpr auto priority = 2;
-      constexpr auto stack_size = 2048;
+      constexpr auto stack_size = 4096;
       constexpr auto queue_len = 2;
     }
   }

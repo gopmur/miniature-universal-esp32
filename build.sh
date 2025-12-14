@@ -13,7 +13,7 @@ function build_web_app() {
 
 function generate_assets() {
   rm -rf ./build/generated
-  python ./main/scripts/generate_http_assets.py ./app/hexa-webapp/dist ./build/generated
+  python ./main/scripts/generate_http_assets.py ./app/hexa-webapp/dist ./generated
 }
 
 function build_firmware() {

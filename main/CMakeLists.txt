@@ -1,6 +1,6 @@
 file(GLOB_RECURSE SOURCE_CPP_FILES "src/*.cpp")
 file(GLOB_RECURSE SOURCE_C_FILES "src/*.c")
-file(GLOB_RECURSE ASSET_FILES "${CMAKE_SOURCE_DIR}/build/generated/assets/*.gz")
+file(GLOB_RECURSE ASSET_FILES "${CMAKE_SOURCE_DIR}/generated/assets/*.gz")
 
 idf_component_register(
   SRCS
@@ -10,5 +10,5 @@ idf_component_register(
     ${ASSET_FILES}
   INCLUDE_DIRS 
     "inc"
-    "${CMAKE_SOURCE_DIR}/build/generated/inc"
+    "${CMAKE_SOURCE_DIR}/generated/inc"
 )

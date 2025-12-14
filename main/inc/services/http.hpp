@@ -9,6 +9,10 @@ class HttpService {
 
   static constexpr const char* LOG_TAG = "HTTP Service";
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
+  static esp_err_t start_handler(httpd_req_t* req);
+  static esp_err_t stop_handler(httpd_req_t* req);
+  static esp_err_t set_right_torque_handler(httpd_req_t* req);
+  static esp_err_t set_left_torque_handler(httpd_req_t* req);
 
   esp_err_t register_dynamic_endpoints();
 
