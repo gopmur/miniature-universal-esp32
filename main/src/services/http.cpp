@@ -75,6 +75,9 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
+  UartPacket uart_packet;
+  uart_packet.type = UartPacketType::STOP;
+  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -109,19 +112,27 @@ esp_err_t HttpService::register_dynamic_endpoints() {
       .user_ctx = nullptr,
   };
 
-  // httpd_uri get_session_reports_uri = {
-  //     .uri = "/api/report",
-  //     .method = HTTP_GET,
-  //     .handler = HttpService::get_session_reports_handler,
-  //     .user_ctx = nullptr,
-  // };
+  httpd_uri set_right_torque_uri = {
+      .uri = "/api/right_torque",
+      .method = HTTP_PUT,
+      .handler = HttpService::set_right_torque_handler,
+      .user_ctx = nullptr,
+  };
 
-  // httpd_uri get_session_reports_uri = {
-  //     .uri = "/api/report",
-  //     .method = HTTP_GET,
-  //     .handler = HttpService::get_session_reports_handler,
-  //     .user_ctx = nullptr,
-  // };
+  httpd_uri set_left_torque_uri = {
+      .uri = "/api/left_torque",
+      .method = HTTP_PUT,
+      .handler = HttpService::set_left_torque_handler,
+      .user_ctx = nullptr,
+  };
+
+  httpd_uri set_control_mode_uri = {
+      .uri = "/api/control_mode",
+      .method = HTTP_PUT,
+      .handler = HttpService::set_left_torque_handler,
+      .user_ctx = nullptr,
+  };
+
   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance,
                                                  &get_session_reports_uri),
                       HttpService::LOG_TAG,
@@ -134,6 +145,18 @@ esp_err_t HttpService::register_dynamic_endpoints() {
       httpd_register_uri_handler(this->server_instance, &stop_uri),
       HttpService::LOG_TAG,
       "Failed to register /api/stop end point");
+  ESP_RETURN_ON_ERROR(
+      httpd_register_uri_handler(this->server_instance, &set_left_torque_uri),
+      HttpService::LOG_TAG,
+      "Failed to register /api/left_torque end point");
+  ESP_RETURN_ON_ERROR(
+      httpd_register_uri_handler(this->server_instance, &set_right_torque_uri),
+      HttpService::LOG_TAG,
+      "Failed to register /api/right_torque end point");
+  ESP_RETURN_ON_ERROR(
+      httpd_register_uri_handler(this->server_instance, &set_control_mode_uri),
+      HttpService::LOG_TAG,
+      "Failed to register /api/control_mode end point");
   return ESP_OK;
 }
 

@@ -15,13 +15,14 @@ namespace config {
 
   namespace stm_uart {
     constexpr auto port = UART_NUM_1;
-    constexpr auto baud_rate = 115200;
+    constexpr auto baud_rate = 9600;
     constexpr auto rx_buffer_size = 256;
     constexpr auto tx_pin = 17;
     constexpr auto rx_pin = 16;
     constexpr auto data_bits = UART_DATA_8_BITS;
     constexpr auto parity = UART_PARITY_DISABLE;
     constexpr auto stop_bits = UART_STOP_BITS_1;
+    constexpr auto packet_length = 5;
   }
 
   namespace service {
