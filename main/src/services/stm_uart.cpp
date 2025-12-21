@@ -29,8 +29,7 @@ void StmUartService::main(StmUartService* self) {
     auto uart_packet = self->queue.receive(portMAX_DELAY);
     if (!uart_packet)
       continue;
-    auto tx_buffer = uart_packet->get_raw();
-    uart_write_bytes(self->port, tx_buffer.data(), tx_buffer.size());
+    uart_write_bytes(self->port, uart_packet->data(), uart_packet->size());
   }
 }
 

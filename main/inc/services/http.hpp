@@ -4,7 +4,7 @@
 #include "esp_http_server.h"
 
 class HttpService {
- private:
+  private:
   httpd_handle_t server_instance;
 
   static constexpr const char* LOG_TAG = "HTTP Service";
@@ -13,9 +13,13 @@ class HttpService {
   static esp_err_t stop_handler(httpd_req_t* req);
   static esp_err_t set_right_torque_handler(httpd_req_t* req);
   static esp_err_t set_left_torque_handler(httpd_req_t* req);
+  static esp_err_t set_mode_manual_handler(httpd_req_t* req);
+  static esp_err_t set_mode_automatic_handler(httpd_req_t* req);
+  static esp_err_t set_mode_semi_automatic_handler(httpd_req_t* req);
+  static esp_err_t set_mode_smart_handler(httpd_req_t* req);
 
   esp_err_t register_dynamic_endpoints();
 
- public:
+  public:
   void start();
 };

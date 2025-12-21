@@ -23,8 +23,17 @@ union UartPayload {
 };
 
 struct UartPacket {
-  UartPacketType type;
-  UartPayload payload;
+  UartPacketType header;
+  std::array<uint8_t, config::stm_uart::packet_length - 1> payload;
 
-  std::array<uint8_t, config::stm_uart::packet_length> get_raw();
+  static std::array<uint8_t, config::stm_uart::packet_length>
+  make_start_packet();
+  static std::array<uint8_t, config::stm_uart::packet_length>
+  make_stop_packet();
+  static std::array<uint8_t, config::stm_uart::packet_length>
+  make_set_left_torque_packet(float torque);
+  static std::array<uint8_t, config::stm_uart::packet_length>
+  make_set_right_torque_packet(float torque);
+  static std::array<uint8_t, config::stm_uart::packet_length> make_set_mode_packet(
+      ControlMode mode);
 };

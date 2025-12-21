@@ -3,22 +3,44 @@
 #include "helper.hpp"
 #include "services/stm_uart.hpp"
 
-std::array<uint8_t, config::stm_uart::packet_length> UartPacket::get_raw() {
-  std::array<uint8_t, config::stm_uart::packet_length> raw;
-  raw[0] = static_cast<uint8_t>(this->type);
-  switch (this->type) {
-    case UartPacketType::SET_LEFT_TORQUE:
-    case UartPacketType::SET_RIGHT_TORQUE:
-      raw[1] = get_byte(this->payload.torque, 0);
-      raw[2] = get_byte(this->payload.torque, 1);
-      raw[3] = get_byte(this->payload.torque, 2);
-      raw[4] = get_byte(this->payload.torque, 3);
-      break;
-    case UartPacketType::SET_MODE:
-      raw[1] = static_cast<uint8_t>(this->payload.control_mode);
-    default:
-      break;
-  }
-  return raw;
+std::array<uint8_t, config::stm_uart::packet_length>
+UartPacket::make_start_packet() {
+  std::array<uint8_t, config::stm_uart::packet_length> packet;
+  packet[0] = static_cast<uint8_t>(UartPacketType::START);
+  return packet;
 }
 
+std::array<uint8_t, config::stm_uart::packet_length>
+UartPacket::make_stop_packet() {
+  std::array<uint8_t, config::stm_uart::packet_length> packet;
+  packet[0] = static_cast<uint8_t>(UartPacketType::STOP);
+  return packet;
+}
+
+std::array<uint8_t, config::stm_uart::packet_length>
+UartPacket::make_set_left_torque_packet(float torque) {
+  std::array<uint8_t, config::stm_uart::packet_length> packet;
+  packet[0] = static_cast<uint8_t>(UartPacketType::SET_LEFT_TORQUE);
+  for (int i = 0; i < 4; i++) {
+    packet[i + 1] = get_byte(torque, i);
+  }
+  return packet;
+}
+
+std::array<uint8_t, config::stm_uart::packet_length>
+UartPacket::make_set_right_torque_packet(float torque) {
+  std::array<uint8_t, config::stm_uart::packet_length> packet;
+  packet[0] = static_cast<uint8_t>(UartPacketType::SET_RIGHT_TORQUE);
+  for (int i = 0; i < 4; i++) {
+    packet[i + 1] = get_byte(torque, i);
+  }
+  return packet;
+}
+
+std::array<uint8_t, config::stm_uart::packet_length>
+UartPacket::make_set_mode_packet(ControlMode mode) {
+  std::array<uint8_t, config::stm_uart::packet_length> packet;
+  packet[0] = static_cast<uint8_t>(UartPacketType::SET_MODE);
+  packet[1] = static_cast<uint8_t>(mode);
+  return packet;
+}

@@ -26,3 +26,14 @@ inline uint8_t get_byte(uint32_t v, uint8_t b) {
     return 0;
   return v >> (8 * b) & 0xff;
 }
+
+inline uint8_t get_byte(float v, uint8_t b) {
+  if (b >= 4)
+    return 0;
+  union {
+    float f;
+    uint32_t u;
+  } x;
+  x.f = v;
+  return x.u >> (8 * b) & 0xff;
+}

@@ -65,8 +65,7 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
-  UartPacket uart_packet;
-  uart_packet.type = UartPacketType::START;
+  auto uart_packet = UartPacket::make_start_packet();
   context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -75,8 +74,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
-  UartPacket uart_packet;
-  uart_packet.type = UartPacketType::STOP;
+  auto uart_packet = UartPacket::make_stop_packet();
   context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -87,6 +85,39 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
+  return ESP_OK;
+}
+
+esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
+  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::MANUAL);
+  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
+  return ESP_OK;
+}
+esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
+  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::AUTO);
+  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
+  return ESP_OK;
+}
+esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
+  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SEMI_AUTO);
+  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
+  return ESP_OK;
+}
+esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
+  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SMART);
+  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 
@@ -126,10 +157,31 @@ esp_err_t HttpService::register_dynamic_endpoints() {
       .user_ctx = nullptr,
   };
 
-  httpd_uri set_control_mode_uri = {
-      .uri = "/api/control_mode",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_left_torque_handler,
+  httpd_uri set_mode_manual_uri = {
+      .uri = "/api/set-mode/manual",
+      .method = HTTP_GET,
+      .handler = HttpService::set_mode_manual_handler,
+      .user_ctx = nullptr,
+  };
+
+  httpd_uri set_mode_automatic_uri = {
+      .uri = "/api/set-mode/automatic",
+      .method = HTTP_GET,
+      .handler = HttpService::set_mode_automatic_handler,
+      .user_ctx = nullptr,
+  };
+
+  httpd_uri set_mode_semi_automatic_uri = {
+      .uri = "/api/set-mode/semi-automatic",
+      .method = HTTP_GET,
+      .handler = HttpService::set_mode_semi_automatic_handler,
+      .user_ctx = nullptr,
+  };
+
+  httpd_uri set_mode_smart_uri = {
+      .uri = "/api/set-mode/smart",
+      .method = HTTP_GET,
+      .handler = HttpService::set_mode_smart_handler,
       .user_ctx = nullptr,
   };
 
@@ -154,14 +206,28 @@ esp_err_t HttpService::register_dynamic_endpoints() {
       HttpService::LOG_TAG,
       "Failed to register /api/right_torque end point");
   ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &set_control_mode_uri),
+      httpd_register_uri_handler(this->server_instance, &set_mode_manual_uri),
       HttpService::LOG_TAG,
-      "Failed to register /api/control_mode end point");
+      "Failed to register /api/set-mode/manual end point");
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance,
+                                                 &set_mode_automatic_uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register /api/set-mode/automatic end point");
+  ESP_RETURN_ON_ERROR(
+      httpd_register_uri_handler(this->server_instance,
+                                 &set_mode_semi_automatic_uri),
+      HttpService::LOG_TAG,
+      "Failed to register /api/set-mode/semi-automatic end point");
+  ESP_RETURN_ON_ERROR(
+      httpd_register_uri_handler(this->server_instance, &set_mode_smart_uri),
+      HttpService::LOG_TAG,
+      "Failed to register /api/set-mode/smart end point");
   return ESP_OK;
 }
 
 void HttpService::start() {
   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
+  http_config.max_uri_handlers = 12;
   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
   http_server_register_assets(server_instance);
   ESP_ERROR_CHECK(register_dynamic_endpoints());

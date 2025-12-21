@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include "config.hpp"
 #include "hal/uart_types.h"
 #include "ipc/queue.hpp"
@@ -20,7 +21,7 @@ class StmUartService : public Service<config::service::stm_uart::stack_size> {
   static void main(StmUartService* service);
 
   public:
-  Queue<UartPacket, 32> queue;
+  Queue<std::array<uint8_t, config::stm_uart::packet_length>, 4> queue;
   StmUartService(uart_port_t port,
                  uart_word_length_t data_bits,
                  uart_parity_t parity,
