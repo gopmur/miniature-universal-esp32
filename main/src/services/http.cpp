@@ -11,6 +11,7 @@
 #include "portmacro.h"
 #include "report.hpp"
 
+#include <cJSON.h>
 #include "context.hpp"
 #include "services/stm_uart.hpp"
 
@@ -82,9 +83,53 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
+  int len = req->content_len;
+  char* body = (char*)malloc(len + 1);
+
+  int received = httpd_req_recv(req, body, len);
+  body[received] = 0;
+
+  cJSON* root = cJSON_Parse(body);
+  cJSON* torqueItem = cJSON_GetObjectItem(root, "torque");
+
+  if (cJSON_IsNumber(torqueItem)) {
+    int torque = torqueItem->valueint;
+    auto uart_packet = UartPacket::make_set_right_torque_packet(torque);
+    context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  }
+
+  cJSON_Delete(root);
+  free(body);
+
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
+
 esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
+  int len = req->content_len;
+  char* body = (char*)malloc(len + 1);
+
+  int received = httpd_req_recv(req, body, len);
+  body[received] = 0;
+
+  cJSON* root = cJSON_Parse(body);
+  cJSON* torqueItem = cJSON_GetObjectItem(root, "torque");
+
+  if (cJSON_IsNumber(torqueItem)) {
+    int torque = torqueItem->valueint;
+    auto uart_packet = UartPacket::make_set_left_torque_packet(torque);
+    context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  }
+
+  cJSON_Delete(root);
+  free(body);
+
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
+
   return ESP_OK;
 }
 
