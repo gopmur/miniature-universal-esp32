@@ -2,6 +2,7 @@
 
 #include "esp_err.h"
 #include "esp_http_server.h"
+#include "ipc/queue.hpp"
 
 class HttpService {
   private:
@@ -17,9 +18,11 @@ class HttpService {
   static esp_err_t set_mode_automatic_handler(httpd_req_t* req);
   static esp_err_t set_mode_semi_automatic_handler(httpd_req_t* req);
   static esp_err_t set_mode_smart_handler(httpd_req_t* req);
+  static esp_err_t get_running_handler(httpd_req_t *req);
 
   esp_err_t register_dynamic_endpoints();
 
   public:
+  Queue<bool, 4> queue;
   void start();
 };

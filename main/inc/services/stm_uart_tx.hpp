@@ -7,7 +7,7 @@
 #include "service.hpp"
 #include "stm_uart/packet.hpp"
 
-class StmUartService : public Service<config::service::stm_uart::stack_size> {
+class StmUartTxService : public Service<config::service::stm_uart::stack_size> {
   private:
   const uart_port_t port;
   const uart_word_length_t data_bits;
@@ -18,11 +18,11 @@ class StmUartService : public Service<config::service::stm_uart::stack_size> {
   const int baud_rate;
   const int rx_buffer_size;
 
-  static void main(StmUartService* service);
+  static void main(StmUartTxService* service);
 
   public:
   Queue<std::array<uint8_t, config::stm_uart::packet_length>, 4> queue;
-  StmUartService(uart_port_t port,
+  StmUartTxService(uart_port_t port,
                  uart_word_length_t data_bits,
                  uart_parity_t parity,
                  uart_stop_bits_t stop_bits,

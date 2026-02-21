@@ -6,6 +6,7 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
+#include "esp_log.h"
 #include "http_assets.hpp"
 #include "http_parser.h"
 #include "portmacro.h"
@@ -13,14 +14,9 @@
 
 #include <cJSON.h>
 #include "context.hpp"
-#include "services/stm_uart.hpp"
+#include "services/stm_uart_tx.hpp"
 
 esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
-  // if (context::stm_uart_service != nullptr) {
-  //   const auto message = HttpToStmUartSignal::REQUEST_REPORT;
-  //   xQueueSend(context::http_to_stm_uart_queue, &message, portMAX_DELAY);
-  // }
-
   constexpr int record_count = 8;
   constexpr int data_count = 2000;
   constexpr float sampling_rate = 0.1;
@@ -65,9 +61,29 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::get_running_handler(httpd_req_t* req) {
+  auto uart_packet = UartPacket::make_get_running_packet();
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto running = context::http_service.queue.receive(portMAX_DELAY);
+  if (!running.has_value()) {
+    httpd_resp_send_err(req,
+                        HTTPD_500_INTERNAL_SERVER_ERROR,
+                        "STM32 not responding");
+    return ESP_OK;
+  }
+  auto root = cJSON_CreateObject();
+  cJSON_AddBoolToObject(root, "running", running.value());
+  auto json_str = cJSON_PrintUnformatted(root);
+  httpd_resp_set_type(req, "application/json");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, json_str, HTTPD_RESP_USE_STRLEN),
+                      HttpService::LOG_TAG,
+                      "Get running response transmission failed");
+  return ESP_OK;
+}
+
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_start_packet();
-  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -76,7 +92,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_stop_packet();
-  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -95,7 +111,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
   if (cJSON_IsNumber(torqueItem)) {
     int torque = torqueItem->valueint;
     auto uart_packet = UartPacket::make_set_right_torque_packet(torque);
-    context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+    context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   }
 
   cJSON_Delete(root);
@@ -120,7 +136,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
   if (cJSON_IsNumber(torqueItem)) {
     int torque = torqueItem->valueint;
     auto uart_packet = UartPacket::make_set_left_torque_packet(torque);
-    context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+    context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   }
 
   cJSON_Delete(root);
@@ -135,7 +151,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::MANUAL);
-  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -143,7 +159,7 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::AUTO);
-  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -151,7 +167,7 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SEMI_AUTO);
-  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -159,7 +175,8 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SMART);
-  context::stm_uart_service.queue.send(uart_packet, portMAX_DELAY);
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -167,23 +184,23 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::register_dynamic_endpoints() {
-  httpd_uri get_session_reports_uri = {
-      .uri = "/api/report",
+  httpd_uri get_running_uri = {
+      .uri = "/api/running",
       .method = HTTP_GET,
-      .handler = HttpService::get_session_reports_handler,
+      .handler = HttpService::get_running_handler,
       .user_ctx = nullptr,
   };
 
   httpd_uri start_uri = {
       .uri = "/api/start",
-      .method = HTTP_GET,
+      .method = HTTP_PUT,
       .handler = HttpService::start_handler,
       .user_ctx = nullptr,
   };
 
   httpd_uri stop_uri = {
       .uri = "/api/stop",
-      .method = HTTP_GET,
+      .method = HTTP_PUT,
       .handler = HttpService::stop_handler,
       .user_ctx = nullptr,
   };
@@ -204,36 +221,36 @@ esp_err_t HttpService::register_dynamic_endpoints() {
 
   httpd_uri set_mode_manual_uri = {
       .uri = "/api/set-mode/manual",
-      .method = HTTP_GET,
+      .method = HTTP_PUT,
       .handler = HttpService::set_mode_manual_handler,
       .user_ctx = nullptr,
   };
 
   httpd_uri set_mode_automatic_uri = {
       .uri = "/api/set-mode/automatic",
-      .method = HTTP_GET,
+      .method = HTTP_PUT,
       .handler = HttpService::set_mode_automatic_handler,
       .user_ctx = nullptr,
   };
 
   httpd_uri set_mode_semi_automatic_uri = {
       .uri = "/api/set-mode/semi-automatic",
-      .method = HTTP_GET,
+      .method = HTTP_PUT,
       .handler = HttpService::set_mode_semi_automatic_handler,
       .user_ctx = nullptr,
   };
 
   httpd_uri set_mode_smart_uri = {
       .uri = "/api/set-mode/smart",
-      .method = HTTP_GET,
+      .method = HTTP_PUT,
       .handler = HttpService::set_mode_smart_handler,
       .user_ctx = nullptr,
   };
 
-  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance,
-                                                 &get_session_reports_uri),
-                      HttpService::LOG_TAG,
-                      "Failed to register /api/report end point");
+  ESP_RETURN_ON_ERROR(
+      httpd_register_uri_handler(this->server_instance, &get_running_uri),
+      HttpService::LOG_TAG,
+      "Failed to register /api/running end point");
   ESP_RETURN_ON_ERROR(
       httpd_register_uri_handler(this->server_instance, &start_uri),
       HttpService::LOG_TAG,

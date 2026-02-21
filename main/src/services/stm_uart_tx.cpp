@@ -1,20 +1,21 @@
-#include "services/stm_uart.hpp"
+#include "services/stm_uart_tx.hpp"
 #include <cstdio>
 #include "config.hpp"
 #include "driver/uart.h"
 #include "esp_err.h"
+#include "esp_log.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
 #include "portmacro.h"
 
-StmUartService::StmUartService(uart_port_t port,
-                               uart_word_length_t data_bits,
-                               uart_parity_t parity,
-                               uart_stop_bits_t stop_bits,
-                               int tx_pin,
-                               int rx_pin,
-                               int baud_rate,
-                               int rx_buffer_size)
+StmUartTxService::StmUartTxService(uart_port_t port,
+                                   uart_word_length_t data_bits,
+                                   uart_parity_t parity,
+                                   uart_stop_bits_t stop_bits,
+                                   int tx_pin,
+                                   int rx_pin,
+                                   int baud_rate,
+                                   int rx_buffer_size)
     : port(port),
       data_bits(data_bits),
       parity(parity),
@@ -24,16 +25,17 @@ StmUartService::StmUartService(uart_port_t port,
       baud_rate(baud_rate),
       rx_buffer_size(rx_buffer_size) {}
 
-void StmUartService::main(StmUartService* self) {
+void StmUartTxService::main(StmUartTxService* self) {
   while (true) {
     auto uart_packet = self->queue.receive(portMAX_DELAY);
     if (!uart_packet)
       continue;
+    ESP_LOGI("UART", "SENT %d\n", uart_packet->data()[0]);
     uart_write_bytes(self->port, uart_packet->data(), uart_packet->size());
   }
 }
 
-void StmUartService::start() {
+void StmUartTxService::start() {
   ESP_ERROR_CHECK(uart_set_pin(this->port,
                                this->tx_pin,
                                this->rx_pin,
@@ -53,14 +55,14 @@ void StmUartService::start() {
 #pragma clang diagnostic pop
   ESP_ERROR_CHECK(uart_param_config(this->port, &uart_config));
   ESP_ERROR_CHECK(
-      uart_driver_install(this->port, this->rx_buffer_size, 0, 0, nullptr, 0));
+      uart_driver_install(this->port, this->rx_buffer_size, this->rx_buffer_size, 0, nullptr, 0));
   priority = config::service::dns::priority;
-  this->thread_id =
-      xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(StmUartService::main),
-                        "stm_uart_service",
-                        stack_size,
-                        this,
-                        config::service::stm_uart::priority,
-                        stack,
-                        &tcb);
+  this->thread_id = xTaskCreateStatic(
+      reinterpret_cast<void (*)(void*)>(StmUartTxService::main),
+      "stm_uart_tx_service",
+      stack_size,
+      this,
+      config::service::stm_uart::priority,
+      stack,
+      &tcb);
 }
