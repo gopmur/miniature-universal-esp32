@@ -37,3 +37,20 @@ inline uint8_t get_byte(float v, uint8_t b) {
   x.f = v;
   return x.u >> (8 * b) & 0xff;
 }
+
+inline uint32_t u32_concat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
+  uint32_t u0 = b0;
+  uint32_t u1 = b1;
+  uint32_t u2 = b2;
+  uint32_t u3 = b3;
+  return (u3 << 24) | (u2 << 16) | (u1 << 8) | u0;
+}
+
+inline float f_concat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
+  union {
+    float f;
+    uint32_t u;
+  } x;
+  x.u = u32_concat(b0, b1, b2, b3);
+  return x.f;
+}

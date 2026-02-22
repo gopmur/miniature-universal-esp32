@@ -13,6 +13,7 @@
 
 #include <cJSON.h>
 #include "context.hpp"
+#include "services/stm_uart/packet.hpp"
 #include "services/stm_uart_tx.hpp"
 
 esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
@@ -60,18 +61,42 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::get_running_handler(httpd_req_t* req) {
+esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_get_running_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
-  auto running = context::http_service.queue.receive(50);
-  if (!running.has_value()) {
+  uart_packet = UartPacket::make_get_right_manual_packet();
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  uart_packet = UartPacket::make_get_left_manual_packet();
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  uart_packet = UartPacket::make_get_mode_packet();
+  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+
+  auto running_response = context::http_service.queue.receive(50);
+  auto right_manual_torque_response = context::http_service.queue.receive(50);
+  auto left_manual_torque_response = context::http_service.queue.receive(50);
+  auto mode_response = context::http_service.queue.receive(50);
+
+  if (!running_response.has_value() ||
+      !right_manual_torque_response.has_value() ||
+      !left_manual_torque_response.has_value() || !mode_response.has_value()) {
     httpd_resp_send_err(req,
                         HTTPD_500_INTERNAL_SERVER_ERROR,
                         "STM32 not responding");
     return ESP_OK;
   }
   auto root = cJSON_CreateObject();
-  cJSON_AddBoolToObject(root, "running", running.value());
+  cJSON_AddBoolToObject(root, "running", running_response->payload.b);
+  cJSON_AddNumberToObject(root,
+                          "right_manual_torque",
+                          right_manual_torque_response->payload.f);
+  cJSON_AddNumberToObject(root,
+                          "left_manual_torque",
+                          left_manual_torque_response->payload.f);
+  cJSON_AddStringToObject(
+      root,
+      "mode_torque",
+      get_contorl_mode_str(left_manual_torque_response->payload.control_mode));
+
   auto json_str = cJSON_PrintUnformatted(root);
   httpd_resp_set_type(req, "application/json");
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, json_str, HTTPD_RESP_USE_STRLEN),
@@ -187,10 +212,10 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::register_dynamic_endpoints() {
-  httpd_uri get_running_uri = {
-      .uri = "/api/running",
+  httpd_uri get_states_uri = {
+      .uri = "/api/states",
       .method = HTTP_GET,
-      .handler = HttpService::get_running_handler,
+      .handler = HttpService::get_state_handler,
       .user_ctx = nullptr,
   };
 
@@ -251,7 +276,7 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   };
 
   ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &get_running_uri),
+      httpd_register_uri_handler(this->server_instance, &get_states_uri),
       HttpService::LOG_TAG,
       "Failed to register /api/running end point");
   ESP_RETURN_ON_ERROR(
