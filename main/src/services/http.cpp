@@ -87,15 +87,15 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   auto root = cJSON_CreateObject();
   cJSON_AddBoolToObject(root, "running", running_response->payload.b);
   cJSON_AddNumberToObject(root,
-                          "right_manual_torque",
+                          "rightTorque",
                           right_manual_torque_response->payload.f);
   cJSON_AddNumberToObject(root,
-                          "left_manual_torque",
+                          "leftTorque",
                           left_manual_torque_response->payload.f);
   cJSON_AddStringToObject(
       root,
-      "mode_torque",
-      get_contorl_mode_str(left_manual_torque_response->payload.control_mode));
+      "mode",
+      get_contorl_mode_str(mode_response->payload.control_mode));
 
   auto json_str = cJSON_PrintUnformatted(root);
   httpd_resp_set_type(req, "application/json");

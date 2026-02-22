@@ -3,9 +3,16 @@ set -e
 
 export IDF_TOOLCHAIN=clang
 
-function build_web_app() {
+function pull_and_build_web_app() {
   cd app/hexa-webapp
   git pull
+  bun i
+  bun run build
+  cd ../..
+}
+
+function build_web_app() {
+  cd app/hexa-webapp
   bun i
   bun run build
   cd ../..
