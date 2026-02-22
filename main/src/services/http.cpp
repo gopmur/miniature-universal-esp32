@@ -6,7 +6,6 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
-#include "esp_log.h"
 #include "http_assets.hpp"
 #include "http_parser.h"
 #include "portmacro.h"
@@ -64,7 +63,7 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 esp_err_t HttpService::get_running_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_get_running_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
-  auto running = context::http_service.queue.receive(500);
+  auto running = context::http_service.queue.receive(50);
   if (!running.has_value()) {
     httpd_resp_send_err(req,
                         HTTPD_500_INTERNAL_SERVER_ERROR,

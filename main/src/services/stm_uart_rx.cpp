@@ -18,25 +18,17 @@ void StmUartRxService::main(StmUartRxService* self) {
       continue;
 
     auto packet = Lappl::read(self->rx_buffer);
-    if (packet.has_value()) {
-      ESP_LOGI("STM_UART",
-               "packet received %d %d %d %d %d",
-               packet.value()[0],
-               packet.value()[1],
-               packet.value()[2],
-               packet.value()[3],
-               packet.value()[4]);
+    if (!packet.has_value()) {
+      continue;
     }
-
-    // auto header = static_cast<UartPacketType>(packet[0]);
-    // switch (header) {
-    //   case UartPacketType::GET_RUNNING:
-    //     ESP_LOGI("STM_UART", "IT WORKEDDDDD");
-    //     context::http_service.queue.send(packet[1], portMAX_DELAY);
-    //     break;
-    //   default:
-    //     break;
-    // }
+    auto header = static_cast<UartPacketType>(packet.value()[0]);
+      switch (header) {
+        case UartPacketType::GET_RUNNING:
+          context::http_service.queue.send(packet.value()[1], portMAX_DELAY);
+          break;
+        default:
+          break;
+      }
   }
 }
 
