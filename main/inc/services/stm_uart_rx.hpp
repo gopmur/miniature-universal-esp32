@@ -7,7 +7,7 @@
 
 class StmUartRxService : public Service<config::service::stm_uart::stack_size> {
   private:
-  uint8_t rx_buffer[config::stm_uart::packet_length];
+  uint8_t rx_buffer;
   const uart_port_t port;
 
   static void main(StmUartRxService* service);

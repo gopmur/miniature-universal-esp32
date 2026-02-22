@@ -64,7 +64,7 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 esp_err_t HttpService::get_running_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_get_running_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
-  auto running = context::http_service.queue.receive(portMAX_DELAY);
+  auto running = context::http_service.queue.receive(500);
   if (!running.has_value()) {
     httpd_resp_send_err(req,
                         HTTPD_500_INTERNAL_SERVER_ERROR,
@@ -80,6 +80,10 @@ esp_err_t HttpService::get_running_handler(httpd_req_t* req) {
                       "Get running response transmission failed");
   return ESP_OK;
 }
+
+// esp_err_t HttpService::get_right_torque(httpd_req_t* req) {
+
+// }
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   auto uart_packet = UartPacket::make_start_packet();

@@ -7,6 +7,7 @@
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
 #include "portmacro.h"
+#include "services/stm_uart/lappl.hpp"
 
 StmUartTxService::StmUartTxService(uart_port_t port,
                                    uart_word_length_t data_bits,
@@ -30,8 +31,23 @@ void StmUartTxService::main(StmUartTxService* self) {
     auto uart_packet = self->queue.receive(portMAX_DELAY);
     if (!uart_packet)
       continue;
-    ESP_LOGI("UART", "SENT %d\n", uart_packet->data()[0]);
-    uart_write_bytes(self->port, uart_packet->data(), uart_packet->size());
+    ESP_LOGI("UART",
+             "Raw packet sent: %0x %0x %0x %0x %0x",
+             uart_packet.value()[0],
+             uart_packet.value()[1],
+             uart_packet.value()[2],
+             uart_packet.value()[3],
+             uart_packet.value()[4]);
+    auto lappl_packet = Lappl::encode(uart_packet.value());
+    ESP_LOGI("UART",
+             "Raw packet sent: %0x %0x %0x %0x %0x %0x",
+             lappl_packet[0],
+             lappl_packet[1],
+             lappl_packet[2],
+             lappl_packet[3],
+             lappl_packet[4],
+             lappl_packet[5]);
+    uart_write_bytes(self->port, lappl_packet.data(), lappl_packet.size());
   }
 }
 
@@ -54,8 +70,12 @@ void StmUartTxService::start() {
   };
 #pragma clang diagnostic pop
   ESP_ERROR_CHECK(uart_param_config(this->port, &uart_config));
-  ESP_ERROR_CHECK(
-      uart_driver_install(this->port, this->rx_buffer_size, this->rx_buffer_size, 0, nullptr, 0));
+  ESP_ERROR_CHECK(uart_driver_install(this->port,
+                                      this->rx_buffer_size,
+                                      this->rx_buffer_size,
+                                      0,
+                                      nullptr,
+                                      0));
   priority = config::service::dns::priority;
   this->thread_id = xTaskCreateStatic(
       reinterpret_cast<void (*)(void*)>(StmUartTxService::main),
