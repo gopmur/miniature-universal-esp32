@@ -61,7 +61,16 @@ esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+void HttpService::allow_cors(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  httpd_resp_set_hdr(req,
+                     "Access-Control-Allow-Methods",
+                     "GET, PUT, POST, OPTIONS");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+}
+
 esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_get_running_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   uart_packet = UartPacket::make_get_right_manual_packet();
@@ -105,11 +114,8 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-// esp_err_t HttpService::get_right_torque(httpd_req_t* req) {
-
-// }
-
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_start_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -119,6 +125,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_stop_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -127,6 +134,7 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   int len = req->content_len;
   char* body = (char*)malloc(len + 1);
 
@@ -152,6 +160,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   int len = req->content_len;
   char* body = (char*)malloc(len + 1);
 
@@ -178,6 +187,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::MANUAL);
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -186,6 +196,7 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::AUTO);
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -194,6 +205,7 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SEMI_AUTO);
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -202,6 +214,7 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
   auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SMART);
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
 
@@ -211,113 +224,91 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::register_dynamic_endpoints() {
-  httpd_uri get_states_uri = {
-      .uri = "/api/states",
-      .method = HTTP_GET,
-      .handler = HttpService::get_state_handler,
+esp_err_t HttpService::options_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  httpd_resp_send(req, NULL, 0);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::register_uri(const char* uri_address,
+                                    httpd_method_t method,
+                                    esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri uri = {
+      .uri = uri_address,
+      .method = method,
+      .handler = handler,
       .user_ctx = nullptr,
   };
-
-  httpd_uri start_uri = {
-      .uri = "/api/start",
-      .method = HTTP_PUT,
-      .handler = HttpService::start_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri stop_uri = {
-      .uri = "/api/stop",
-      .method = HTTP_PUT,
-      .handler = HttpService::stop_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri set_right_torque_uri = {
-      .uri = "/api/right_torque",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_right_torque_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri set_left_torque_uri = {
-      .uri = "/api/left_torque",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_left_torque_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri set_mode_manual_uri = {
-      .uri = "/api/set-mode/manual",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_mode_manual_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri set_mode_automatic_uri = {
-      .uri = "/api/set-mode/automatic",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_mode_automatic_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri set_mode_semi_automatic_uri = {
-      .uri = "/api/set-mode/semi-automatic",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_mode_semi_automatic_handler,
-      .user_ctx = nullptr,
-  };
-
-  httpd_uri set_mode_smart_uri = {
-      .uri = "/api/set-mode/smart",
-      .method = HTTP_PUT,
-      .handler = HttpService::set_mode_smart_handler,
-      .user_ctx = nullptr,
-  };
-
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &get_states_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/running end point");
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &start_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/start end point");
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &stop_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/stop end point");
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &set_left_torque_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/left_torque end point");
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &set_right_torque_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/right_torque end point");
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &set_mode_manual_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/set-mode/manual end point");
-  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance,
-                                                 &set_mode_automatic_uri),
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
                       HttpService::LOG_TAG,
-                      "Failed to register /api/set-mode/automatic end point");
+                      "Failed to register %s end point",
+                      uri_address);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::register_uri_with_option(
+    const char* uri_address,
+    httpd_method_t method,
+    esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri uri = {
+      .uri = uri_address,
+      .method = method,
+      .handler = handler,
+      .user_ctx = nullptr,
+  };
+
+  httpd_uri option_uri = {
+      .uri = uri_address,
+      .method = HTTP_OPTIONS,
+      .handler = HttpService::options_handler,
+      .user_ctx = nullptr,
+  };
+
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register %s end point",
+                      uri_address);
+
   ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance,
-                                 &set_mode_semi_automatic_uri),
+      httpd_register_uri_handler(this->server_instance, &option_uri),
       HttpService::LOG_TAG,
-      "Failed to register /api/set-mode/semi-automatic end point");
-  ESP_RETURN_ON_ERROR(
-      httpd_register_uri_handler(this->server_instance, &set_mode_smart_uri),
-      HttpService::LOG_TAG,
-      "Failed to register /api/set-mode/smart end point");
+      "Failed to register option method for %s end point",
+      uri_address);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::register_dynamic_endpoints() {
+  this->register_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
+  this->register_uri_with_option("/api/start",
+                                 HTTP_PUT,
+                                 HttpService::start_handler);
+  this->register_uri_with_option("/api/stop",
+                                 HTTP_PUT,
+                                 HttpService::stop_handler);
+  this->register_uri_with_option("/api/right_torque",
+                                 HTTP_PUT,
+                                 HttpService::set_right_torque_handler);
+  this->register_uri_with_option("/api/left_torque",
+                                 HTTP_PUT,
+                                 HttpService::set_left_torque_handler);
+  this->register_uri_with_option("/api/set-mode/manual",
+                                 HTTP_PUT,
+                                 HttpService::set_mode_manual_handler);
+  this->register_uri_with_option("/api/set-mode/automatic",
+                                 HTTP_PUT,
+                                 HttpService::set_mode_automatic_handler);
+  this->register_uri_with_option("/api/set-mode/semi-automatic",
+                                 HTTP_PUT,
+                                 HttpService::set_mode_semi_automatic_handler);
+  this->register_uri_with_option("/api/set-mode/smart",
+                                 HTTP_PUT,
+                                 HttpService::set_mode_smart_handler);
   return ESP_OK;
 }
 
 void HttpService::start() {
   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
-  http_config.max_uri_handlers = 12;
+  http_config.max_uri_handlers = 32;
   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
   http_server_register_assets(server_instance);
   ESP_ERROR_CHECK(register_dynamic_endpoints());

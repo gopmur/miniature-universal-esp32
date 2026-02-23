@@ -31,22 +31,7 @@ void StmUartTxService::main(StmUartTxService* self) {
     auto uart_packet = self->queue.receive(portMAX_DELAY);
     if (!uart_packet)
       continue;
-    ESP_LOGI("UART",
-             "Raw packet sent: %0x %0x %0x %0x %0x",
-             uart_packet.value()[0],
-             uart_packet.value()[1],
-             uart_packet.value()[2],
-             uart_packet.value()[3],
-             uart_packet.value()[4]);
     auto lappl_packet = Lappl::encode(uart_packet.value());
-    ESP_LOGI("UART",
-             "Raw packet sent: %0x %0x %0x %0x %0x %0x",
-             lappl_packet[0],
-             lappl_packet[1],
-             lappl_packet[2],
-             lappl_packet[3],
-             lappl_packet[4],
-             lappl_packet[5]);
     uart_write_bytes(self->port, lappl_packet.data(), lappl_packet.size());
   }
 }
