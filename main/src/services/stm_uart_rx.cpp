@@ -46,7 +46,7 @@ void StmUartRxService::main(StmUartRxService* self) {
                                                 packet.value()[4]);
         break;
       case UartPacketType::GET_MODE:
-        http_queue_message.header = HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
+        http_queue_message.header = HttpQueueMessageHeader::MODE;
         http_queue_message.payload.control_mode =
             static_cast<ControlMode>(packet.value()[1]);
         break;

@@ -80,37 +80,44 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   uart_packet = UartPacket::make_get_mode_packet();
   context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
 
-  auto running_response = context::http_service.queue.receive(50);
-  auto right_manual_torque_response = context::http_service.queue.receive(50);
-  auto left_manual_torque_response = context::http_service.queue.receive(50);
-  auto mode_response = context::http_service.queue.receive(50);
-
-  if (!running_response.has_value() ||
-      !right_manual_torque_response.has_value() ||
-      !left_manual_torque_response.has_value() || !mode_response.has_value()) {
-    httpd_resp_send_err(req,
-                        HTTPD_500_INTERNAL_SERVER_ERROR,
-                        "STM32 not responding");
-    return ESP_OK;
-  }
   auto root = cJSON_CreateObject();
-  cJSON_AddBoolToObject(root, "running", running_response->payload.b);
-  cJSON_AddNumberToObject(root,
-                          "rightTorque",
-                          right_manual_torque_response->payload.f);
-  cJSON_AddNumberToObject(root,
-                          "leftTorque",
-                          left_manual_torque_response->payload.f);
-  cJSON_AddStringToObject(
-      root,
-      "mode",
-      get_contorl_mode_str(mode_response->payload.control_mode));
+
+  for (int i = 0; i < 4; i++) {
+    auto response = context::http_service.queue.receive(50);
+    if (!response.has_value()) {
+      cJSON_Delete(root);
+      httpd_resp_send_err(req,
+                          HTTPD_500_INTERNAL_SERVER_ERROR,
+                          "STM32 not responding");
+      return ESP_OK;
+    }
+    switch (response->header) {
+      case HttpQueueMessageHeader::RUNNING:
+        cJSON_AddBoolToObject(root, "running", response->payload.b);
+        break;
+      case HttpQueueMessageHeader::LEFT_MANUAL_TORQUE:
+        cJSON_AddNumberToObject(root, "leftTorque", response->payload.f);
+        break;
+      case HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE:
+        cJSON_AddNumberToObject(root, "rightTorque", response->payload.f);
+        break;
+      case HttpQueueMessageHeader::MODE:
+        cJSON_AddStringToObject(
+            root,
+            "mode",
+            get_contorl_mode_str(response->payload.control_mode));
+        break;
+    }
+  }
 
   auto json_str = cJSON_PrintUnformatted(root);
+  cJSON_Delete(root);
   httpd_resp_set_type(req, "application/json");
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, json_str, HTTPD_RESP_USE_STRLEN),
-                      HttpService::LOG_TAG,
-                      "Get running response transmission failed");
+  auto ret = httpd_resp_send(req, json_str, HTTPD_RESP_USE_STRLEN);
+  if (ret != ESP_OK) {
+    ESP_LOGE(HttpService::LOG_TAG, "Get running response transmission failed");
+  }
+  free(json_str);
   return ESP_OK;
 }
 
