@@ -3,6 +3,8 @@
 
 #include "services/http.hpp"
 
+#include "config.hpp"
+#include "driver/uart.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
@@ -13,8 +15,8 @@
 
 #include <cJSON.h>
 #include "context.hpp"
+#include "services/stm_uart/lappl.hpp"
 #include "services/stm_uart/packet.hpp"
-#include "services/stm_uart_tx.hpp"
 
 esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
   constexpr int record_count = 8;
@@ -71,14 +73,26 @@ void HttpService::allow_cors(httpd_req_t* req) {
 
 esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_get_running_packet();
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
-  uart_packet = UartPacket::make_get_right_manual_packet();
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
-  uart_packet = UartPacket::make_get_left_manual_packet();
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
-  uart_packet = UartPacket::make_get_mode_packet();
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet =
+      LapplPacket::make_read_packet(LapplAddress::RUNNING).get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_read_packet(LapplAddress::RIGHT_TORQUE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet =
+      LapplPacket::make_read_packet(LapplAddress::LEFT_TORQUE).get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_read_packet(LapplAddress::CONTROL_MODE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
 
   auto root = cJSON_CreateObject();
 
@@ -123,8 +137,11 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_start_packet();
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet = LapplPacket::make_write_packet(LapplAddress::RUNNING, true)
+                         .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -133,8 +150,12 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_stop_packet();
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet =
+      LapplPacket::make_write_packet(LapplAddress::RUNNING, false)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -152,9 +173,13 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
   cJSON* torqueItem = cJSON_GetObjectItem(root, "torque");
 
   if (cJSON_IsNumber(torqueItem)) {
-    int torque = torqueItem->valueint;
-    auto uart_packet = UartPacket::make_set_right_torque_packet(torque);
-    context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+    float torque = torqueItem->valuedouble;
+    auto uart_packet =
+        LapplPacket::make_write_packet(LapplAddress::RIGHT_TORQUE, torque)
+            .get_raw_packet();
+    uart_write_bytes(config::stm_uart::port,
+                     uart_packet.data(),
+                     uart_packet.size());
   }
 
   cJSON_Delete(root);
@@ -178,9 +203,13 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
   cJSON* torqueItem = cJSON_GetObjectItem(root, "torque");
 
   if (cJSON_IsNumber(torqueItem)) {
-    int torque = torqueItem->valueint;
-    auto uart_packet = UartPacket::make_set_left_torque_packet(torque);
-    context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+    float torque = torqueItem->valuedouble;
+    auto uart_packet =
+        LapplPacket::make_write_packet(LapplAddress::LEFT_TORQUE, torque)
+            .get_raw_packet();
+    uart_write_bytes(config::stm_uart::port,
+                     uart_packet.data(),
+                     uart_packet.size());
   }
 
   cJSON_Delete(root);
@@ -195,8 +224,13 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::MANUAL);
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet =
+      LapplPacket::make_write_packet(LapplAddress::CONTROL_MODE,
+                                     static_cast<uint8_t>(ControlMode::MANUAL))
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -204,8 +238,13 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::AUTO);
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet =
+      LapplPacket::make_write_packet(LapplAddress::CONTROL_MODE,
+                                     static_cast<uint8_t>(ControlMode::AUTO))
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -213,8 +252,13 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SEMI_AUTO);
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet = LapplPacket::make_write_packet(
+                         LapplAddress::CONTROL_MODE,
+                         static_cast<uint8_t>(ControlMode::SEMI_AUTO))
+                         .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -222,8 +266,13 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = UartPacket::make_set_mode_packet(ControlMode::SMART);
-  context::stm_uart_tx_service.queue.send(uart_packet, portMAX_DELAY);
+  auto uart_packet =
+      LapplPacket::make_write_packet(LapplAddress::CONTROL_MODE,
+                                     static_cast<uint8_t>(ControlMode::SMART))
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,

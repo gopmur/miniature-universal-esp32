@@ -3,6 +3,7 @@
 
 #include <freertos/FreeRTOS.h>
 
+#include "driver/uart.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -62,10 +63,39 @@ class App {
     ESP_ERROR_CHECK(esp_wifi_start());
   }
 
+  void setup_uart() {
+    ESP_ERROR_CHECK(uart_set_pin(config::stm_uart::port,
+                                 config::stm_uart::tx_pin,
+                                 config::stm_uart::rx_pin,
+                                 UART_PIN_NO_CHANGE,
+                                 UART_PIN_NO_CHANGE));
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+    uart_config_t uart_config = {
+        .baud_rate = config::stm_uart::baud_rate,
+        .data_bits = config::stm_uart::data_bits,
+        .parity = config::stm_uart::parity,
+        .stop_bits = config::stm_uart::stop_bits,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .rx_flow_ctrl_thresh = 0,
+    };
+#pragma clang diagnostic pop
+    ESP_ERROR_CHECK(uart_param_config(config::stm_uart::port, &uart_config));
+    ESP_ERROR_CHECK(uart_driver_install(config::stm_uart::port,
+                                        config::stm_uart::rx_buffer_size,
+                                        config::stm_uart::rx_buffer_size,
+                                        0,
+                                        nullptr,
+                                        0));
+  }
+
   void setup() {
     setup_flash();
     setup_netif();
     setup_wifi();
+    setup_uart();
+
     // context::init();
     context::http_service.start();
     context::dns_service.start();

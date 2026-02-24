@@ -4,6 +4,13 @@
 #include <cstdint>
 #include <optional>
 
+enum class LapplAddress : uint8_t {
+  RUNNING,
+  LEFT_TORQUE,
+  RIGHT_TORQUE,
+  CONTROL_MODE,
+};
+
 enum class LapplType : uint8_t {
   WRITE,
   READ,
@@ -15,7 +22,8 @@ struct LapplHeader {
   LapplType type : 2;  // bits 6..5
   uint8_t ack : 1;     // bit 4
   uint8_t resp : 1;    // bit 3
-  uint8_t _res : 3;    // bits 2..0 (must be zero)
+  uint8_t _res : 3;    // bits 2..0 (must be zero) maybe can be used for version
+                       // control ???
 
   constexpr LapplHeader() : type(LapplType::WRITE), ack(0), resp(0), _res(0) {}
 
@@ -34,29 +42,41 @@ struct LapplHeader {
 struct LapplPacket {
   LapplHeader header;
   uint8_t sign;
-  uint8_t address;
+  LapplAddress address;
   uint8_t data[4];
   uint8_t check_sum;
-  
-  LapplPacket();
-  LapplPacket(LapplType type, bool resp, uint8_t address, std::array<uint8_t, 4> data);
-  LapplPacket(LapplType type, bool resp, uint8_t address, bool data);
-  LapplPacket(LapplType type, bool resp, uint8_t address, float data);
-  
+
+  static LapplPacket make_read_response_packet(LapplAddress address,
+                                               std::array<uint8_t, 4> data);
+  static LapplPacket make_read_response_packet(LapplAddress address, bool data);
+  static LapplPacket make_read_response_packet(LapplAddress address,
+                                               float data);
+  static LapplPacket make_read_response_packet(LapplAddress address,
+                                               uint8_t data);
+  static LapplPacket make_read_packet(LapplAddress address);
+  static LapplPacket make_write_packet(LapplAddress address,
+                                       std::array<uint8_t, 4> data);
+  static LapplPacket make_write_packet(LapplAddress address, bool data);
+  static LapplPacket make_write_packet(LapplAddress address, float data);
+  static LapplPacket make_write_packet(LapplAddress address, uint8_t data);
+
   void recreate_sign_bits();
   bool check_integrity();
-  
+  std::array<uint8_t, 8> get_raw_packet();
+
   private:
   uint8_t calculate_check_sum();
   void generate_check_sum();
   void generate_sign_byte();
   void remove_sign_bits();
+  void pack();
 };
 
 class Lappl {
   private:
   static int i;
   static LapplPacket packet;
-  
-  static std::optional<LapplPacket> read(uint8_t lappl_byte);
+
+  public:
+  static std::optional<LapplPacket> read_stream(uint8_t lappl_byte);
 };

@@ -20,38 +20,42 @@ void StmUartRxService::main(StmUartRxService* self) {
     if (ret <= 0)
       continue;
 
-    auto packet = Lappl::read(self->rx_buffer);
+    auto packet = Lappl::read_stream(self->rx_buffer);
     if (!packet.has_value()) {
       continue;
     }
     HttpQueueMessage http_queue_message;
-    auto header = static_cast<UartPacketType>(packet.value()[0]);
-    switch (header) {
-      case UartPacketType::GET_RUNNING:
-        http_queue_message.header = HttpQueueMessageHeader::RUNNING;
-        http_queue_message.payload.b = packet.value()[1];
-        break;
-      case UartPacketType::GET_RIGHT_MANUAL_TORQUE:
-        http_queue_message.header = HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
-        http_queue_message.payload.f = f_concat(packet.value()[1],
-                                                packet.value()[2],
-                                                packet.value()[3],
-                                                packet.value()[4]);
-        break;
-      case UartPacketType::GET_LEFT_MANUAL_TORQUE:
-        http_queue_message.header = HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
-        http_queue_message.payload.f = f_concat(packet.value()[1],
-                                                packet.value()[2],
-                                                packet.value()[3],
-                                                packet.value()[4]);
-        break;
-      case UartPacketType::GET_MODE:
-        http_queue_message.header = HttpQueueMessageHeader::MODE;
-        http_queue_message.payload.control_mode =
-            static_cast<ControlMode>(packet.value()[1]);
-        break;
-      default:
-        break;
+
+    if (packet->header.resp) {
+      switch (static_cast<LapplAddress>(packet->address)) {
+        case LapplAddress::RUNNING:
+          http_queue_message.header = HttpQueueMessageHeader::RUNNING;
+          http_queue_message.payload.b = packet->data[0];
+          break;
+        case LapplAddress::RIGHT_TORQUE:
+          http_queue_message.header =
+              HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
+          http_queue_message.payload.f = f_concat(packet->data[0],
+                                                  packet->data[1],
+                                                  packet->data[2],
+                                                  packet->data[3]);
+          break;
+        case LapplAddress::LEFT_TORQUE:
+          http_queue_message.header =
+              HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
+          http_queue_message.payload.f = f_concat(packet->data[0],
+                                                  packet->data[1],
+                                                  packet->data[2],
+                                                  packet->data[3]);
+          break;
+        case LapplAddress::CONTROL_MODE:
+          http_queue_message.header = HttpQueueMessageHeader::MODE;
+          http_queue_message.payload.control_mode =
+              static_cast<ControlMode>(packet->data[0]);
+          break;
+        default:
+          break;
+      }
     }
     context::http_service.queue.send(http_queue_message, portMAX_DELAY);
   }
