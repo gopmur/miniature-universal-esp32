@@ -21,21 +21,11 @@ void StmUartRxService::main(StmUartRxService* self) {
     if (ret <= 0)
       continue;
 
-    printf("recv %02x\n", self->rx_buffer);
-
     auto packet = Lappl::read_stream(self->rx_buffer);
     if (!packet.has_value()) {
       continue;
     }
     HttpQueueMessage http_queue_message;
-
- 
-
-    printf("header %d\n", (int)packet->header.b.type);
-    printf("resp %d\n", (int)packet->header.b.resp);
-    printf("data %02x %02x %02x %02x\n", packet->data[0], packet->data[0], packet->data[0], packet->data[0]);
-    printf("cs %02x\n", packet->check_sum);
-    printf("\n");
 
     if (packet->header.b.resp == 1 && packet->header.b.type == LapplType::READ) {
       switch (static_cast<LapplAddress>(packet->address)) {
