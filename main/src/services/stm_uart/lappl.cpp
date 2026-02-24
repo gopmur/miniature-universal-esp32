@@ -6,13 +6,25 @@
 int Lappl::i;
 LapplPacket Lappl::packet;
 
+float LapplPacket::get_float() {
+  return f_concat(this->data[0], this->data[1], this->data[2], this->data[3]);
+}
+
+uint8_t LapplPacket::get_uint8() {
+  return this->data[0];
+}
+
+bool LapplPacket::get_bool() {
+  return this->data[0];
+}
+
 LapplPacket LapplPacket::make_read_packet(LapplAddress address) {
   LapplPacket packet;
-  packet.header.type = LapplType::READ;
-  packet.header.resp = 0;
+  packet.header.b.type = LapplType::READ;
+  packet.header.b.resp = 0;
   packet.address = address;
   for (int i = 0; i < 4; i++) {
-    packet.data[0] = 0;
+    packet.data[i] = 0;
   }
   packet.pack();
   return packet;
@@ -28,11 +40,11 @@ LapplPacket LapplPacket::make_read_response_packet(
     LapplAddress address,
     std::array<uint8_t, 4> data) {
   LapplPacket packet;
-  packet.header.type = LapplType::READ;
-  packet.header.resp = 1;
+  packet.header.b.type = LapplType::READ;
+  packet.header.b.resp = 1;
   packet.address = address;
   for (int i = 0; i < 4; i++) {
-    packet.data[0] = data[0];
+    packet.data[i] = data[i];
   }
   packet.pack();
   return packet;
@@ -62,11 +74,11 @@ LapplPacket LapplPacket::make_read_response_packet(LapplAddress address,
 LapplPacket LapplPacket::make_write_packet(LapplAddress address,
                                            std::array<uint8_t, 4> data) {
   LapplPacket packet;
-  packet.header.type = LapplType::WRITE;
-  packet.header.resp = 0;
+  packet.header.b.type = LapplType::WRITE;
+  packet.header.b.resp = 0;
   packet.address = address;
   for (int i = 0; i < 4; i++) {
-    packet.data[0] = data[0];
+    packet.data[i] = data[i];
   }
   packet.pack();
   return packet;
@@ -92,11 +104,11 @@ LapplPacket LapplPacket::make_write_packet(LapplAddress address, float data) {
 
 std::array<uint8_t, 8> LapplPacket::get_raw_packet() {
   std::array<uint8_t, 8> raw_packet;
-  raw_packet[0] = static_cast<uint8_t>(this->header);
+  raw_packet[0] = this->header.u8;
   raw_packet[1] = this->sign;
   raw_packet[2] = static_cast<uint8_t>(this->address);
   for (int i = 0; i < 4; i++) {
-    raw_packet[i + 3] = this->data[0];
+    raw_packet[i + 3] = this->data[i];
   }
   raw_packet[7] = this->check_sum;
   return raw_packet;
@@ -104,7 +116,7 @@ std::array<uint8_t, 8> LapplPacket::get_raw_packet() {
 
 uint8_t LapplPacket::calculate_check_sum() {
   uint8_t check_sum = 0;
-  check_sum = static_cast<uint8_t>(this->header);
+  check_sum = this->header.u8;
   check_sum += static_cast<uint8_t>(this->address);
   for (int i = 0; i < 4; i++) {
     check_sum += this->data[i];
@@ -119,7 +131,7 @@ void LapplPacket::generate_check_sum() {
 void LapplPacket::generate_sign_byte() {
   this->sign = 0;
 
-  int sign_bit = get_bit(static_cast<uint8_t>(this->header), 7);
+  int sign_bit = get_bit(this->header.u8, 7);
   this->sign |= sign_bit;
   this->sign <<= 1;
 
@@ -138,12 +150,11 @@ void LapplPacket::generate_sign_byte() {
 }
 
 void LapplPacket::remove_sign_bits() {
-  this->header =
-      static_cast<LapplHeader>(set_bit(static_cast<uint8_t>(this->header), 7));
+  this->header.u8 = set_bit(header.u8, 7);
   this->address = static_cast<LapplAddress>(
       unset_bit(static_cast<uint8_t>(this->address), 7));
   for (int i = 0; i < 4; i++) {
-    this->data[0] = unset_bit(this->data[0], 7);
+    this->data[i] = unset_bit(this->data[i], 7);
   }
   this->check_sum = unset_bit(this->check_sum, 7);
 }
@@ -152,14 +163,17 @@ void LapplPacket::recreate_sign_bits() {
   int sign_bit = get_bit(this->sign, 0) << 7;
   this->check_sum |= sign_bit;
 
-  for (int i = 1 < 5; i++;) {
+  for (int i = 1; i < 5; i++) {
     sign_bit = get_bit(this->sign, i) << 7;
     this->data[4 - i] |= sign_bit;
   }
 
+  sign_bit = get_bit(this->sign, 5) << 7;
+  this->address =
+      static_cast<LapplAddress>(static_cast<uint8_t>(address) | sign_bit);
+
   sign_bit = get_bit(this->sign, 6) << 7;
-  this->header =
-      static_cast<LapplHeader>(static_cast<uint8_t>(this->header) | sign_bit);
+  this->header.u8 &= sign_bit | (~0x80);
 }
 
 bool LapplPacket::check_integrity() {
@@ -170,7 +184,7 @@ bool LapplPacket::check_integrity() {
 std::optional<LapplPacket> Lappl::read_stream(uint8_t input) {
   if (get_bit(input, 7)) {
     i = 0;
-    packet.header = LapplHeader(input & (~0x80));
+    packet.header.u8 = input;
     i++;
   }
 
@@ -185,7 +199,7 @@ std::optional<LapplPacket> Lappl::read_stream(uint8_t input) {
   }
 
   else if (i < 7) {
-    packet.data[i - 2] = input;
+    packet.data[i - 3] = input;
     i++;
   }
 

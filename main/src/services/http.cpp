@@ -8,6 +8,7 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
+#include "esp_log.h"
 #include "http_assets.hpp"
 #include "http_parser.h"
 #include "portmacro.h"
@@ -75,21 +76,61 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   auto uart_packet =
       LapplPacket::make_read_packet(LapplAddress::RUNNING).get_raw_packet();
+  ESP_LOGI("UART",
+           "%02x %02x %02x %02x %02x %02x %02x %02x",
+           uart_packet.data()[0],
+           uart_packet.data()[1],
+           uart_packet.data()[2],
+           uart_packet.data()[3],
+           uart_packet.data()[4],
+           uart_packet.data()[5],
+           uart_packet.data()[6],
+           uart_packet.data()[7]);
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
   uart_packet = LapplPacket::make_read_packet(LapplAddress::RIGHT_TORQUE)
                     .get_raw_packet();
+  ESP_LOGI("UART",
+           "%02x %02x %02x %02x %02x %02x %02x %02x",
+           uart_packet.data()[0],
+           uart_packet.data()[1],
+           uart_packet.data()[2],
+           uart_packet.data()[3],
+           uart_packet.data()[4],
+           uart_packet.data()[5],
+           uart_packet.data()[6],
+           uart_packet.data()[7]);
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
   uart_packet =
       LapplPacket::make_read_packet(LapplAddress::LEFT_TORQUE).get_raw_packet();
+  ESP_LOGI("UART",
+           "%02x %02x %02x %02x %02x %02x %02x %02x",
+           uart_packet.data()[0],
+           uart_packet.data()[1],
+           uart_packet.data()[2],
+           uart_packet.data()[3],
+           uart_packet.data()[4],
+           uart_packet.data()[5],
+           uart_packet.data()[6],
+           uart_packet.data()[7]);
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
   uart_packet = LapplPacket::make_read_packet(LapplAddress::CONTROL_MODE)
                     .get_raw_packet();
+  ESP_LOGI("UART",
+           "%02x %02x %02x %02x %02x %02x %02x %02x",
+           uart_packet.data()[0],
+           uart_packet.data()[1],
+           uart_packet.data()[2],
+           uart_packet.data()[3],
+           uart_packet.data()[4],
+           uart_packet.data()[5],
+           uart_packet.data()[6],
+           uart_packet.data()[7]);
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
