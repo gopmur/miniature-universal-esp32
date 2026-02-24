@@ -3,7 +3,6 @@
 #include "config.hpp"
 #include "hal/uart_types.h"
 #include "service.hpp"
-#include "stm_uart/packet.hpp"
 
 class StmUartRxService : public Service<config::service::stm_uart::stack_size> {
   private:

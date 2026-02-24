@@ -54,3 +54,18 @@ inline float f_concat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
   x.u = u32_concat(b0, b1, b2, b3);
   return x.f;
 }
+
+template <typename T>
+inline bool get_bit(T n, int bit) {
+  return (n >> bit) & 1;
+}
+
+template <typename T>
+inline T set_bit(T n, int bit) {
+  return n | (1 << bit);
+}
+
+template <typename T>
+inline T unset_bit(T n, int bit) {
+  return n & (~(1 << bit));
+}

@@ -15,7 +15,6 @@
 #include "context.hpp"
 #include "services/dns.hpp"
 #include "services/http.hpp"
-#include "services/stm_uart_tx.hpp"
 
 class App {
   private:
@@ -71,7 +70,6 @@ class App {
     context::http_service.start();
     context::dns_service.start();
     context::led_service.start();
-    context::stm_uart_tx_service.start();
     context::stm_uart_rx_service.start();
   }
 

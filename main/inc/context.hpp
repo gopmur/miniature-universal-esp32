@@ -5,7 +5,6 @@
 #include "services/http.hpp"
 #include "services/led.hpp"
 #include "services/stm_uart_rx.hpp"
-#include "services/stm_uart_tx.hpp"
 
 template <typename T>
 struct DistantState {
@@ -21,7 +20,6 @@ namespace context {
   extern HttpService http_service;
   extern DnsService dns_service;
   extern LedService led_service;
-  extern StmUartTxService stm_uart_tx_service;
   extern StmUartRxService stm_uart_rx_service;
 
   // extern QueueHandle_t http_to_stm_uart_queue;
