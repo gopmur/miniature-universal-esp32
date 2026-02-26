@@ -101,6 +101,7 @@ class App {
     context::dns_service.start();
     context::led_service.start();
     context::stm_uart_rx_service.start();
+    context::ws_service.start();
   }
 
   public:

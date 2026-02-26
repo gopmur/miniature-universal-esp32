@@ -40,5 +40,11 @@ namespace config {
       constexpr auto stack_size = 4096;
       constexpr auto queue_len = 2;
     }
+
+    namespace ws {
+      constexpr auto priority = 2;
+      constexpr auto stack_size = 4096;
+    }
+
   }
 }

@@ -1,6 +1,7 @@
 #include "context.hpp"
 #include "services/led.hpp"
 #include "services/stm_uart_rx.hpp"
+#include "services/ws.hpp"
 
 namespace context {
 
@@ -9,4 +10,5 @@ namespace context {
   LedService led_service;
 
   StmUartRxService stm_uart_rx_service(config::stm_uart::port);
+  WebSocketService ws_service;
 }

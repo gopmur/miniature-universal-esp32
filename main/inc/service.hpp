@@ -2,16 +2,26 @@
 
 #include "freertos/idf_additions.h"
 
+#define START_SERVICE(NAME, PRIORITY)                                          \
+  priority = PRIORITY;                                                         \
+  this->thread_id = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(main), \
+                                      NAME,                                    \
+                                      stack_size,                              \
+                                      this,                                    \
+                                      priority,                                \
+                                      stack,                                   \
+                                      &tcb);
+
 template <int STACK_SIZE>
 class Service {
- protected:
+  protected:
   StackType_t stack[STACK_SIZE];
   StaticTask_t tcb;
   int priority;
   TaskHandle_t thread_id;
   void wait_for_notification();
 
- public:
+  public:
   static constexpr int stack_size = STACK_SIZE;
 
   TaskHandle_t get_thread_id();

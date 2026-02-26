@@ -147,7 +147,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(LapplAddress::TEST_RANDOM)
+  uart_packet = LapplPacket::make_start_stream_packet(LapplAddress::IMU_GX)
                     .get_raw_packet();
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
@@ -166,7 +166,7 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::TEST_RANDOM)
+  uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::IMU_GX)
                     .get_raw_packet();
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
@@ -301,23 +301,16 @@ esp_err_t HttpService::options_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::register_uri(const char* uri_address,
-                                    httpd_method_t method,
-                                    esp_err_t (*handler)(httpd_req_t* req)) {
-  httpd_uri uri = {
-      .uri = uri_address,
-      .method = method,
-      .handler = handler,
-      .user_ctx = nullptr,
-  };
-  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
-                      HttpService::LOG_TAG,
-                      "Failed to register %s end point",
-                      uri_address);
+esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
+  if (req->method == HTTP_GET) {
+    auto client_fd = httpd_req_to_sockfd(req);
+    context::ws_service.start_sending(client_fd);
+    ESP_LOGI("WS", "WebSocket client connected, fd=%d", 0);
+  }
   return ESP_OK;
 }
 
-esp_err_t HttpService::register_uri_with_option(
+esp_err_t HttpService::register_http_uri(
     const char* uri_address,
     httpd_method_t method,
     esp_err_t (*handler)(httpd_req_t* req)) {
@@ -326,6 +319,29 @@ esp_err_t HttpService::register_uri_with_option(
       .method = method,
       .handler = handler,
       .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+  };
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register %s end point",
+                      uri_address);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::register_http_uri_with_option(
+    const char* uri_address,
+    httpd_method_t method,
+    esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri uri = {
+      .uri = uri_address,
+      .method = method,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
   };
 
   httpd_uri option_uri = {
@@ -333,6 +349,9 @@ esp_err_t HttpService::register_uri_with_option(
       .method = HTTP_OPTIONS,
       .handler = HttpService::options_handler,
       .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
   };
 
   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
@@ -348,32 +367,56 @@ esp_err_t HttpService::register_uri_with_option(
   return ESP_OK;
 }
 
+esp_err_t HttpService::register_ws_uri(const char* uri_address,
+                                       esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri_t uri = {
+      .uri = uri_address,
+      .method = HTTP_GET,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = true,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+
+  };
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register %s end point",
+                      uri_address);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::register_dynamic_endpoints() {
-  this->register_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
-  this->register_uri_with_option("/api/start",
-                                 HTTP_PUT,
-                                 HttpService::start_handler);
-  this->register_uri_with_option("/api/stop",
-                                 HTTP_PUT,
-                                 HttpService::stop_handler);
-  this->register_uri_with_option("/api/right_torque",
-                                 HTTP_PUT,
-                                 HttpService::set_right_torque_handler);
-  this->register_uri_with_option("/api/left_torque",
-                                 HTTP_PUT,
-                                 HttpService::set_left_torque_handler);
-  this->register_uri_with_option("/api/set-mode/manual",
-                                 HTTP_PUT,
-                                 HttpService::set_mode_manual_handler);
-  this->register_uri_with_option("/api/set-mode/automatic",
-                                 HTTP_PUT,
-                                 HttpService::set_mode_automatic_handler);
-  this->register_uri_with_option("/api/set-mode/semi-automatic",
-                                 HTTP_PUT,
-                                 HttpService::set_mode_semi_automatic_handler);
-  this->register_uri_with_option("/api/set-mode/smart",
-                                 HTTP_PUT,
-                                 HttpService::set_mode_smart_handler);
+  this->register_http_uri("/api/states",
+                          HTTP_GET,
+                          HttpService::get_state_handler);
+  this->register_http_uri_with_option("/api/start",
+                                      HTTP_PUT,
+                                      HttpService::start_handler);
+  this->register_http_uri_with_option("/api/stop",
+                                      HTTP_PUT,
+                                      HttpService::stop_handler);
+  this->register_http_uri_with_option("/api/right_torque",
+                                      HTTP_PUT,
+                                      HttpService::set_right_torque_handler);
+  this->register_http_uri_with_option("/api/left_torque",
+                                      HTTP_PUT,
+                                      HttpService::set_left_torque_handler);
+  this->register_http_uri_with_option("/api/set-mode/manual",
+                                      HTTP_PUT,
+                                      HttpService::set_mode_manual_handler);
+  this->register_http_uri_with_option("/api/set-mode/automatic",
+                                      HTTP_PUT,
+                                      HttpService::set_mode_automatic_handler);
+  this->register_http_uri_with_option(
+      "/api/set-mode/semi-automatic",
+      HTTP_PUT,
+      HttpService::set_mode_semi_automatic_handler);
+  this->register_http_uri_with_option("/api/set-mode/smart",
+                                      HTTP_PUT,
+                                      HttpService::set_mode_smart_handler);
+
+  this->register_ws_uri("/api/data", HttpService::ws_data_handler);
   return ESP_OK;
 }
 

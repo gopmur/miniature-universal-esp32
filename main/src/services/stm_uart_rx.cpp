@@ -30,7 +30,7 @@ void StmUartRxService::main(StmUartRxService* self) {
       switch (static_cast<LapplAddress>(packet->address)) {
         case LapplAddress::RUNNING:
           http_queue_message.header = HttpQueueMessageHeader::RUNNING;
-          http_queue_message.payload.b = packet->data[0];
+          http_queue_message.payload.b = packet->get_uint8();
           context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         case LapplAddress::RIGHT_TORQUE:
@@ -48,10 +48,11 @@ void StmUartRxService::main(StmUartRxService* self) {
         case LapplAddress::CONTROL_MODE:
           http_queue_message.header = HttpQueueMessageHeader::MODE;
           http_queue_message.payload.control_mode =
-              static_cast<ControlMode>(packet->data[0]);
+              static_cast<ControlMode>(packet->get_uint8());
           context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         default:
+          context::ws_service.queue.send(packet->get_float(), portMAX_DELAY);
           ESP_LOGI("UART_RX", "%f", packet->get_float());
           break;
       }
