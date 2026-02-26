@@ -25,33 +25,37 @@ void StmUartRxService::main(StmUartRxService* self) {
     }
     HttpQueueMessage http_queue_message;
 
-    if (packet->header.b.resp == 1 && packet->header.b.type == LapplType::READ) {
+    if (packet->header.b.resp == 1 &&
+        packet->header.b.type == LapplType::READ) {
       switch (static_cast<LapplAddress>(packet->address)) {
         case LapplAddress::RUNNING:
           http_queue_message.header = HttpQueueMessageHeader::RUNNING;
           http_queue_message.payload.b = packet->data[0];
+          context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         case LapplAddress::RIGHT_TORQUE:
           http_queue_message.header =
               HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
           http_queue_message.payload.f = packet->get_float();
+          context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         case LapplAddress::LEFT_TORQUE:
           http_queue_message.header =
               HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
           http_queue_message.payload.f = packet->get_float();
+          context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         case LapplAddress::CONTROL_MODE:
           http_queue_message.header = HttpQueueMessageHeader::MODE;
           http_queue_message.payload.control_mode =
               static_cast<ControlMode>(packet->data[0]);
+          context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         default:
           ESP_LOGI("UART_RX", "%f", packet->get_float());
           break;
       }
     }
-    context::http_service.queue.send(http_queue_message, portMAX_DELAY);
   }
 }
 

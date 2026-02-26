@@ -147,7 +147,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(LapplAddress::TEST_ZERO)
+  uart_packet = LapplPacket::make_start_stream_packet(LapplAddress::TEST_RANDOM)
                     .get_raw_packet();
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
@@ -166,7 +166,7 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::TEST_ZERO)
+  uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::TEST_RANDOM)
                     .get_raw_packet();
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
