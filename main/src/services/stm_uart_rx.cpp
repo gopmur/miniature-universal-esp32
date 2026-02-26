@@ -4,10 +4,8 @@
 #include "context.hpp"
 #include "driver/uart.h"
 #include "esp_log.h"
-#include "esp_log_level.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
-#include "helper.hpp"
 #include "portmacro.h"
 #include "services/http.hpp"
 #include "services/stm_uart/lappl.hpp"
@@ -36,18 +34,12 @@ void StmUartRxService::main(StmUartRxService* self) {
         case LapplAddress::RIGHT_TORQUE:
           http_queue_message.header =
               HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
-          http_queue_message.payload.f = f_concat(packet->data[0],
-                                                  packet->data[1],
-                                                  packet->data[2],
-                                                  packet->data[3]);
+          http_queue_message.payload.f = packet->get_float();
           break;
         case LapplAddress::LEFT_TORQUE:
           http_queue_message.header =
               HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
-          http_queue_message.payload.f = f_concat(packet->data[0],
-                                                  packet->data[1],
-                                                  packet->data[2],
-                                                  packet->data[3]);
+          http_queue_message.payload.f = packet->get_float();
           break;
         case LapplAddress::CONTROL_MODE:
           http_queue_message.header = HttpQueueMessageHeader::MODE;
@@ -55,6 +47,7 @@ void StmUartRxService::main(StmUartRxService* self) {
               static_cast<ControlMode>(packet->data[0]);
           break;
         default:
+          ESP_LOGI("UART_RX", "%f", packet->get_float());
           break;
       }
     }

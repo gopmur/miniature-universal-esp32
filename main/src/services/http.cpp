@@ -147,6 +147,11 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
+  uart_packet = LapplPacket::make_start_stream_packet(LapplAddress::TEST_ZERO)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -158,6 +163,11 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   auto uart_packet =
       LapplPacket::make_write_packet(LapplAddress::RUNNING, false)
           .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::TEST_ZERO)
+                    .get_raw_packet();
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());

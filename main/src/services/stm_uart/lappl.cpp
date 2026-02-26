@@ -30,6 +30,30 @@ LapplPacket LapplPacket::make_read_packet(LapplAddress address) {
   return packet;
 }
 
+LapplPacket LapplPacket::make_start_stream_packet(LapplAddress address) {
+  LapplPacket packet;
+  packet.header.b.type = LapplType::START_STREAM;
+  packet.header.b.resp = 0;
+  packet.address = address;
+  for (int i = 0; i < 4; i++) {
+    packet.data[i] = 0;
+  }
+  packet.pack();
+  return packet;
+}
+
+LapplPacket LapplPacket::make_stop_stream_packet(LapplAddress address) {
+  LapplPacket packet;
+  packet.header.b.type = LapplType::STOP_STREAM;
+  packet.header.b.resp = 0;
+  packet.address = address;
+  for (int i = 0; i < 4; i++) {
+    packet.data[i] = 0;
+  }
+  packet.pack();
+  return packet;
+}
+
 void LapplPacket::pack() {
   this->generate_check_sum();
   this->generate_sign_byte();

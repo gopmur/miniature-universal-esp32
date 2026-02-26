@@ -9,6 +9,10 @@ enum class LapplAddress : uint8_t {
   LEFT_TORQUE,
   RIGHT_TORQUE,
   CONTROL_MODE,
+  TEST_SINE,
+  TEST_RANDOM,
+  TEST_ZERO,
+  ADDRESS_COUNT,
 };
 
 enum class LapplType : uint8_t {
@@ -51,6 +55,8 @@ struct LapplPacket {
   static LapplPacket make_write_packet(LapplAddress address, bool data);
   static LapplPacket make_write_packet(LapplAddress address, float data);
   static LapplPacket make_write_packet(LapplAddress address, uint8_t data);
+  static LapplPacket make_start_stream_packet(LapplAddress address);
+  static LapplPacket make_stop_stream_packet(LapplAddress address);
 
   float get_float();
   uint8_t get_uint8();
