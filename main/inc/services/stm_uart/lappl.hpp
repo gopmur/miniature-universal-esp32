@@ -12,6 +12,13 @@ enum class LapplAddress : uint8_t {
   IMU_GX,
   IMU_GY,
   IMU_GZ,
+  LED_SERVICE_CPU_USAGE,
+  IMU_SERVICE_CPU_USAGE,
+  ESP_UART_TX_SERVICE_CPU_USAGE,
+  ESP_UART_RX_SERVICE_CPU_USAGE,
+  MOTOR_SERVICE_CPU_USAGE,
+  CAN_RECV_SERVICE_CPU_USAGE,
+  SD_SERVICE_CPU_USAGE,
   TEST_RANDOM,
   TEST_ZERO,
   ADDRESS_COUNT,
@@ -22,13 +29,14 @@ enum class LapplType : uint8_t {
   READ,
   START_STREAM,
   STOP_STREAM,
+  EOC // end of cycle
 };
 
 struct _LapplHeader {
-  LapplType type : 2;  // bits 6..5
+  LapplType type : 3;  // bits 6..5
   uint8_t ack : 1;     // bit 4
   uint8_t resp : 1;    // bit 3
-  uint8_t _res : 3;    // bits 2..0 (must be zero) maybe can be used for version
+  uint8_t _res : 2;    // bits 2..0 (must be zero) maybe can be used for version
                        // control ???
 };
 

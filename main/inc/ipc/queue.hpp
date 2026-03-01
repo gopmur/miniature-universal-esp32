@@ -14,6 +14,7 @@ class Queue {
   Queue();
   void send(T val, int ticks_to_wait);
   std::optional<T> receive(int ticks_to_wait);
+  void flush();
 };
 
 template <typename T, int N>
@@ -35,4 +36,9 @@ std::optional<T> Queue<T, N>::receive(int ticks_to_wait) {
     return status;
   }
   return std::nullopt;
+}
+
+template <typename T, int N>
+void Queue<T, N>::flush() {
+  xQueueReset(this->queue);
 }

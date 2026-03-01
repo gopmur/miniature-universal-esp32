@@ -74,6 +74,8 @@ void HttpService::allow_cors(httpd_req_t* req) {
 
 esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
+  context::http_service.queue.flush();
+
   auto uart_packet =
       LapplPacket::make_read_packet(LapplAddress::RUNNING).get_raw_packet();
 
@@ -102,7 +104,9 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   auto root = cJSON_CreateObject();
 
   for (int i = 0; i < 4; i++) {
-    auto response = context::http_service.queue.receive(50);
+    auto response = context::http_service.queue.receive(
+        50);  // if the it passes and the the value comes the next time old
+              // value is read
     if (!response.has_value()) {
       cJSON_Delete(root);
       httpd_resp_send_err(req,
@@ -152,6 +156,48 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
                    uart_packet.size());
+  uart_packet =
+      LapplPacket::make_start_stream_packet(LapplAddress::LED_SERVICE_CPU_USAGE)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet =
+      LapplPacket::make_start_stream_packet(LapplAddress::IMU_SERVICE_CPU_USAGE)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_start_stream_packet(
+                    LapplAddress::MOTOR_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet =
+      LapplPacket::make_start_stream_packet(LapplAddress::SD_SERVICE_CPU_USAGE)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_start_stream_packet(
+                    LapplAddress::CAN_RECV_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_start_stream_packet(
+                    LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_start_stream_packet(
+                    LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -167,6 +213,48 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
                    uart_packet.data(),
                    uart_packet.size());
   uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::IMU_GX)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet =
+      LapplPacket::make_stop_stream_packet(LapplAddress::LED_SERVICE_CPU_USAGE)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet =
+      LapplPacket::make_stop_stream_packet(LapplAddress::IMU_SERVICE_CPU_USAGE)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_stop_stream_packet(
+                    LapplAddress::MOTOR_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet =
+      LapplPacket::make_stop_stream_packet(LapplAddress::SD_SERVICE_CPU_USAGE)
+          .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_stop_stream_packet(
+                    LapplAddress::CAN_RECV_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_stop_stream_packet(
+                    LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE)
+                    .get_raw_packet();
+  uart_write_bytes(config::stm_uart::port,
+                   uart_packet.data(),
+                   uart_packet.size());
+  uart_packet = LapplPacket::make_stop_stream_packet(
+                    LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE)
                     .get_raw_packet();
   uart_write_bytes(config::stm_uart::port,
                    uart_packet.data(),
