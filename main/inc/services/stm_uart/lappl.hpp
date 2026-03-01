@@ -2,8 +2,8 @@
 
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <initializer_list>
+#include <optional>
 
 enum class LapplAddress : uint8_t {
   RUNNING,
@@ -20,6 +20,7 @@ enum class LapplAddress : uint8_t {
   MOTOR_SERVICE_CPU_USAGE,
   CAN_RECV_SERVICE_CPU_USAGE,
   SD_SERVICE_CPU_USAGE,
+  MONITOR_SERVICE_CPU_USAGE,
   TEST_RANDOM,
   TEST_ZERO,
   ADDRESS_COUNT,
@@ -30,7 +31,7 @@ enum class LapplType : uint8_t {
   READ,
   START_STREAM,
   STOP_STREAM,
-  EOC // end of cycle
+  EOC  // end of cycle
 };
 
 struct _LapplHeader {

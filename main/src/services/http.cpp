@@ -231,13 +231,16 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  start_streams({LapplAddress::LED_SERVICE_CPU_USAGE,
-                 LapplAddress::IMU_SERVICE_CPU_USAGE,
-                 LapplAddress::MOTOR_SERVICE_CPU_USAGE,
-                 LapplAddress::SD_SERVICE_CPU_USAGE,
-                 LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
-                 LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
-                 LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE});
+  start_streams({
+      LapplAddress::LED_SERVICE_CPU_USAGE,
+      LapplAddress::IMU_SERVICE_CPU_USAGE,
+      LapplAddress::MOTOR_SERVICE_CPU_USAGE,
+      LapplAddress::SD_SERVICE_CPU_USAGE,
+      LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
+      LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+      LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
+      LapplAddress::MONITOR_SERVICE_CPU_USAGE,
+  });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start CPU usage stream failed");
@@ -245,13 +248,16 @@ esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::stop_cpu_usage_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  stop_streams({LapplAddress::LED_SERVICE_CPU_USAGE,
-                LapplAddress::IMU_SERVICE_CPU_USAGE,
-                LapplAddress::MOTOR_SERVICE_CPU_USAGE,
-                LapplAddress::SD_SERVICE_CPU_USAGE,
-                LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
-                LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
-                LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE});
+  stop_streams({
+      LapplAddress::LED_SERVICE_CPU_USAGE,
+      LapplAddress::IMU_SERVICE_CPU_USAGE,
+      LapplAddress::MOTOR_SERVICE_CPU_USAGE,
+      LapplAddress::SD_SERVICE_CPU_USAGE,
+      LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
+      LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+      LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
+      LapplAddress::MONITOR_SERVICE_CPU_USAGE,
+  });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop CPU usage stream failed");

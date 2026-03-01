@@ -86,12 +86,17 @@ void WebSocketService::main(WebSocketService* self) {
           break;
         case LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE:
           cJSON_AddNumberToObject(root,
-                                  "canEspRxServiceCpuUsage",
+                                  "uartEspRxServiceCpuUsage",
                                   packet->get_float());
           break;
         case LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE:
           cJSON_AddNumberToObject(root,
-                                  "canEspTxServiceCpuUsage",
+                                  "uartEspTxServiceCpuUsage",
+                                  packet->get_float());
+          break;
+        case LapplAddress::MONITOR_SERVICE_CPU_USAGE:
+          cJSON_AddNumberToObject(root,
+                                  "monitorServiceCpuUsage",
                                   packet->get_float());
           break;
         default:
