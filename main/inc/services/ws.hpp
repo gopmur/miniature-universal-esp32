@@ -13,6 +13,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
   public:
   Queue<LapplPacket, 8> queue;
   WebSocketService();
+  bool is_connected();
   void start();
   void start_sending(int fd);
   void stop_sending();

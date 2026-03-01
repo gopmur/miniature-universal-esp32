@@ -31,6 +31,7 @@ void StmUartRxService::main(StmUartRxService* self) {
         case LapplAddress::RUNNING:
           http_queue_message.header = HttpQueueMessageHeader::RUNNING;
           http_queue_message.payload.b = packet->get_uint8();
+
           context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         case LapplAddress::RIGHT_TORQUE:
@@ -51,22 +52,23 @@ void StmUartRxService::main(StmUartRxService* self) {
           http_queue_message.header = HttpQueueMessageHeader::MODE;
           http_queue_message.payload.control_mode =
               static_cast<ControlMode>(packet->get_uint8());
+
           context::http_service.queue.send(http_queue_message, portMAX_DELAY);
           break;
         default:
-          context::ws_service.queue.send(packet.value(), portMAX_DELAY);
-          ESP_LOGI("UART_RX",
-                   "%d %f",
-                   static_cast<int>(packet->address),
-                   packet->get_float());
+
+          if (context::ws_service.is_connected()) {
+            context::ws_service.queue.send(packet.value(), portMAX_DELAY);
+          }
           break;
       }
     }
 
     else if (packet->header.b.resp == 1 &&
              packet->header.b.type == LapplType::EOC) {
-      context::ws_service.queue.send(packet.value(), portMAX_DELAY);
-      ESP_LOGI("UART_RX", "EOC", );
+      if (context::ws_service.is_connected()) {
+        context::ws_service.queue.send(packet.value(), portMAX_DELAY);
+      }
     }
   }
 }

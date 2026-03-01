@@ -85,9 +85,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   auto root = cJSON_CreateObject();
 
   for (int i = 0; i < 4; i++) {
-    auto response = context::http_service.queue.receive(
-        50);  // if the it passes and the the value comes the next time old
-              // value is read
+    auto response = context::http_service.queue.receive(200);
     if (!response.has_value()) {
       cJSON_Delete(root);
       httpd_resp_send_err(req,

@@ -12,6 +12,10 @@ WebSocketService::WebSocketService() {
   this->fd = -1;
 };
 
+bool WebSocketService::is_connected() {
+  return this->fd >= 0;
+}
+
 void WebSocketService::main(WebSocketService* self) {
   cJSON* root = cJSON_CreateObject();
   while (true) {
@@ -23,6 +27,7 @@ void WebSocketService::main(WebSocketService* self) {
         break;
       }
       if (packet->header.b.type == LapplType::EOC) {
+        self->queue.flush();
         char* json_str = cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
         httpd_ws_frame_t ws_packet = {
@@ -40,6 +45,7 @@ void WebSocketService::main(WebSocketService* self) {
           ESP_LOGW("WS", "Client disconnected or send failed");
           self->fd = -1;
         }
+        free(json_str);
         root = cJSON_CreateObject();
         continue;
       }
