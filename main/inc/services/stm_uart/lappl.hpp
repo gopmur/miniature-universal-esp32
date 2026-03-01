@@ -2,10 +2,10 @@
 
 #include <array>
 #include <cstdint>
-#include <initializer_list>
 #include <optional>
 
 enum class LapplAddress : uint8_t {
+  ZERO,
   RUNNING,
   LEFT_TORQUE,
   RIGHT_TORQUE,
@@ -26,12 +26,15 @@ enum class LapplAddress : uint8_t {
   ADDRESS_COUNT,
 };
 
+enum class LapplCommand : uint8_t { RESTART };
+
 enum class LapplType : uint8_t {
   WRITE,
   READ,
   START_STREAM,
   STOP_STREAM,
-  EOC  // end of cycle
+  EOC,  // end of cycle
+  COMMAND
 };
 
 struct _LapplHeader {
@@ -69,6 +72,8 @@ struct LapplPacket {
   static LapplPacket make_write_packet(LapplAddress address, uint8_t data);
   static LapplPacket make_start_stream_packet(LapplAddress address);
   static LapplPacket make_stop_stream_packet(LapplAddress address);
+  static LapplPacket make_eoc_packet();
+  static LapplPacket make_command_packet(LapplCommand command);
 
   float get_float();
   uint8_t get_uint8();

@@ -57,6 +57,9 @@ def generate_c_code(output_path: str, asset_uris: dict[str, str]):
         .method = HTTP_GET, \\
         .handler = file_name##_get, \\
         .user_ctx = NULL, \\
+        .is_websocket = false, \\
+        .handle_ws_control_frames = false, \\
+        .supported_subprotocol = nullptr, \\
     }}; \\
     httpd_register_uri_handler(server_instance, &file_name##_uri); \\
   }}

@@ -60,6 +60,23 @@ void LapplPacket::pack() {
   this->remove_sign_bits();
 }
 
+LapplPacket LapplPacket::make_eoc_packet() {
+  LapplPacket packet;
+  packet.header.b.type = LapplType::EOC;
+  packet.header.b.resp = 1;
+  packet.pack();
+  return packet;
+}
+
+LapplPacket LapplPacket::make_command_packet(LapplCommand command) {
+  LapplPacket packet;
+  packet.header.b.type = LapplType::COMMAND;
+  packet.header.b.resp = 0;
+  packet.data[0] = static_cast<uint8_t>(command);
+  packet.pack();
+  return packet;
+}
+
 LapplPacket LapplPacket::make_read_response_packet(
     LapplAddress address,
     std::array<uint8_t, 4> data) {

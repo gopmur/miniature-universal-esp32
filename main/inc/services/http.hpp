@@ -57,6 +57,8 @@ class HttpService {
   static esp_err_t start_imu_data_stream_handler(httpd_req_t* req);
   static esp_err_t stop_imu_data_stream_handler(httpd_req_t* req);
 
+  static esp_err_t restart_handler(httpd_req_t* req);
+    
   esp_err_t register_dynamic_endpoints();
 
   public:

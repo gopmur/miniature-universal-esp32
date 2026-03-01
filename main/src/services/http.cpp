@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "http_assets.hpp"
 #include "http_parser.h"
 #include "portmacro.h"
@@ -283,6 +284,15 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::restart_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  send_command(LapplCommand::RESTART);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Restart failed");
+  return ESP_OK;
+}
+
 esp_err_t HttpService::options_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   httpd_resp_send(req, NULL, 0);
@@ -375,6 +385,9 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
 }
 
 esp_err_t HttpService::register_dynamic_endpoints() {
+  this->register_http_uri("/api/restart",
+                          HTTP_GET,
+                          HttpService::restart_handler);
   this->register_http_uri("/api/states",
                           HTTP_GET,
                           HttpService::get_state_handler);

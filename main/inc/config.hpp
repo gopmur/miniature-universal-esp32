@@ -15,7 +15,7 @@ namespace config {
 
   namespace stm_uart {
     constexpr auto port = UART_NUM_1;
-    constexpr auto baud_rate = 500000;
+    constexpr auto baud_rate = 250000;
     constexpr auto rx_buffer_size = 256;
     constexpr auto tx_pin = 17;
     constexpr auto rx_pin = 16;

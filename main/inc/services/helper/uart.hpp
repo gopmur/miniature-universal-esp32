@@ -54,3 +54,8 @@ inline void write_address(LapplAddress address, T value) {
   auto packet = LapplPacket::make_write_packet(address, value).get_raw_packet();
   uart_write_bytes(config::stm_uart::port, packet.data(), packet.size());
 }
+
+inline void send_command(LapplCommand command) {
+  auto packet = LapplPacket::make_command_packet(command).get_raw_packet();
+  uart_write_bytes(config::stm_uart::port, packet.data(), packet.size());
+}
