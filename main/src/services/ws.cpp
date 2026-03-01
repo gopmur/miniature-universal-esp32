@@ -51,7 +51,7 @@ void WebSocketService::main(WebSocketService* self) {
           cJSON_AddNumberToObject(root, "imuGy", packet->get_float());
           break;
         case LapplAddress::IMU_GZ:
-          cJSON_AddNumberToObject(root, "imuGy", packet->get_float());
+          cJSON_AddNumberToObject(root, "imuGz", packet->get_float());
           break;
         case LapplAddress::LED_SERVICE_CPU_USAGE:
           cJSON_AddNumberToObject(root,

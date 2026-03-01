@@ -16,6 +16,7 @@
 
 #include <cJSON.h>
 #include "context.hpp"
+#include "services/helper/uart.hpp"
 #include "services/stm_uart/lappl.hpp"
 #include "services/stm_uart/packet.hpp"
 
@@ -76,30 +77,10 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   context::http_service.queue.flush();
 
-  auto uart_packet =
-      LapplPacket::make_read_packet(LapplAddress::RUNNING).get_raw_packet();
-
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_read_packet(LapplAddress::RIGHT_TORQUE)
-                    .get_raw_packet();
-
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_read_packet(LapplAddress::LEFT_TORQUE).get_raw_packet();
-
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_read_packet(LapplAddress::CONTROL_MODE)
-                    .get_raw_packet();
-
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  read_addresses({LapplAddress::RUNNING,
+                  LapplAddress::RIGHT_TORQUE,
+                  LapplAddress::LEFT_TORQUE,
+                  LapplAddress::CONTROL_MODE});
 
   auto root = cJSON_CreateObject();
 
@@ -146,58 +127,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = LapplPacket::make_write_packet(LapplAddress::RUNNING, true)
-                         .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(LapplAddress::IMU_GX)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_start_stream_packet(LapplAddress::LED_SERVICE_CPU_USAGE)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_start_stream_packet(LapplAddress::IMU_SERVICE_CPU_USAGE)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(
-                    LapplAddress::MOTOR_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_start_stream_packet(LapplAddress::SD_SERVICE_CPU_USAGE)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(
-                    LapplAddress::CAN_RECV_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(
-                    LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_start_stream_packet(
-                    LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  write_address(LapplAddress::RUNNING, true);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -206,59 +136,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet =
-      LapplPacket::make_write_packet(LapplAddress::RUNNING, false)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(LapplAddress::IMU_GX)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_stop_stream_packet(LapplAddress::LED_SERVICE_CPU_USAGE)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_stop_stream_packet(LapplAddress::IMU_SERVICE_CPU_USAGE)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(
-                    LapplAddress::MOTOR_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet =
-      LapplPacket::make_stop_stream_packet(LapplAddress::SD_SERVICE_CPU_USAGE)
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(
-                    LapplAddress::CAN_RECV_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(
-                    LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
-  uart_packet = LapplPacket::make_stop_stream_packet(
-                    LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE)
-                    .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  write_address(LapplAddress::RUNNING, false);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -277,12 +155,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
 
   if (cJSON_IsNumber(torqueItem)) {
     float torque = torqueItem->valuedouble;
-    auto uart_packet =
-        LapplPacket::make_write_packet(LapplAddress::RIGHT_TORQUE, torque)
-            .get_raw_packet();
-    uart_write_bytes(config::stm_uart::port,
-                     uart_packet.data(),
-                     uart_packet.size());
+    write_address(LapplAddress::RIGHT_TORQUE, torque);
   }
 
   cJSON_Delete(root);
@@ -307,12 +180,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
   if (cJSON_IsNumber(torqueItem)) {
     float torque = torqueItem->valuedouble;
-    auto uart_packet =
-        LapplPacket::make_write_packet(LapplAddress::LEFT_TORQUE, torque)
-            .get_raw_packet();
-    uart_write_bytes(config::stm_uart::port,
-                     uart_packet.data(),
-                     uart_packet.size());
+    write_address(LapplAddress::LEFT_TORQUE, torque);
   }
 
   cJSON_Delete(root);
@@ -327,13 +195,8 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet =
-      LapplPacket::make_write_packet(LapplAddress::CONTROL_MODE,
-                                     static_cast<uint8_t>(ControlMode::MANUAL))
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  write_address(LapplAddress::CONTROL_MODE,
+                static_cast<uint8_t>(ControlMode::MANUAL));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -341,13 +204,8 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet =
-      LapplPacket::make_write_packet(LapplAddress::CONTROL_MODE,
-                                     static_cast<uint8_t>(ControlMode::AUTO))
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  write_address(LapplAddress::CONTROL_MODE,
+                static_cast<uint8_t>(ControlMode::AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -355,13 +213,8 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet = LapplPacket::make_write_packet(
-                         LapplAddress::CONTROL_MODE,
-                         static_cast<uint8_t>(ControlMode::SEMI_AUTO))
-                         .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  write_address(LapplAddress::CONTROL_MODE,
+                static_cast<uint8_t>(ControlMode::SEMI_AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -369,17 +222,60 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  auto uart_packet =
-      LapplPacket::make_write_packet(LapplAddress::CONTROL_MODE,
-                                     static_cast<uint8_t>(ControlMode::SMART))
-          .get_raw_packet();
-  uart_write_bytes(config::stm_uart::port,
-                   uart_packet.data(),
-                   uart_packet.size());
+  write_address(LapplAddress::CONTROL_MODE,
+                static_cast<uint8_t>(ControlMode::SMART));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
+  return ESP_OK;
+}
+
+esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  start_streams({LapplAddress::LED_SERVICE_CPU_USAGE,
+                 LapplAddress::IMU_SERVICE_CPU_USAGE,
+                 LapplAddress::MOTOR_SERVICE_CPU_USAGE,
+                 LapplAddress::SD_SERVICE_CPU_USAGE,
+                 LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
+                 LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+                 LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE});
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start CPU usage stream failed");
+  return ESP_OK;
+}
+esp_err_t HttpService::stop_cpu_usage_stream_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  stop_streams({LapplAddress::LED_SERVICE_CPU_USAGE,
+                LapplAddress::IMU_SERVICE_CPU_USAGE,
+                LapplAddress::MOTOR_SERVICE_CPU_USAGE,
+                LapplAddress::SD_SERVICE_CPU_USAGE,
+                LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
+                LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+                LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE});
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop CPU usage stream failed");
+  return ESP_OK;
+}
+
+esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  start_streams(
+      {LapplAddress::IMU_GX, LapplAddress::IMU_GY, LapplAddress::IMU_GZ});
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start imu data stream failed");
+  return ESP_OK;
+}
+esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  stop_streams(
+      {LapplAddress::IMU_GX, LapplAddress::IMU_GY, LapplAddress::IMU_GZ});
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop imu data stream failed");
   return ESP_OK;
 }
 
@@ -478,6 +374,18 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/states",
                           HTTP_GET,
                           HttpService::get_state_handler);
+  this->register_http_uri("/api/streams/start/imu",
+                          HTTP_GET,
+                          HttpService::start_imu_data_stream_handler);
+  this->register_http_uri("/api/streams/stop/imu",
+                          HTTP_GET,
+                          HttpService::stop_imu_data_stream_handler);
+  this->register_http_uri("/api/streams/start/cpu_usage",
+                          HTTP_GET,
+                          HttpService::start_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/stop/cpu_usage",
+                          HTTP_GET,
+                          HttpService::stop_cpu_usage_stream_handler);
   this->register_http_uri_with_option("/api/start",
                                       HTTP_PUT,
                                       HttpService::start_handler);

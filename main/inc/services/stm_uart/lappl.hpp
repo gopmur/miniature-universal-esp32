@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <initializer_list>
 
 enum class LapplAddress : uint8_t {
   RUNNING,
