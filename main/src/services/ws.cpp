@@ -132,17 +132,7 @@ void WebSocketService::start_sending(int fd) {
     this->connection_age[max_age_connection] = 0;
     this->connection_fds[max_age_connection] = fd;
   }
-  ESP_LOGI("START SENDING",
-           "connection_age %d %d %d",
-           this->connection_age[0],
-           this->connection_age[1],
-           this->connection_age[2]);
-  ESP_LOGI("START SENDING",
-           "connection_fds %d %d %d",
-           this->connection_fds[0],
-           this->connection_fds[1],
-           this->connection_fds[2]);
-  ESP_LOGI("START SENDING", "connection_count %d", this->connection_count);
+
   this->notify();
 }
 
@@ -172,17 +162,6 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
-  ESP_LOGI("STOP SENDING",
-           "connection_age %d %d %d",
-           this->connection_age[0],
-           this->connection_age[1],
-           this->connection_age[2]);
-  ESP_LOGI("STOP SENDING",
-           "connection_fds %d %d %d",
-           this->connection_fds[0],
-           this->connection_fds[1],
-           this->connection_fds[2]);
-  ESP_LOGI("STOP SENDING", "connection_count %d", this->connection_count);
 }
 
 void WebSocketService::start() {
