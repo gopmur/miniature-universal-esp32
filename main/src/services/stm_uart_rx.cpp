@@ -57,7 +57,7 @@ void StmUartRxService::main(StmUartRxService* self) {
           break;
         default:
 
-          if (context::ws_service.is_connected()) {
+          if (context::ws_service.has_connections()) {
             context::ws_service.queue.send(packet.value(), portMAX_DELAY);
           }
           break;
@@ -66,7 +66,7 @@ void StmUartRxService::main(StmUartRxService* self) {
 
     else if (packet->header.b.resp == 1 &&
              packet->header.b.type == LapplType::EOC) {
-      if (context::ws_service.is_connected()) {
+      if (context::ws_service.has_connections()) {
         context::ws_service.queue.send(packet.value(), portMAX_DELAY);
       }
     }

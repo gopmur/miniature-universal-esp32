@@ -9,11 +9,13 @@
 #include "services/stm_uart/lappl.hpp"
 
 WebSocketService::WebSocketService() {
-  this->fd = -1;
+  connection_age.fill(-1);
+  connection_fds.fill(-1);
+  connection_count = 0;
 };
 
-bool WebSocketService::is_connected() {
-  return this->fd >= 0;
+bool WebSocketService::has_connections() {
+  return connection_count > 0;
 }
 
 void WebSocketService::main(WebSocketService* self) {
@@ -23,7 +25,7 @@ void WebSocketService::main(WebSocketService* self) {
 
     while (true) {
       auto packet = self->queue.receive(portMAX_DELAY);
-      if (self->fd < 0 || !packet.has_value()) {
+      if (!self->has_connections() || !packet.has_value()) {
         break;
       }
       if (packet->header.b.type == LapplType::EOC) {
@@ -37,13 +39,16 @@ void WebSocketService::main(WebSocketService* self) {
             .payload = (uint8_t*)json_str,
             .len = strlen(json_str),
         };
-        esp_err_t ret =
-            httpd_ws_send_frame_async(context::http_service.server_instance,
-                                      self->fd,
-                                      &ws_packet);
-        if (ret != ESP_OK) {
-          ESP_LOGW("WS", "Client disconnected or send failed");
-          self->fd = -1;
+        for (int i = 0; i < self->connection_count; i++) {
+          int fd = self->connection_fds[i];
+          esp_err_t ret =
+              httpd_ws_send_frame_async(context::http_service.server_instance,
+                                        fd,
+                                        &ws_packet);
+          if (ret != ESP_OK) {
+            ESP_LOGW("WS", "Client disconnected or send failed");
+            self->stop_sending(fd);
+          }
         }
         free(json_str);
         root = cJSON_CreateObject();
@@ -107,12 +112,77 @@ void WebSocketService::main(WebSocketService* self) {
 }
 
 void WebSocketService::start_sending(int fd) {
-  this->fd = fd;
+  if (connection_count < config::service::ws::max_connection) {
+    this->connection_fds[this->connection_count] = fd;
+    for (int i = 0; i < this->connection_count; i++) {
+      this->connection_age[i]++;
+    }
+    this->connection_age[this->connection_count] = 0;
+    this->connection_count++;
+  } else {
+    int max_age_connection = 0;
+    int max_age = 0;
+    for (int i = 0; i < this->connection_count; i++) {
+      if (this->connection_age[i] > max_age) {
+        max_age = this->connection_age[i];
+        max_age_connection = this->connection_fds[i];
+      }
+      this->connection_age[i]++;
+    }
+    this->connection_age[max_age_connection] = 0;
+    this->connection_fds[max_age_connection] = fd;
+  }
+  ESP_LOGI("START SENDING",
+           "connection_age %d %d %d",
+           this->connection_age[0],
+           this->connection_age[1],
+           this->connection_age[2]);
+  ESP_LOGI("START SENDING",
+           "connection_fds %d %d %d",
+           this->connection_fds[0],
+           this->connection_fds[1],
+           this->connection_fds[2]);
+  ESP_LOGI("START SENDING", "connection_count %d", this->connection_count);
   this->notify();
 }
 
-void WebSocketService::stop_sending() {
-  this->fd = 0;
+void WebSocketService::stop_sending(int fd) {
+  if (this->connection_count == 0) {
+    return;
+  }
+  int connection_to_remove = -1;
+  int connection_to_remove_age = 0;
+  for (int i = 0; i < this->connection_count; i++) {
+    if (this->connection_fds[i] == fd) {
+      connection_to_remove = i;
+      connection_to_remove_age = this->connection_age[i];
+      break;
+    }
+  }
+  if (connection_to_remove == -1) {
+    return;
+  }
+  for (int i = 0; i < this->connection_count; i++) {
+    if (this->connection_age[i] > connection_to_remove_age) {
+      this->connection_age[i]--;
+    }
+  }
+  for (int i = connection_to_remove; i < this->connection_count - 1; i++) {
+    this->connection_age[i] = this->connection_age[i + 1];
+    this->connection_fds[i] = this->connection_fds[i + 1];
+  }
+  this->connection_count--;
+  ESP_LOGI("STOP SENDING",
+           "connection_age %d %d %d",
+           this->connection_age[0],
+           this->connection_age[1],
+           this->connection_age[2]);
+  ESP_LOGI("STOP SENDING",
+           "connection_fds %d %d %d",
+           this->connection_fds[0],
+           this->connection_fds[1],
+           this->connection_fds[2]);
+  ESP_LOGI("STOP SENDING", "connection_count %d", this->connection_count);
 }
 
 void WebSocketService::start() {

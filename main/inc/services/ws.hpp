@@ -8,13 +8,15 @@
 class WebSocketService : public Service<config::service::ws::stack_size> {
   private:
   static void main(WebSocketService* self);
-  int fd;
+  std::array<int, config::service::ws::max_connection> connection_fds;
+  std::array<int, config::service::ws::max_connection> connection_age;
+  int connection_count;
 
   public:
   Queue<LapplPacket, 8> queue;
   WebSocketService();
-  bool is_connected();
+  bool has_connections();
   void start();
   void start_sending(int fd);
-  void stop_sending();
+  void stop_sending(int fd);
 };

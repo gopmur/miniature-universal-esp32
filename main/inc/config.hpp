@@ -44,6 +44,7 @@ namespace config {
     namespace ws {
       constexpr auto priority = 2;
       constexpr auto stack_size = 4096;
+      constexpr auto max_connection = 3;
     }
 
   }
