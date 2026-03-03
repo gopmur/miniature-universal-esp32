@@ -2,11 +2,12 @@
 
 #include <sys/types.h>
 
+#include "config.hpp"
 #include "service.hpp"
 #include "services/dns/packet.hpp"
 
-class DnsService : Service<4096> {
- private:
+class DnsService : AbstractService<config::service::dns::stack_size> {
+  private:
   in_addr_t iface_address;
 
   bool drop_packet(DNSPacket& packet);
@@ -15,8 +16,8 @@ class DnsService : Service<4096> {
   void make_dns_response(DNSPacket& packet, int parse_err);
   static void main(DnsService* service);
 
- public:
-  DnsService(const char* iface_address);
+  public:
+  DnsService(int priority, const char* iface_address);
 
   void start();
 };

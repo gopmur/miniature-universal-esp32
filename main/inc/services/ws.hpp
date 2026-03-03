@@ -5,7 +5,7 @@
 #include "service.hpp"
 #include "services/stm_uart/lappl.hpp"
 
-class WebSocketService : public Service<config::service::ws::stack_size> {
+class WebSocketService : public AbstractService<config::service::ws::stack_size> {
   private:
   static void main(WebSocketService* self);
   std::array<int, config::service::ws::max_connection> connection_fds;
@@ -14,7 +14,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
 
   public:
   Queue<LapplPacket, 32> queue;
-  WebSocketService();
+  WebSocketService(int priority);
   bool has_connections();
   void start();
   void start_sending(int fd);

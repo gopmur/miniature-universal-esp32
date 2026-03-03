@@ -1,14 +1,14 @@
 #include "services/ws.hpp"
 #include "cJSON.h"
 #include "config.hpp"
-#include "context.hpp"
+#include "context/services/http.hpp"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "portmacro.h"
 #include "service.hpp"
 #include "services/stm_uart/lappl.hpp"
 
-WebSocketService::WebSocketService() {
+WebSocketService::WebSocketService(int priority) : AbstractService(priority) {
   connection_age.fill(-1);
   connection_fds.fill(-1);
   connection_count = 0;
@@ -42,7 +42,7 @@ void WebSocketService::main(WebSocketService* self) {
         for (int i = 0; i < self->connection_count; i++) {
           int fd = self->connection_fds[i];
           esp_err_t ret =
-              httpd_ws_send_frame_async(context::http_service.server_instance,
+              httpd_ws_send_frame_async(http_service.server_instance,
                                         fd,
                                         &ws_packet);
           if (ret != ESP_OK) {
@@ -162,9 +162,8 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
-
 }
 
 void WebSocketService::start() {
-  START_SERVICE("NAME", config::service::ws::priority);
+  START_SERVICE("ws_service");
 }

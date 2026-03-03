@@ -13,9 +13,12 @@
 #include "nvs_flash.h"
 
 #include "config.hpp"
-#include "context.hpp"
-#include "services/dns.hpp"
-#include "services/http.hpp"
+
+#include "context/services/dns.hpp"
+#include "context/services/led.hpp"
+#include "context/services/ws.hpp"
+#include "context/services/http.hpp"
+#include "context/services/stm_uart_rx.hpp"
 
 class App {
   private:
@@ -96,12 +99,11 @@ class App {
     setup_wifi();
     setup_uart();
 
-    // context::init();
-    context::http_service.start();
-    context::dns_service.start();
-    context::led_service.start();
-    context::stm_uart_rx_service.start();
-    context::ws_service.start();
+    http_service.start();
+    dns_service.start();
+    led_service.start();
+    stm_uart_rx_service.start();
+    ws_service.start();
   }
 
   public:

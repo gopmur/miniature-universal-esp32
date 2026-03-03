@@ -4,7 +4,13 @@
 #include "esp_http_server.h"
 #include "ipc/queue.hpp"
 #include "services/stm_uart/lappl.hpp"
-#include "services/stm_uart/packet.hpp"
+
+enum class ControlMode : uint8_t {
+  MANUAL,
+  AUTO,
+  SEMI_AUTO,
+  SMART,
+};
 
 enum class HttpQueueMessageHeader {
   RUNNING,

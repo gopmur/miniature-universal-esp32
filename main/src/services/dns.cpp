@@ -12,7 +12,8 @@
 
 #include "services/dns.hpp"
 
-DnsService::DnsService(const char* iface_address) {
+DnsService::DnsService(int priority, const char* iface_address)
+    : AbstractService(priority) {
   inet_pton(AF_INET, iface_address, &this->iface_address);
 }
 
@@ -73,7 +74,11 @@ void DnsService::main(DnsService* service) {
   while (true) {
     struct sockaddr_in client_address;
     socklen_t client_address_len = sizeof(struct sockaddr_in);
-    recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr*)&client_address,
+    recvfrom(sock,
+             buf,
+             BUFFER_SIZE,
+             0,
+             (struct sockaddr*)&client_address,
              &client_address_len);
 
     int ret = packet.parse(buf, BUFFER_SIZE, nullptr);
@@ -83,14 +88,22 @@ void DnsService::main(DnsService* service) {
     service->make_dns_response(packet, ret);
     int answer_size;
     packet.copy(buf, BUFFER_SIZE, &answer_size);
-    sendto(sock, buf, answer_size, 0, (struct sockaddr*)&client_address,
+    sendto(sock,
+           buf,
+           answer_size,
+           0,
+           (struct sockaddr*)&client_address,
            client_address_len);
   }
 };
 
 void DnsService::start() {
   priority = config::service::dns::priority;
-  this->thread_id = xTaskCreateStatic(
-      reinterpret_cast<void (*)(void*)>(main), "dns_service", stack_size, this,
-      config::service::dns::priority, stack, &tcb);
+  this->thread_id = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(main),
+                                      "dns_service",
+                                      stack_size,
+                                      this,
+                                      config::service::dns::priority,
+                                      stack,
+                                      &tcb);
 }

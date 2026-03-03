@@ -1,8 +1,10 @@
 #include "services/led.hpp"
-#include "config.hpp"
 #include "driver/gpio.h"
 #include "freertos/idf_additions.h"
 #include "hal/gpio_types.h"
+#include "service.hpp"
+
+LedService::LedService(int priority) : AbstractService(priority) {}
 
 void LedService::main(LedService* self) {
   gpio_config_t led_config = {
@@ -24,8 +26,5 @@ void LedService::main(LedService* self) {
 }
 
 void LedService::start() {
-  this->priority = config::service::led::priority;
-  this->thread_id =
-      xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(main), "led_service",
-                        stack_size, this, priority, stack, &tcb);
+  START_SERVICE("led_service");
 }

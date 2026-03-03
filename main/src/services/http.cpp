@@ -16,10 +16,23 @@
 #include "report.hpp"
 
 #include <cJSON.h>
-#include "context.hpp"
+#include "context/services/http.hpp"
+#include "context/services/ws.hpp"
 #include "services/helper/uart.hpp"
 #include "services/stm_uart/lappl.hpp"
-#include "services/stm_uart/packet.hpp"
+
+const char* get_contorl_mode_str(ControlMode control_mode) {
+  switch (control_mode) {
+    case ControlMode::MANUAL:
+      return "manual";
+    case ControlMode::AUTO:
+      return "automatic";
+    case ControlMode::SEMI_AUTO:
+      return "semi-automatic";
+    case ControlMode::SMART:
+      return "smart";
+  }
+}
 
 esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
   constexpr int record_count = 8;
@@ -76,7 +89,7 @@ void HttpService::allow_cors(httpd_req_t* req) {
 
 esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  context::http_service.queue.flush();
+  http_service.queue.flush();
 
   read_addresses({LapplAddress::RUNNING,
                   LapplAddress::RIGHT_TORQUE,
@@ -86,7 +99,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   auto root = cJSON_CreateObject();
 
   for (int i = 0; i < 4; i++) {
-    auto response = context::http_service.queue.receive(200);
+    auto response = http_service.queue.receive(200);
     if (!response.has_value()) {
       cJSON_Delete(root);
       httpd_resp_send_err(req,
@@ -302,7 +315,7 @@ esp_err_t HttpService::options_handler(httpd_req_t* req) {
 esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   if (req->method == HTTP_GET) {
     auto client_fd = httpd_req_to_sockfd(req);
-    context::ws_service.start_sending(client_fd);
+    ws_service.start_sending(client_fd);
     ESP_LOGI("WS", "WebSocket client connected, fd=%d", client_fd);
   }
   return ESP_OK;
