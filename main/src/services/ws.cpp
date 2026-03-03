@@ -1,6 +1,7 @@
 #include "services/ws.hpp"
 #include "cJSON.h"
 #include "config.hpp"
+#include "context/monitoring_data.hpp"
 #include "context/services/http.hpp"
 #include "esp_http_server.h"
 #include "esp_log.h"
@@ -30,6 +31,12 @@ void WebSocketService::main(WebSocketService* self) {
       }
       if (packet->header.b.type == LapplType::EOC) {
         self->queue.flush();
+        cJSON_AddNumberToObject(root, "esp32DnsServiceCpuUsage", monitoring_data.dns_service_cpu_usage);
+        cJSON_AddNumberToObject(root, "esp32LedServiceCpuUsage", monitoring_data.led_service_cpu_usage);
+        cJSON_AddNumberToObject(root, "esp32MonitorServiceCpuUsage", monitoring_data.monitor_service_cpu_usage);
+        cJSON_AddNumberToObject(root, "esp32StmUartRxServiceCpuUsage", monitoring_data.stm_uart_rx_service_cpu_usage);
+        cJSON_AddNumberToObject(root, "esp32WsServiceCpuUsage", monitoring_data.ws_service_cpu_usage);
+
         char* json_str = cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
         httpd_ws_frame_t ws_packet = {

@@ -47,5 +47,10 @@ namespace config {
       constexpr auto max_connection = 3;
     }
 
+    namespace monitor {
+      constexpr auto priority = 2;
+      constexpr auto stack_size = 4096;
+    }
+
   }
 }

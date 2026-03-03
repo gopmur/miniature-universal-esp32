@@ -20,7 +20,6 @@
                                       priority,                                \
                                       stack,                                   \
                                       &tcb);                                   \
-  monitoring_data.service_count++;
 
 /**
  * @brief Base class template for FreeRTOS services.

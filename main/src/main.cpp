@@ -14,6 +14,7 @@
 
 #include "config.hpp"
 
+#include "context/services/monitor.hpp"
 #include "context/services/dns.hpp"
 #include "context/services/led.hpp"
 #include "context/services/ws.hpp"
@@ -104,6 +105,7 @@ class App {
     led_service.start();
     stm_uart_rx_service.start();
     ws_service.start();
+    monitor_service.start();
   }
 
   public:

@@ -18,7 +18,7 @@ void StmUartRxService::main(StmUartRxService* self) {
   while (true) {
     int bytes_read = uart_read_bytes(self->port, self->rx_buffer, 1024, 0);
     if (bytes_read <= 0) {
-      vTaskDelay(5);
+      vTaskDelay(10);
       continue;
     }
     for (int i = 0; i < bytes_read; i++) {
