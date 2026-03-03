@@ -13,7 +13,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
   int connection_count;
 
   public:
-  Queue<LapplPacket, 8> queue;
+  Queue<LapplPacket, 32> queue;
   WebSocketService();
   bool has_connections();
   void start();

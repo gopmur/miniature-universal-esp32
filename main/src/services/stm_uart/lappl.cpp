@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <optional>
 #include <services/stm_uart/lappl.hpp>
+#include "esp_log.h"
 #include "helper.hpp"
 
 int Lappl::i;
@@ -224,6 +225,7 @@ bool LapplPacket::check_integrity() {
 
 std::optional<LapplPacket> Lappl::read_stream(uint8_t input) {
   if (get_bit(input, 7)) {
+
     i = 0;
     packet.header.u8 = input;
     i++;
