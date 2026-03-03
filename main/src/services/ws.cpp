@@ -125,7 +125,7 @@ void WebSocketService::start_sending(int fd) {
     for (int i = 0; i < this->connection_count; i++) {
       if (this->connection_age[i] > max_age) {
         max_age = this->connection_age[i];
-        max_age_connection = this->connection_fds[i];
+        max_age_connection = i;
       }
       this->connection_age[i]++;
     }
@@ -162,6 +162,7 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
+
 }
 
 void WebSocketService::start() {
