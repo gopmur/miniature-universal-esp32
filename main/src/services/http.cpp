@@ -4,21 +4,16 @@
 
 #include "services/http.hpp"
 
-#include "config.hpp"
-#include "driver/uart.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
-#include "esp_system.h"
 #include "helper.hpp"
 #include "helper/json.hpp"
 #include "http_assets.hpp"
 #include "http_parser.h"
-#include "portmacro.h"
-#include "report.hpp"
 
-#include <cJSON.h>
+
 #include "context/services/http.hpp"
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"

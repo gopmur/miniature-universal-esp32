@@ -1,6 +1,5 @@
 #include "services/stm_uart_rx.hpp"
 #include <cstdio>
-#include "config.hpp"
 #include "context/services/http.hpp"
 #include "context/services/ws.hpp"
 #include "driver/uart.h"
