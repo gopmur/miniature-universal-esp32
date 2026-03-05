@@ -27,6 +27,10 @@ inline uint8_t get_byte(uint32_t v, uint8_t b) {
   return v >> (8 * b) & 0xff;
 }
 
+inline uint8_t get_byte(uint16_t v, uint8_t b) {
+  return get_byte(static_cast<uint32_t>(v), b);
+}
+
 inline uint8_t get_byte(float v, uint8_t b) {
   if (b >= 4)
     return 0;

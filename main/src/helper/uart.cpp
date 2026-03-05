@@ -1,11 +1,6 @@
-#pragma once
+#include "helper/uart.hpp"
 
-#include <initializer_list>
-#include "config.hpp"
-#include "driver/uart.h"
-#include "services/stm_uart/lappl.hpp"
-
-inline void start_streams(std::initializer_list<LapplAddress> addresses) {
+void start_streams(std::initializer_list<LapplAddress> addresses) {
   std::array<bool, static_cast<uint8_t>(LapplAddress::ADDRESS_COUNT)>
       address_sent;
   address_sent.fill(false);
@@ -20,7 +15,7 @@ inline void start_streams(std::initializer_list<LapplAddress> addresses) {
   }
 }
 
-inline void stop_streams(std::initializer_list<LapplAddress> addresses) {
+void stop_streams(std::initializer_list<LapplAddress> addresses) {
   std::array<bool, static_cast<uint8_t>(LapplAddress::ADDRESS_COUNT)>
       address_sent;
   address_sent.fill(false);
@@ -35,7 +30,7 @@ inline void stop_streams(std::initializer_list<LapplAddress> addresses) {
   }
 }
 
-inline void read_addresses(std::initializer_list<LapplAddress> addresses) {
+void read_addresses(std::initializer_list<LapplAddress> addresses) {
   std::array<bool, static_cast<uint8_t>(LapplAddress::ADDRESS_COUNT)>
       address_sent;
   address_sent.fill(false);
@@ -49,13 +44,7 @@ inline void read_addresses(std::initializer_list<LapplAddress> addresses) {
   }
 }
 
-template <typename T>
-inline void write_address(LapplAddress address, T value) {
-  auto packet = LapplPacket::make_write_packet(address, value).get_raw_packet();
-  uart_write_bytes(config::stm_uart::port, packet.data(), packet.size());
-}
-
-inline void send_command(LapplCommand command) {
+void send_command(LapplCommand command) {
   auto packet = LapplPacket::make_command_packet(command).get_raw_packet();
   uart_write_bytes(config::stm_uart::port, packet.data(), packet.size());
 }

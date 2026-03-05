@@ -31,14 +31,12 @@ void StmUartRxService::main(StmUartRxService* self) {
           packet->header.b.type == LapplType::READ) {
         switch (static_cast<LapplAddress>(packet->address)) {
           case LapplAddress::RUNNING:
-            ESP_LOGI("RECEIVED BYTES", "RUNNING");
             http_queue_message.header = HttpQueueMessageHeader::RUNNING;
             http_queue_message.payload.b = packet->get_uint8();
 
             http_service.queue.send(http_queue_message, portMAX_DELAY);
             break;
           case LapplAddress::RIGHT_TORQUE:
-            ESP_LOGI("RECEIVED BYTES", "RIGHT_TORQUE");
             http_queue_message.header =
                 HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
             http_queue_message.payload.f = packet->get_float();
@@ -46,7 +44,6 @@ void StmUartRxService::main(StmUartRxService* self) {
             http_service.queue.send(http_queue_message, portMAX_DELAY);
             break;
           case LapplAddress::LEFT_TORQUE:
-            ESP_LOGI("RECEIVED BYTES", "LEFT_TORQUE");
             http_queue_message.header =
                 HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
             http_queue_message.payload.f = packet->get_float();
@@ -54,13 +51,18 @@ void StmUartRxService::main(StmUartRxService* self) {
             http_service.queue.send(http_queue_message, portMAX_DELAY);
             break;
           case LapplAddress::CONTROL_MODE:
-            ESP_LOGI("RECEIVED BYTES", "CONTROL_MODE");
             http_queue_message.header = HttpQueueMessageHeader::MODE;
             http_queue_message.payload.control_mode =
                 static_cast<ControlMode>(packet->get_uint8());
 
             http_service.queue.send(http_queue_message, portMAX_DELAY);
             break;
+          case LapplAddress::RTC_TIME: {
+            uint8_t hours = packet->data[0];
+            uint8_t minutes = packet->data[1];
+            uint8_t seconds = packet->data[2];
+            ESP_LOGI("TIME", "%02d:%02d:%02d", hours, minutes, seconds);
+          } break;
           default:
 
             if (ws_service.has_connections()) {

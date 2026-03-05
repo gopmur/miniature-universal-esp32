@@ -2,6 +2,7 @@
 
 #include "esp_err.h"
 #include "esp_http_server.h"
+#include "helper/json.hpp"
 #include "ipc/queue.hpp"
 #include "services/stm_uart/lappl.hpp"
 
@@ -45,6 +46,9 @@ class HttpService {
                             esp_err_t (*handler)(httpd_req_t* req));
   static void allow_cors(httpd_req_t* req);
 
+  static void set_rtc_time(Json* time_json, Json* time_error_json);
+  static void set_rtc_date(Json* date_json, Json* date_error_json);
+
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
   static esp_err_t start_handler(httpd_req_t* req);
   static esp_err_t stop_handler(httpd_req_t* req);
@@ -54,6 +58,7 @@ class HttpService {
   static esp_err_t set_mode_automatic_handler(httpd_req_t* req);
   static esp_err_t set_mode_semi_automatic_handler(httpd_req_t* req);
   static esp_err_t set_mode_smart_handler(httpd_req_t* req);
+  static esp_err_t set_rtc(httpd_req_t* req);
   static esp_err_t get_state_handler(httpd_req_t* req);
   static esp_err_t options_handler(httpd_req_t* req);
   static esp_err_t ws_data_handler(httpd_req_t* req);
