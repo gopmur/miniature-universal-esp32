@@ -56,27 +56,19 @@ void StmUartRxService::main(StmUartRxService* self) {
 
             http_service.queue.send(http_queue_message, portMAX_DELAY);
             break;
-          case LapplAddress::RTC_TIME: {
-            uint8_t hours = packet->data[0];
-            uint8_t minutes = packet->data[1];
-            uint8_t seconds = packet->data[2];
-            ESP_LOGI("TIME", "%02d:%02d:%02d", hours, minutes, seconds);
-          } break;
+
           default:
 
             if (ws_service.has_connections()) {
               ws_service.queue.send(packet.value(), portMAX_DELAY);
             }
-            // ESP_LOGI("UART RECEIVED",
-            //          "%d",
-            //          static_cast<uint8_t>(packet->address));
+            
             break;
         }
       }
 
       else if (packet->header.b.resp == 1 &&
                packet->header.b.type == LapplType::EOC)
-      // ESP_LOGI("UART RECEIVED", "EOC");
       {
         if (ws_service.has_connections()) {
           ws_service.queue.send(packet.value(), portMAX_DELAY);

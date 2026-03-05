@@ -13,7 +13,6 @@
 #include "http_assets.hpp"
 #include "http_parser.h"
 
-
 #include "context/services/http.hpp"
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
@@ -399,7 +398,6 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   if (req->method == HTTP_GET) {
     auto client_fd = httpd_req_to_sockfd(req);
     ws_service.start_sending(client_fd);
-    ESP_LOGI("WS", "WebSocket client connected, fd=%d", client_fd);
   }
   return ESP_OK;
 }
