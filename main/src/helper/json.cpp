@@ -51,6 +51,17 @@ void Json::set_object(const char* name, Json* object) {
   }
 }
 
+void Json::set_bool(const char* name, bool boolean) {
+  auto item = cJSON_GetObjectItem(this->root, name);
+  if (item && cJSON_IsBool(item)) {
+    cJSON_SetBoolValue(item, boolean);
+  } else if (item) {
+    cJSON_ReplaceItemInObject(this->root, name, cJSON_CreateBool(boolean));
+  } else {
+    cJSON_AddBoolToObject(this->root, name, boolean);
+  }
+}
+
 void Json::set_error(const char* name, JsonError error) {
   const char* error_message;
   switch (error) {
