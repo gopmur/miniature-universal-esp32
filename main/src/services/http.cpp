@@ -125,6 +125,7 @@ esp_err_t HttpService::set_rtc(httpd_req_t* req) {
 
   Json res_json;
   Json req_json(req_body);
+  free(req_body);
 
   auto time_item = req_json.get_object("time", &res_json);
   auto date_item = req_json.get_object("date", &res_json);
@@ -155,7 +156,6 @@ esp_err_t HttpService::set_rtc(httpd_req_t* req) {
   }
 
   free(res_str);
-  free(req_body);
 
   return ESP_OK;
 }
@@ -236,21 +236,26 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
 esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   int len = req->content_len;
-  char* body = (char*)malloc(len + 1);
+  char* body = static_cast<char*>(malloc(len + 1));
 
   int received = httpd_req_recv(req, body, len);
   body[received] = 0;
 
-  cJSON* root = cJSON_Parse(body);
-  cJSON* torqueItem = cJSON_GetObjectItem(root, "torque");
+  Json res_json;
+  Json req_json(body);
+  free(body);
 
-  if (cJSON_IsNumber(torqueItem)) {
-    float torque = torqueItem->valuedouble;
-    write_address(LapplAddress::RIGHT_TORQUE, torque);
+  auto torque = req_json.get_number("torque", &res_json);
+
+  if (std::holds_alternative<JsonError>(torque)) {
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
+    free(res_str);
+    return ESP_OK;
   }
 
-  cJSON_Delete(root);
-  free(body);
+  write_address(LapplAddress::RIGHT_TORQUE,
+                static_cast<float>(std::get<double>(torque)));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -261,26 +266,30 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
 esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   int len = req->content_len;
-  char* body = (char*)malloc(len + 1);
+  char* body = static_cast<char*>(malloc(len + 1));
 
   int received = httpd_req_recv(req, body, len);
   body[received] = 0;
 
-  cJSON* root = cJSON_Parse(body);
-  cJSON* torque_item = cJSON_GetObjectItem(root, "torque");
+  Json res_json;
+  Json req_json(body);
+  free(body);
 
-  if (cJSON_IsNumber(torque_item)) {
-    float torque = torque_item->valuedouble;
-    write_address(LapplAddress::LEFT_TORQUE, torque);
+  auto torque = req_json.get_number("torque", &res_json);
+
+  if (std::holds_alternative<JsonError>(torque)) {
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
+    free(res_str);
+    return ESP_OK;
   }
 
-  cJSON_Delete(root);
-  free(body);
+  write_address(LapplAddress::LEFT_TORQUE,
+                static_cast<float>(std::get<double>(torque)));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
-
   return ESP_OK;
 }
 
