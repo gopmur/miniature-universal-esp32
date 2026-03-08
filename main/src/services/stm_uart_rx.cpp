@@ -3,7 +3,6 @@
 #include "context/services/http.hpp"
 #include "context/services/ws.hpp"
 #include "driver/uart.h"
-#include "esp_log.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
 #include "portmacro.h"

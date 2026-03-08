@@ -1,16 +1,32 @@
 #pragma once
 
 #include "config.hpp"
+#include "helper/json.hpp"
 #include "ipc/queue.hpp"
 #include "service.hpp"
 #include "services/stm_uart/lappl.hpp"
 
-class WebSocketService : public AbstractService<config::service::ws::stack_size> {
+class WebSocketService
+    : public AbstractService<config::service::ws::stack_size> {
   private:
-  static void main(WebSocketService* self);
+  bool esp_cpu_usage_enabled;
+  bool stm_cpu_usage_enabled;
+  bool imu_data_enabled;
   std::array<int, config::service::ws::max_connection> connection_fds;
   std::array<int, config::service::ws::max_connection> connection_age;
   int connection_count;
+  bool should_wait_for_eoc();
+  void fill_esp_cpu_usage_json(Json* esp_cpu_usage_json);
+  void fill_json_with_packet_data(LapplPacket packet,
+                                  Json* stm_cpu_usage_json,
+                                  Json* imu_data_json);
+  void fill_root_json(Json* json,
+                      Json* stm_cpu_usage_json,
+                      Json* esp_cpu_usage_json,
+                      Json* imu_data_json);
+  void send_to_connections(const char* data);
+
+  static void main(WebSocketService* self);
 
   public:
   Queue<LapplPacket, 32> queue;
@@ -19,4 +35,11 @@ class WebSocketService : public AbstractService<config::service::ws::stack_size>
   void start();
   void start_sending(int fd);
   void stop_sending(int fd);
+
+  void enable_esp_cpu_usage();
+  void disable_esp_cpu_usage();
+  void enable_stm_cpu_usage();
+  void disable_stm_cpu_usage();
+  void enable_imu_data();
+  void disable_imu_data();
 };

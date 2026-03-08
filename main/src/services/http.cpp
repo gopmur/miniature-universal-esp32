@@ -325,8 +325,9 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
+esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
+  ws_service.enable_stm_cpu_usage();
   start_streams({
       LapplAddress::LED_SERVICE_CPU_USAGE,
       LapplAddress::IMU_SERVICE_CPU_USAGE,
@@ -342,8 +343,10 @@ esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
                       "Start CPU usage stream failed");
   return ESP_OK;
 }
-esp_err_t HttpService::stop_cpu_usage_stream_handler(httpd_req_t* req) {
+
+esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
+  ws_service.disable_stm_cpu_usage();
   stop_streams({
       LapplAddress::LED_SERVICE_CPU_USAGE,
       LapplAddress::IMU_SERVICE_CPU_USAGE,
@@ -360,8 +363,22 @@ esp_err_t HttpService::stop_cpu_usage_stream_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::start_esp_cpu_usage_stream_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  ws_service.enable_esp_cpu_usage();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+esp_err_t HttpService::stop_esp_cpu_usage_stream_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  ws_service.disable_esp_cpu_usage();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
+  ws_service.enable_imu_data();
   start_streams(
       {LapplAddress::IMU_GX, LapplAddress::IMU_GY, LapplAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -371,6 +388,7 @@ esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
+  ws_service.disable_imu_data();
   stop_streams(
       {LapplAddress::IMU_GX, LapplAddress::IMU_GY, LapplAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -491,12 +509,18 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/streams/stop/imu",
                           HTTP_GET,
                           HttpService::stop_imu_data_stream_handler);
-  this->register_http_uri("/api/streams/start/cpu_usage",
+  this->register_http_uri("/api/streams/start/stm_cpu_usage",
                           HTTP_GET,
-                          HttpService::start_cpu_usage_stream_handler);
-  this->register_http_uri("/api/streams/stop/cpu_usage",
+                          HttpService::start_stm_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/stop/stm_cpu_usage",
                           HTTP_GET,
-                          HttpService::stop_cpu_usage_stream_handler);
+                          HttpService::stop_stm_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/start/esp_cpu_usage",
+                          HTTP_GET,
+                          HttpService::start_esp_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/stop/esp_cpu_usage",
+                          HTTP_GET,
+                          HttpService::stop_esp_cpu_usage_stream_handler);
   this->register_http_uri_with_option("/api/start",
                                       HTTP_PUT,
                                       HttpService::start_handler);

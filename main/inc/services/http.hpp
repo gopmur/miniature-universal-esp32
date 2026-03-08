@@ -63,13 +63,15 @@ class HttpService {
   static esp_err_t options_handler(httpd_req_t* req);
   static esp_err_t ws_data_handler(httpd_req_t* req);
 
-  static esp_err_t start_cpu_usage_stream_handler(httpd_req_t* req);
-  static esp_err_t stop_cpu_usage_stream_handler(httpd_req_t* req);
+  static esp_err_t start_stm_cpu_usage_stream_handler(httpd_req_t* req);
+  static esp_err_t stop_stm_cpu_usage_stream_handler(httpd_req_t* req);
+  static esp_err_t start_esp_cpu_usage_stream_handler(httpd_req_t* req);
+  static esp_err_t stop_esp_cpu_usage_stream_handler(httpd_req_t* req);
   static esp_err_t start_imu_data_stream_handler(httpd_req_t* req);
   static esp_err_t stop_imu_data_stream_handler(httpd_req_t* req);
 
   static esp_err_t restart_handler(httpd_req_t* req);
-    
+
   esp_err_t register_dynamic_endpoints();
 
   public:
