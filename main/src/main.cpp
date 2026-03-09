@@ -8,18 +8,19 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
+#include "esp_wifi_default.h"
 #include "esp_wifi_types_generic.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
 #include "config.hpp"
 
-#include "context/services/monitor.hpp"
 #include "context/services/dns.hpp"
-#include "context/services/led.hpp"
-#include "context/services/ws.hpp"
 #include "context/services/http.hpp"
+#include "context/services/led.hpp"
+#include "context/services/monitor.hpp"
 #include "context/services/stm_uart_rx.hpp"
+#include "context/services/ws.hpp"
 
 class App {
   private:
@@ -38,6 +39,7 @@ class App {
   void setup_netif() {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_create_default_wifi_sta();
     esp_netif_create_default_wifi_ap();
   }
 
@@ -62,7 +64,7 @@ class App {
       wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
     ESP_ERROR_CHECK(esp_wifi_start());
   }

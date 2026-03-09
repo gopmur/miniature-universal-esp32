@@ -7,6 +7,7 @@
 #include "freertos/idf_additions.h"
 #include "lwip/sockets.h"
 
+#include "service.hpp"
 #include "services/dns/packet.hpp"
 #include "services/dns/packet/consts.hpp"
 
@@ -98,12 +99,5 @@ void DnsService::main(DnsService* service) {
 };
 
 void DnsService::start() {
-  priority = config::service::dns::priority;
-  this->thread_id = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(main),
-                                      "dns_service",
-                                      stack_size,
-                                      this,
-                                      config::service::dns::priority,
-                                      stack,
-                                      &tcb);
+  START_SERVICE("dns_service")
 }

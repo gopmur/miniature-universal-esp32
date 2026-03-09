@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "APSTA",
     "EINVAL",
     "FLOWCTRL",
     "Gopmur",
@@ -8,6 +9,8 @@
     "LOGI",
     "LOGW",
     "netif",
+    "otadata",
+    "rssi",
     "SRCS",
     "TXTFILES",
     "Wmissing"

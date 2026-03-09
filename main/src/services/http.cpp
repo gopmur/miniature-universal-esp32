@@ -8,6 +8,8 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
 #include "helper.hpp"
 #include "helper/json.hpp"
 #include "http_assets.hpp"
@@ -75,6 +77,44 @@ const char* get_contorl_mode_str(ControlMode control_mode) {
 //                       "Termination of chunk transmission failed");
 //   return ESP_OK;
 // }
+
+esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
+  allow_cors(req);
+  wifi_scan_config_t scan_config = {0};
+
+  esp_wifi_scan_start(&scan_config, true);
+
+  uint16_t ap_count = 0;
+  esp_wifi_scan_get_ap_num(&ap_count);
+
+  wifi_ap_record_t* ap_records =
+      (wifi_ap_record_t*)malloc(sizeof(wifi_ap_record_t) * 20);
+
+  uint16_t number = ap_count;
+  if (number > 20)
+    number = 20;
+
+  esp_wifi_scan_get_ap_records(&number, ap_records);
+
+  Json root_json;
+  for (int i = 0; i < number; i++) {
+    Json ap_json;
+    ap_json.set_number("rssi", ap_records[i].rssi);
+    root_json.set_object(reinterpret_cast<char*>(ap_records[i].ssid), &ap_json);
+  }
+  auto res_str = root_json.stringify();
+
+  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
+
+  free(res_str);
+  free(ap_records);
+
+  return ESP_OK;
+}
+
+esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
+  return ESP_OK;
+}
 
 void HttpService::set_rtc_time(Json* time_json, Json* time_error_json) {
   auto hours_item = time_json->get_number("hours", time_error_json);
@@ -521,6 +561,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/streams/stop/esp_cpu_usage",
                           HTTP_GET,
                           HttpService::stop_esp_cpu_usage_stream_handler);
+  this->register_http_uri("/api/wifi/scan",
+                          HTTP_GET,
+                          HttpService::scan_wifi_handler);
   this->register_http_uri_with_option("/api/start",
                                       HTTP_PUT,
                                       HttpService::start_handler);
@@ -549,7 +592,6 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri_with_option("/api/date-time",
                                       HTTP_PUT,
                                       HttpService::set_rtc);
-
   this->register_ws_uri("/api/data", HttpService::ws_data_handler);
   return ESP_OK;
 }
