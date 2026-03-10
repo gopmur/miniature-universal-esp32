@@ -17,6 +17,7 @@
 
 #include "context/services/dns.hpp"
 #include "context/services/http.hpp"
+#include "context/services/http_async_handler.hpp"
 #include "context/services/led.hpp"
 #include "context/services/monitor.hpp"
 #include "context/services/stm_uart_rx.hpp"
@@ -102,6 +103,7 @@ class App {
     setup_wifi();
     setup_uart();
 
+    http_async_handler_service.start();
     http_service.start();
     dns_service.start();
     led_service.start();
