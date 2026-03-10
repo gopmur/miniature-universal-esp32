@@ -4,10 +4,13 @@
 
 #include "services/http.hpp"
 
+#include "config.hpp"
+#include "driver/uart.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper.hpp"
@@ -440,6 +443,8 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
 esp_err_t HttpService::restart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   send_command(LapplCommand::RESTART);
+  uart_flush(config::stm_uart::port);
+  esp_restart();
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Restart failed");
