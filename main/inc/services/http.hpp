@@ -4,7 +4,7 @@
 #include "esp_http_server.h"
 #include "helper/json.hpp"
 #include "ipc/queue.hpp"
-#include "services/stm_uart/lappl.hpp"
+#include "services/stm_uart/rssp.hpp"
 
 enum class ControlMode : uint8_t {
   MANUAL,

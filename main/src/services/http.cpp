@@ -24,7 +24,7 @@
 #include "helper/uart.hpp"
 #include "portmacro.h"
 #include "services/http_async_handler.hpp"
-#include "services/stm_uart/lappl.hpp"
+#include "services/stm_uart/rssp.hpp"
 
 const char* get_contorl_mode_str(ControlMode control_mode) {
   switch (control_mode) {
@@ -114,7 +114,7 @@ void HttpService::set_rtc_time(Json* time_json, Json* time_error_json) {
   uint8_t minutes = std::get<double>(minutes_item);
   uint8_t seconds = std::get<double>(seconds_item);
   std::array<uint8_t, 4> time_data = {hours, minutes, seconds, 0};
-  write_address(LapplAddress::RTC_TIME, time_data);
+  write_address(RsspAddress::RTC_TIME, time_data);
 }
 
 void HttpService::set_rtc_date(Json* date_json, Json* date_error_json) {
@@ -133,7 +133,7 @@ void HttpService::set_rtc_date(Json* date_json, Json* date_error_json) {
                                       get_byte(year, 0),
                                       month,
                                       day};
-  write_address(LapplAddress::RTC_DATE, date_data);
+  write_address(RsspAddress::RTC_DATE, date_data);
 }
 
 esp_err_t HttpService::set_rtc(httpd_req_t* req) {
@@ -191,10 +191,10 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   http_service.queue.flush();
 
-  read_addresses({LapplAddress::RUNNING,
-                  LapplAddress::RIGHT_TORQUE,
-                  LapplAddress::LEFT_TORQUE,
-                  LapplAddress::CONTROL_MODE});
+  read_addresses({RsspAddress::RUNNING,
+                  RsspAddress::RIGHT_TORQUE,
+                  RsspAddress::LEFT_TORQUE,
+                  RsspAddress::CONTROL_MODE});
 
   Json res_json;
 
@@ -237,7 +237,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  write_address(LapplAddress::RUNNING, true);
+  write_address(RsspAddress::RUNNING, true);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -246,7 +246,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  write_address(LapplAddress::RUNNING, false);
+  write_address(RsspAddress::RUNNING, false);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -273,7 +273,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
     return ESP_OK;
   }
 
-  write_address(LapplAddress::RIGHT_TORQUE,
+  write_address(RsspAddress::RIGHT_TORQUE,
                 static_cast<float>(std::get<double>(torque)));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -303,7 +303,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
     return ESP_OK;
   }
 
-  write_address(LapplAddress::LEFT_TORQUE,
+  write_address(RsspAddress::LEFT_TORQUE,
                 static_cast<float>(std::get<double>(torque)));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -314,7 +314,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  write_address(LapplAddress::CONTROL_MODE,
+  write_address(RsspAddress::CONTROL_MODE,
                 static_cast<uint8_t>(ControlMode::MANUAL));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -323,7 +323,7 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  write_address(LapplAddress::CONTROL_MODE,
+  write_address(RsspAddress::CONTROL_MODE,
                 static_cast<uint8_t>(ControlMode::AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -332,7 +332,7 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  write_address(LapplAddress::CONTROL_MODE,
+  write_address(RsspAddress::CONTROL_MODE,
                 static_cast<uint8_t>(ControlMode::SEMI_AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -341,7 +341,7 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  write_address(LapplAddress::CONTROL_MODE,
+  write_address(RsspAddress::CONTROL_MODE,
                 static_cast<uint8_t>(ControlMode::SMART));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
@@ -354,14 +354,14 @@ esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   ws_service.enable_stm_cpu_usage();
   start_streams({
-      LapplAddress::LED_SERVICE_CPU_USAGE,
-      LapplAddress::IMU_SERVICE_CPU_USAGE,
-      LapplAddress::MOTOR_SERVICE_CPU_USAGE,
-      LapplAddress::SD_SERVICE_CPU_USAGE,
-      LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
-      LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
-      LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
-      LapplAddress::MONITOR_SERVICE_CPU_USAGE,
+      RsspAddress::LED_SERVICE_CPU_USAGE,
+      RsspAddress::IMU_SERVICE_CPU_USAGE,
+      RsspAddress::MOTOR_SERVICE_CPU_USAGE,
+      RsspAddress::SD_SERVICE_CPU_USAGE,
+      RsspAddress::CAN_RECV_SERVICE_CPU_USAGE,
+      RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+      RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
+      RsspAddress::MONITOR_SERVICE_CPU_USAGE,
   });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -373,14 +373,14 @@ esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   ws_service.disable_stm_cpu_usage();
   stop_streams({
-      LapplAddress::LED_SERVICE_CPU_USAGE,
-      LapplAddress::IMU_SERVICE_CPU_USAGE,
-      LapplAddress::MOTOR_SERVICE_CPU_USAGE,
-      LapplAddress::SD_SERVICE_CPU_USAGE,
-      LapplAddress::CAN_RECV_SERVICE_CPU_USAGE,
-      LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
-      LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
-      LapplAddress::MONITOR_SERVICE_CPU_USAGE,
+      RsspAddress::LED_SERVICE_CPU_USAGE,
+      RsspAddress::IMU_SERVICE_CPU_USAGE,
+      RsspAddress::MOTOR_SERVICE_CPU_USAGE,
+      RsspAddress::SD_SERVICE_CPU_USAGE,
+      RsspAddress::CAN_RECV_SERVICE_CPU_USAGE,
+      RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+      RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
+      RsspAddress::MONITOR_SERVICE_CPU_USAGE,
   });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -405,7 +405,7 @@ esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   ws_service.enable_imu_data();
   start_streams(
-      {LapplAddress::IMU_GX, LapplAddress::IMU_GY, LapplAddress::IMU_GZ});
+      {RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start imu data stream failed");
@@ -415,7 +415,7 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   ws_service.disable_imu_data();
   stop_streams(
-      {LapplAddress::IMU_GX, LapplAddress::IMU_GY, LapplAddress::IMU_GZ});
+      {RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop imu data stream failed");
@@ -424,7 +424,7 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::restart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  send_command(LapplCommand::RESTART);
+  send_command(RsspCommand::RESTART);
   uart_flush(config::stm_uart::port);
   esp_restart();
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),

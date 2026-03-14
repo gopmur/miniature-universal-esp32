@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <optional>
 
-enum class LapplAddress : uint8_t {
+enum class RsspAddress : uint8_t {
   ZERO,
   RUNNING,
   LEFT_TORQUE,
@@ -28,9 +28,9 @@ enum class LapplAddress : uint8_t {
   ADDRESS_COUNT,
 };
 
-enum class LapplCommand : uint8_t { RESTART };
+enum class RsspCommand : uint8_t { RESTART };
 
-enum class LapplType : uint8_t {
+enum class RsspType : uint8_t {
   WRITE,
   READ,
   START_STREAM,
@@ -39,43 +39,43 @@ enum class LapplType : uint8_t {
   COMMAND
 };
 
-struct _LapplHeader {
-  LapplType type : 3;  // bits 6..5
+struct _RsspHeader {
+  RsspType type : 3;  // bits 6..5
   uint8_t ack : 1;     // bit 4
   uint8_t resp : 1;    // bit 3
   uint8_t _res : 2;    // bits 2..0 (must be zero) maybe can be used for version
                        // control ???
 };
 
-union LapplHeader {
+union RsspHeader {
   uint8_t u8;
-  _LapplHeader b;
+  _RsspHeader b;
 };
 
-struct LapplPacket {
-  LapplHeader header;
+struct RsspPacket {
+  RsspHeader header;
   uint8_t sign;
-  LapplAddress address;
+  RsspAddress address;
   uint8_t data[4];
   uint8_t check_sum;
 
-  static LapplPacket make_read_response_packet(LapplAddress address,
+  static RsspPacket make_read_response_packet(RsspAddress address,
                                                std::array<uint8_t, 4> data);
-  static LapplPacket make_read_response_packet(LapplAddress address, bool data);
-  static LapplPacket make_read_response_packet(LapplAddress address,
+  static RsspPacket make_read_response_packet(RsspAddress address, bool data);
+  static RsspPacket make_read_response_packet(RsspAddress address,
                                                float data);
-  static LapplPacket make_read_response_packet(LapplAddress address,
+  static RsspPacket make_read_response_packet(RsspAddress address,
                                                uint8_t data);
-  static LapplPacket make_read_packet(LapplAddress address);
-  static LapplPacket make_write_packet(LapplAddress address,
+  static RsspPacket make_read_packet(RsspAddress address);
+  static RsspPacket make_write_packet(RsspAddress address,
                                        std::array<uint8_t, 4> data);
-  static LapplPacket make_write_packet(LapplAddress address, bool data);
-  static LapplPacket make_write_packet(LapplAddress address, float data);
-  static LapplPacket make_write_packet(LapplAddress address, uint8_t data);
-  static LapplPacket make_start_stream_packet(LapplAddress address);
-  static LapplPacket make_stop_stream_packet(LapplAddress address);
-  static LapplPacket make_eoc_packet();
-  static LapplPacket make_command_packet(LapplCommand command);
+  static RsspPacket make_write_packet(RsspAddress address, bool data);
+  static RsspPacket make_write_packet(RsspAddress address, float data);
+  static RsspPacket make_write_packet(RsspAddress address, uint8_t data);
+  static RsspPacket make_start_stream_packet(RsspAddress address);
+  static RsspPacket make_stop_stream_packet(RsspAddress address);
+  static RsspPacket make_eoc_packet();
+  static RsspPacket make_command_packet(RsspCommand command);
 
   float get_float();
   uint8_t get_uint8();
@@ -93,11 +93,11 @@ struct LapplPacket {
   void pack();
 };
 
-class Lappl {
+class Rssp {
   private:
   static int i;
-  static LapplPacket packet;
+  static RsspPacket packet;
 
   public:
-  static std::optional<LapplPacket> read_stream(uint8_t lappl_byte);
+  static std::optional<RsspPacket> read_stream(uint8_t rssp_byte);
 };

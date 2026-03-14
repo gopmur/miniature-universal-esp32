@@ -4,7 +4,7 @@
 #include "helper/json.hpp"
 #include "ipc/queue.hpp"
 #include "service.hpp"
-#include "services/stm_uart/lappl.hpp"
+#include "services/stm_uart/rssp.hpp"
 
 class WebSocketService
     : public AbstractService<config::service::ws::stack_size> {
@@ -17,7 +17,7 @@ class WebSocketService
   int connection_count;
   bool should_wait_for_eoc();
   void fill_esp_cpu_usage_json(Json* esp_cpu_usage_json);
-  void fill_json_with_packet_data(LapplPacket packet,
+  void fill_json_with_packet_data(RsspPacket packet,
                                   Json* stm_cpu_usage_json,
                                   Json* imu_data_json);
   void fill_root_json(Json* json,
@@ -29,7 +29,7 @@ class WebSocketService
   static void main(WebSocketService* self);
 
   public:
-  Queue<LapplPacket, 32> queue;
+  Queue<RsspPacket, 32> queue;
   WebSocketService(int priority);
   bool has_connections();
   void start();

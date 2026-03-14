@@ -7,7 +7,7 @@
 #include "esp_log.h"
 #include "portmacro.h"
 #include "service.hpp"
-#include "services/stm_uart/lappl.hpp"
+#include "services/stm_uart/rssp.hpp"
 
 WebSocketService::WebSocketService(int priority)
     : AbstractService(priority),
@@ -58,33 +58,33 @@ void WebSocketService::fill_esp_cpu_usage_json(Json* esp_cpu_usage_json) {
   esp_cpu_usage_json->set_number("ws", monitoring_data.ws_service_cpu_usage);
 }
 
-void WebSocketService::fill_json_with_packet_data(LapplPacket packet,
+void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
                                                   Json* stm_cpu_usage_json,
                                                   Json* imu_data_json) {
   if (this->stm_cpu_usage_enabled) {
     switch (packet.address) {
-      case LapplAddress::LED_SERVICE_CPU_USAGE:
+      case RsspAddress::LED_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("led", packet.get_float());
         break;
-      case LapplAddress::IMU_SERVICE_CPU_USAGE:
+      case RsspAddress::IMU_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("imu", packet.get_float());
         break;
-      case LapplAddress::MOTOR_SERVICE_CPU_USAGE:
+      case RsspAddress::MOTOR_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("motor", packet.get_float());
         break;
-      case LapplAddress::SD_SERVICE_CPU_USAGE:
+      case RsspAddress::SD_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("sd", packet.get_float());
         break;
-      case LapplAddress::CAN_RECV_SERVICE_CPU_USAGE:
+      case RsspAddress::CAN_RECV_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("canRecv", packet.get_float());
         break;
-      case LapplAddress::ESP_UART_RX_SERVICE_CPU_USAGE:
+      case RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("uartRx", packet.get_float());
         break;
-      case LapplAddress::ESP_UART_TX_SERVICE_CPU_USAGE:
+      case RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("uartTx", packet.get_float());
         break;
-      case LapplAddress::MONITOR_SERVICE_CPU_USAGE:
+      case RsspAddress::MONITOR_SERVICE_CPU_USAGE:
         stm_cpu_usage_json->set_number("monitor", packet.get_float());
         break;
       default:
@@ -93,13 +93,13 @@ void WebSocketService::fill_json_with_packet_data(LapplPacket packet,
   }
   if (this->imu_data_enabled) {
     switch (packet.address) {
-      case LapplAddress::IMU_GX:
+      case RsspAddress::IMU_GX:
         imu_data_json->set_number("x", packet.get_float());
         break;
-      case LapplAddress::IMU_GY:
+      case RsspAddress::IMU_GY:
         imu_data_json->set_number("y", packet.get_float());
         break;
-      case LapplAddress::IMU_GZ:
+      case RsspAddress::IMU_GZ:
         imu_data_json->set_number("z", packet.get_float());
         break;
       default:
@@ -156,7 +156,7 @@ void WebSocketService::main(WebSocketService* self) {
         auto packet = self->queue.receive(100);
         if (!packet.has_value())
           continue;
-        if (packet->header.b.type == LapplType::EOC) {
+        if (packet->header.b.type == RsspType::EOC) {
           self->queue.flush();
           if (self->esp_cpu_usage_enabled) {
             self->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
