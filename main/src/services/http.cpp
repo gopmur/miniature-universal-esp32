@@ -414,8 +414,7 @@ esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
 esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   ws_service.disable_imu_data();
-  stop_streams(
-      {RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
+  stop_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop imu data stream failed");
@@ -443,6 +442,30 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   if (req->method == HTTP_GET) {
     auto client_fd = httpd_req_to_sockfd(req);
     ws_service.start_sending(client_fd);
+    return ESP_OK;
+  }
+  httpd_ws_frame_t ws_frame;
+  memset(&ws_frame, 0, sizeof(ws_frame));
+  ws_frame.type = HTTPD_WS_TYPE_TEXT;
+  httpd_ws_recv_frame(req, &ws_frame, 0);
+  if (ws_frame.len) {
+    ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
+    httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
+    ws_frame.payload[ws_frame.len] = 0;
+
+    Json data(reinterpret_cast<char*>(ws_frame.payload));
+    auto left_torque = data.get_number("leftTorque");
+    auto right_torque = data.get_number("rightTorque");
+    if (std::holds_alternative<double>(left_torque)) {
+      write_address(RsspAddress::LEFT_TORQUE,
+                    static_cast<float>(std::get<double>(left_torque)));
+    }
+    if (std::holds_alternative<double>(right_torque)) {
+      write_address(RsspAddress::RIGHT_TORQUE,
+                    static_cast<float>(std::get<double>(right_torque)));
+    }
+
+    free(ws_frame.payload);
   }
   return ESP_OK;
 }
