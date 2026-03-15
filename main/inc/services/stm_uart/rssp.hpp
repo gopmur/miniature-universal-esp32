@@ -23,6 +23,8 @@ enum class RsspAddress : uint8_t {
   MONITOR_SERVICE_CPU_USAGE,
   RTC_TIME,
   RTC_DATE,
+  MOTOR_POS_LEFT,
+  MOTOR_POS_RIGHT,
   TEST_RANDOM,
   TEST_ZERO,
   ADDRESS_COUNT,
@@ -41,10 +43,10 @@ enum class RsspType : uint8_t {
 
 struct _RsspHeader {
   RsspType type : 3;  // bits 6..5
-  uint8_t ack : 1;     // bit 4
-  uint8_t resp : 1;    // bit 3
-  uint8_t _res : 2;    // bits 2..0 (must be zero) maybe can be used for version
-                       // control ???
+  uint8_t ack : 1;    // bit 4
+  uint8_t resp : 1;   // bit 3
+  uint8_t _res : 2;   // bits 2..0 (must be zero) maybe can be used for version
+                      // control ???
 };
 
 union RsspHeader {
@@ -60,18 +62,22 @@ struct RsspPacket {
   uint8_t check_sum;
 
   static RsspPacket make_read_response_packet(RsspAddress address,
-                                               std::array<uint8_t, 4> data);
+                                              std::array<uint8_t, 4> data);
   static RsspPacket make_read_response_packet(RsspAddress address, bool data);
+  static RsspPacket make_read_response_packet(RsspAddress address, float data);
   static RsspPacket make_read_response_packet(RsspAddress address,
-                                               float data);
-  static RsspPacket make_read_response_packet(RsspAddress address,
-                                               uint8_t data);
+                                              uint8_t data);
   static RsspPacket make_read_packet(RsspAddress address);
   static RsspPacket make_write_packet(RsspAddress address,
-                                       std::array<uint8_t, 4> data);
+                                      std::array<uint8_t, 4> data);
   static RsspPacket make_write_packet(RsspAddress address, bool data);
   static RsspPacket make_write_packet(RsspAddress address, float data);
   static RsspPacket make_write_packet(RsspAddress address, uint8_t data);
+  static RsspPacket make_write_packet(RsspAddress address, uint16_t data);
+  static RsspPacket make_write_packet(RsspAddress address, uint32_t data);
+  static RsspPacket make_write_packet(RsspAddress address, int8_t data);
+  static RsspPacket make_write_packet(RsspAddress address, int16_t data);
+  static RsspPacket make_write_packet(RsspAddress address, int32_t data);
   static RsspPacket make_start_stream_packet(RsspAddress address);
   static RsspPacket make_stop_stream_packet(RsspAddress address);
   static RsspPacket make_eoc_packet();
@@ -80,6 +86,8 @@ struct RsspPacket {
   float get_float();
   uint8_t get_uint8();
   bool get_bool();
+  uint32_t get_uint32();
+  uint16_t get_uint16();
 
   void recreate_sign_bits();
   bool check_integrity();

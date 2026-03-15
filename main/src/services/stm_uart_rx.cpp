@@ -3,6 +3,8 @@
 #include "context/services/http.hpp"
 #include "context/services/ws.hpp"
 #include "driver/uart.h"
+#include "esp_log.h"
+#include "esp_log_level.h"
 #include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
 #include "portmacro.h"
@@ -57,18 +59,15 @@ void StmUartRxService::main(StmUartRxService* self) {
             break;
 
           default:
-
             if (ws_service.has_connections()) {
               ws_service.queue.send(packet.value(), portMAX_DELAY);
             }
-            
             break;
         }
       }
 
       else if (packet->header.b.resp == 1 &&
-               packet->header.b.type == RsspType::EOC)
-      {
+               packet->header.b.type == RsspType::EOC) {
         if (ws_service.has_connections()) {
           ws_service.queue.send(packet.value(), portMAX_DELAY);
         }

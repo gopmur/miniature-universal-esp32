@@ -40,12 +40,20 @@ void WebSocketService::disable_imu_data() {
   this->imu_data_enabled = false;
 }
 
+void WebSocketService::enable_motor_data() {
+  this->motor_data_enabled = true;
+}
+void WebSocketService::disable_motor_data() {
+  this->motor_data_enabled = false;
+}
+
 bool WebSocketService::has_connections() {
   return connection_count > 0;
 }
 
 bool WebSocketService::should_wait_for_eoc() {
-  return this->imu_data_enabled || this->stm_cpu_usage_enabled;
+  return this->imu_data_enabled || this->stm_cpu_usage_enabled ||
+         this->motor_data_enabled;
 }
 
 void WebSocketService::fill_esp_cpu_usage_json(Json* esp_cpu_usage_json) {
@@ -60,7 +68,8 @@ void WebSocketService::fill_esp_cpu_usage_json(Json* esp_cpu_usage_json) {
 
 void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
                                                   Json* stm_cpu_usage_json,
-                                                  Json* imu_data_json) {
+                                                  Json* imu_data_json,
+                                                  Json* motor_data_json) {
   if (this->stm_cpu_usage_enabled) {
     switch (packet.address) {
       case RsspAddress::LED_SERVICE_CPU_USAGE:
@@ -106,18 +115,33 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
         break;
     }
   }
+  if (this->motor_data_enabled) {
+    switch (packet.address) {
+      case RsspAddress::MOTOR_POS_LEFT:
+        motor_data_json->set_number("leftPosition", packet.get_uint16());
+        break;
+      case RsspAddress::MOTOR_POS_RIGHT:
+        motor_data_json->set_number("rightPosition", packet.get_uint16());
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 void WebSocketService::fill_root_json(Json* json,
                                       Json* stm_cpu_usage_json,
                                       Json* esp_cpu_usage_json,
-                                      Json* imu_data_json) {
+                                      Json* imu_data_json,
+                                      Json* motor_data_json) {
   if (this->stm_cpu_usage_enabled)
     json->set_object("stmCpuUsage", stm_cpu_usage_json);
   if (this->esp_cpu_usage_enabled)
     json->set_object("espCpuUsage", esp_cpu_usage_json);
   if (this->imu_data_enabled)
     json->set_object("imu", imu_data_json);
+  if (this->motor_data_enabled)
+    json->set_object("motor", motor_data_json);
 }
 
 void WebSocketService::send_to_connections(const char* data) {
@@ -144,6 +168,7 @@ void WebSocketService::main(WebSocketService* self) {
   Json esp_cpu_usage_json;
   Json stm_cpu_usage_json;
   Json imu_data_json;
+  Json motor_data_json;
 
   while (true) {
     self->wait_for_notification();
@@ -164,20 +189,23 @@ void WebSocketService::main(WebSocketService* self) {
           self->fill_root_json(&json,
                                &stm_cpu_usage_json,
                                &esp_cpu_usage_json,
-                               &imu_data_json);
-          char* json_str = json.stringify();
-          json = Json();
-          esp_cpu_usage_json = Json();
-          stm_cpu_usage_json = Json();
-          imu_data_json = Json();
-
-          self->send_to_connections(json_str);
-          free(json_str);
+                               &imu_data_json,
+                               &motor_data_json);
+          if (!json.is_empty()) {
+            char* json_str = json.stringify();
+            self->send_to_connections(json_str);
+            json = Json();
+            esp_cpu_usage_json = Json();
+            stm_cpu_usage_json = Json();
+            imu_data_json = Json();
+            free(json_str);
+          }
 
         } else {
           self->fill_json_with_packet_data(packet.value(),
                                            &stm_cpu_usage_json,
-                                           &imu_data_json);
+                                           &imu_data_json,
+                                           &motor_data_json);
         }
 
       }
@@ -187,14 +215,17 @@ void WebSocketService::main(WebSocketService* self) {
         self->fill_root_json(&json,
                              &stm_cpu_usage_json,
                              &esp_cpu_usage_json,
-                             &imu_data_json);
-        char* json_str = json.stringify();
-        json = Json();
-        esp_cpu_usage_json = Json();
-        stm_cpu_usage_json = Json();
-        imu_data_json = Json();
-        self->send_to_connections(json_str);
-        free(json_str);
+                             &imu_data_json,
+                             &motor_data_json);
+        if (!json.is_empty()) {
+          char* json_str = json.stringify();
+          json = Json();
+          esp_cpu_usage_json = Json();
+          stm_cpu_usage_json = Json();
+          imu_data_json = Json();
+          self->send_to_connections(json_str);
+          free(json_str);
+        }
         vTaskDelay(25);
       }
     }

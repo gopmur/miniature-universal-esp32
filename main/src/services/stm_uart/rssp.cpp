@@ -10,6 +10,13 @@ RsspPacket Rssp::packet;
 float RsspPacket::get_float() {
   return f_concat(this->data[0], this->data[1], this->data[2], this->data[3]);
 }
+uint32_t RsspPacket::get_uint32() {
+  return u32_concat(this->data[0], this->data[1], this->data[2], this->data[3]);
+}
+
+uint16_t RsspPacket::get_uint16() {
+  return u16_concat(this->data[0], this->data[1]);
+}
 
 uint8_t RsspPacket::get_uint8() {
   return this->data[0];
@@ -78,9 +85,8 @@ RsspPacket RsspPacket::make_command_packet(RsspCommand command) {
   return packet;
 }
 
-RsspPacket RsspPacket::make_read_response_packet(
-    RsspAddress address,
-    std::array<uint8_t, 4> data) {
+RsspPacket RsspPacket::make_read_response_packet(RsspAddress address,
+                                                 std::array<uint8_t, 4> data) {
   RsspPacket packet;
   packet.header.b.type = RsspType::READ;
   packet.header.b.resp = 1;
@@ -93,19 +99,19 @@ RsspPacket RsspPacket::make_read_response_packet(
 }
 
 RsspPacket RsspPacket::make_read_response_packet(RsspAddress address,
-                                                   bool data) {
+                                                 bool data) {
   std::array<uint8_t, 4> raw_data = {data, 0, 0, 0};
   return make_read_response_packet(address, raw_data);
 }
 
 RsspPacket RsspPacket::make_read_response_packet(RsspAddress address,
-                                                   uint8_t data) {
+                                                 uint8_t data) {
   std::array<uint8_t, 4> raw_data = {data, 0, 0, 0};
   return make_read_response_packet(address, raw_data);
 }
 
 RsspPacket RsspPacket::make_read_response_packet(RsspAddress address,
-                                                   float data) {
+                                                 float data) {
   std::array<uint8_t, 4> raw_data = {get_byte(data, 0),
                                      get_byte(data, 1),
                                      get_byte(data, 2),
@@ -114,7 +120,7 @@ RsspPacket RsspPacket::make_read_response_packet(RsspAddress address,
 }
 
 RsspPacket RsspPacket::make_write_packet(RsspAddress address,
-                                           std::array<uint8_t, 4> data) {
+                                         std::array<uint8_t, 4> data) {
   RsspPacket packet;
   packet.header.b.type = RsspType::WRITE;
   packet.header.b.resp = 0;
@@ -142,6 +148,28 @@ RsspPacket RsspPacket::make_write_packet(RsspAddress address, float data) {
                                      get_byte(data, 2),
                                      get_byte(data, 3)};
   return make_write_packet(address, raw_data);
+}
+
+RsspPacket RsspPacket::make_write_packet(RsspAddress address, uint16_t data) {
+  std::array<uint8_t, 4> raw_data = {get_low(data), get_high(data), 0, 0};
+  return make_write_packet(address, raw_data);
+}
+RsspPacket RsspPacket::make_write_packet(RsspAddress address, uint32_t data) {
+  std::array<uint8_t, 4> raw_data = {get_byte(data, 0),
+                                     get_byte(data, 1),
+                                     get_byte(data, 2),
+                                     get_byte(data, 3)};
+  return make_write_packet(address, raw_data);
+}
+
+RsspPacket RsspPacket::make_write_packet(RsspAddress address, int8_t data) {
+  return make_write_packet(address, static_cast<uint8_t>(data));
+}
+RsspPacket RsspPacket::make_write_packet(RsspAddress address, int16_t data) {
+  return make_write_packet(address, static_cast<uint16_t>(data));
+}
+RsspPacket RsspPacket::make_write_packet(RsspAddress address, int32_t data) {
+  return make_write_packet(address, static_cast<uint32_t>(data));
 }
 
 std::array<uint8_t, 8> RsspPacket::get_raw_packet() {
@@ -225,7 +253,6 @@ bool RsspPacket::check_integrity() {
 
 std::optional<RsspPacket> Rssp::read_stream(uint8_t input) {
   if (get_bit(input, 7)) {
-
     i = 0;
     packet.header.u8 = input;
     i++;

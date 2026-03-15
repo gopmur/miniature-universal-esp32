@@ -421,6 +421,26 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
+  allow_cors(req);
+  ws_service.enable_motor_data();
+  start_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+  HttpService::LOG_TAG,
+  "Start motor data stream failed");
+  return ESP_OK;
+}
+
+esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
+  allow_cors(req);
+  ws_service.disable_motor_data();
+  stop_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop motor data stream failed");
+  return ESP_OK;
+}
+
 esp_err_t HttpService::restart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   send_command(RsspCommand::RESTART);
@@ -565,6 +585,12 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/streams/stop/stm_cpu_usage",
                           HTTP_GET,
                           HttpService::stop_stm_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/start/motor",
+                          HTTP_GET,
+                          HttpService::start_motor_data_stream_handler);
+  this->register_http_uri("/api/streams/stop/motor",
+                          HTTP_GET,
+                          HttpService::stop_motor_data_stream_handler);
   this->register_http_uri("/api/streams/start/esp_cpu_usage",
                           HTTP_GET,
                           HttpService::start_esp_cpu_usage_stream_handler);

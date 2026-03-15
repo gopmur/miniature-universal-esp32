@@ -69,6 +69,8 @@ class HttpService {
   static esp_err_t stop_esp_cpu_usage_stream_handler(httpd_req_t* req);
   static esp_err_t start_imu_data_stream_handler(httpd_req_t* req);
   static esp_err_t stop_imu_data_stream_handler(httpd_req_t* req);
+  static esp_err_t start_motor_data_stream_handler(httpd_req_t* req);
+  static esp_err_t stop_motor_data_stream_handler(httpd_req_t* req);
 
   static esp_err_t scan_wifi_handler(httpd_req_t* req);
   static esp_err_t connect_to_wifi_handler(httpd_req_t* req);

@@ -59,6 +59,12 @@ inline float f_concat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
   return x.f;
 }
 
+inline uint16_t u16_concat(uint8_t low, uint8_t high) {
+  uint32_t u0 = low;
+  uint32_t u1 = high;
+  return (u1 << 8) | u0;
+}
+
 template <typename T>
 inline bool get_bit(T n, int bit) {
   return (n >> bit) & 1;
@@ -72,4 +78,24 @@ inline T set_bit(T n, int bit) {
 template <typename T>
 inline T unset_bit(T n, int bit) {
   return n & (~(1 << bit));
+}
+
+/**
+ * @brief Extracts the high byte from a 16-bit value.
+ *
+ * @param v 16-bit value.
+ * @return uint8_t High byte of the value.
+ */
+inline uint8_t get_high(uint16_t v) {
+  return (v >> 8) & ((1 << 8) - 1);
+}
+
+/**
+ * @brief Extracts the low byte from a 16-bit value.
+ *
+ * @param v 16-bit value.
+ * @return uint8_t Low byte of the value.
+ */
+inline uint8_t get_low(uint16_t v) {
+  return v & ((1 << 8) - 1);
 }
