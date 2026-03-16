@@ -5,6 +5,7 @@
 #include "context/services/http.hpp"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "portmacro.h"
 #include "service.hpp"
 #include "services/stm_uart/rssp.hpp"
@@ -174,6 +175,7 @@ void WebSocketService::main(WebSocketService* self) {
     self->wait_for_notification();
 
     while (true) {
+      uint64_t microseconds = esp_timer_get_time();
       if (!self->has_connections()) {
         break;
       }
@@ -192,6 +194,7 @@ void WebSocketService::main(WebSocketService* self) {
                                &imu_data_json,
                                &motor_data_json);
           if (!json.is_empty()) {
+            json.set_number("microseconds", microseconds);
             char* json_str = json.stringify();
             self->send_to_connections(json_str);
             json = Json();
@@ -218,6 +221,7 @@ void WebSocketService::main(WebSocketService* self) {
                              &imu_data_json,
                              &motor_data_json);
         if (!json.is_empty()) {
+          json.set_number("microseconds", microseconds);
           char* json_str = json.stringify();
           json = Json();
           esp_cpu_usage_json = Json();
