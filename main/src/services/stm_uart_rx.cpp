@@ -12,17 +12,17 @@
 #include "services/stm_uart/rssp.hpp"
 
 StmUartRxService::StmUartRxService(int priority, uart_port_t port)
-    : AbstractService(priority), port(port) {}
+    : AbstractService(priority, "stm_uart_rx"), port(port) {}
 
-void StmUartRxService::main(StmUartRxService* self) {
+void StmUartRxService::main() {
   while (true) {
-    int bytes_read = uart_read_bytes(self->port, self->rx_buffer, 1024, 0);
+    int bytes_read = uart_read_bytes(this->port, this->rx_buffer, 1024, 0);
     if (bytes_read <= 0) {
       vTaskDelay(10);
       continue;
     }
     for (int i = 0; i < bytes_read; i++) {
-      auto packet = Rssp::read_stream(self->rx_buffer[i]);
+      auto packet = Rssp::read_stream(this->rx_buffer[i]);
       if (!packet.has_value()) {
         continue;
       }
@@ -74,8 +74,4 @@ void StmUartRxService::main(StmUartRxService* self) {
       }
     }
   }
-}
-
-void StmUartRxService::start() {
-  START_SERVICE("stm_uart_rx_service");
 }

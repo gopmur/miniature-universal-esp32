@@ -38,6 +38,9 @@ class Json {
   std::variant<double, JsonError> get_number(const char* name);
   std::variant<double, JsonError> get_number(const char* name,
                                              Json* error_object);
+  std::variant<char*, JsonError> get_string(const char* name);
+  std::variant<char*, JsonError> get_string(const char* name,
+                                            Json* error_object);
 
   char* stringify();
 };

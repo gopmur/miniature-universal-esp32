@@ -121,6 +121,25 @@ std::variant<double, JsonError> Json::get_number(const char* name,
   return number;
 }
 
+std::variant<char*, JsonError> Json::get_string(const char* name) {
+  auto item = cJSON_GetObjectItem(this->root, name);
+  if (item == nullptr) {
+    return JsonError::NOT_PROVIDED;
+  } else if (!cJSON_IsString(item)) {
+    return JsonError::NOT_A_NUMBER;
+  } else {
+    return cJSON_GetStringValue(item);
+  }
+}
+
+std::variant<char*, JsonError> Json::get_string(const char* name, Json* error_object) {
+  auto string = this->get_string(name);
+  if (std::holds_alternative<JsonError>(string)) {
+    error_object->set_error(name, std::get<JsonError>(string));
+  }
+  return string;  
+}
+
 Json::Json(const Json& other) : owned(true) {
   if (other.root) {
     root = cJSON_Duplicate(other.root, 1);

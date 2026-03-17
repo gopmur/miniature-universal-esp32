@@ -4,9 +4,9 @@
 #include "hal/gpio_types.h"
 #include "service.hpp"
 
-LedService::LedService(int priority) : AbstractService(priority) {}
+LedService::LedService(int priority) : AbstractService(priority, "led") {}
 
-void LedService::main(LedService* self) {
+void LedService::main() {
   gpio_config_t led_config = {
       .pin_bit_mask = (1ULL << GPIO_NUM_2),
       .mode = GPIO_MODE_OUTPUT,
@@ -23,8 +23,4 @@ void LedService::main(LedService* self) {
     gpio_set_level(GPIO_NUM_2, 0);
     vTaskDelay(100);
   }
-}
-
-void LedService::start() {
-  START_SERVICE("led_service");
 }

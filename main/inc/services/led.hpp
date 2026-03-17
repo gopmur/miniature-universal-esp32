@@ -5,12 +5,10 @@
 #include "led/modes.hpp"
 #include "service.hpp"
 
-class LedService : public AbstractService<config::service::led::stack_size> {
- private:
-  static void main(LedService* self);
-
- public:
+class LedService
+    : public AbstractService<LedService, config::service::led::stack_size> {
+  public:
+  void main();
   LedService(int priority);
   Queue<LedStatus, config::service::led::queue_len> queue;
-  void start();
 };

@@ -11,20 +11,17 @@
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_wifi_types_generic.h"
 #include "helper.hpp"
 #include "helper/json.hpp"
 #include "http_assets.hpp"
 #include "http_parser.h"
 
 #include "context/services/http.hpp"
-#include "context/services/http_async_handler.hpp"
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
-#include "portmacro.h"
-#include "services/http_async_handler.hpp"
 #include "services/stm_uart/rssp.hpp"
+#include "threads/scan_wifis.hpp"
+#include "threads/wifi_connection.hpp"
 
 const char* get_contorl_mode_str(ControlMode control_mode) {
   switch (control_mode) {
@@ -88,16 +85,22 @@ esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
   allow_cors(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
-  HttpAsyncHandlerMessage http_async_handler_message = {
-      .type = HttpAsyncHandlerMessageType::SCAN_WIFI,
-      .req = async_req,
-  };
-  http_async_handler_service.queue.send(http_async_handler_message,
-                                        portMAX_DELAY);
+  ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
+  scan_wifis_thread.start(&async_req);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
   return ESP_OK;
 }
 
 esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
+  allow_cors(req);
+  httpd_resp_set_type(req, "application/json");
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  WifiConnectionThread wifi_connection_thread("wifi_connection", 5, 4096);
+  wifi_connection_thread.start(&async_req);
   return ESP_OK;
 }
 
@@ -426,8 +429,8 @@ esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
   ws_service.enable_motor_data();
   start_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-  HttpService::LOG_TAG,
-  "Start motor data stream failed");
+                      HttpService::LOG_TAG,
+                      "Start motor data stream failed");
   return ESP_OK;
 }
 
@@ -600,6 +603,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/wifi/scan",
                           HTTP_GET,
                           HttpService::scan_wifi_handler);
+  this->register_http_uri("/api/wifi/connect",
+                          HTTP_POST,
+                          HttpService::connect_to_wifi_handler);
   this->register_http_uri_with_option("/api/start",
                                       HTTP_PUT,
                                       HttpService::start_handler);
@@ -634,7 +640,7 @@ esp_err_t HttpService::register_dynamic_endpoints() {
 
 void HttpService::start() {
   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
-  http_config.max_uri_handlers = 32;
+  http_config.max_uri_handlers = 64;
   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
   http_server_register_assets(server_instance);
   ESP_ERROR_CHECK(register_dynamic_endpoints());

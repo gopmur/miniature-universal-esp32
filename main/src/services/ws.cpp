@@ -11,7 +11,7 @@
 #include "services/stm_uart/rssp.hpp"
 
 WebSocketService::WebSocketService(int priority)
-    : AbstractService(priority),
+    : AbstractService(priority, "ws"),
       esp_cpu_usage_enabled(false),
       stm_cpu_usage_enabled(false),
       imu_data_enabled(false) {
@@ -164,7 +164,7 @@ void WebSocketService::send_to_connections(const char* data) {
   }
 }
 
-void WebSocketService::main(WebSocketService* self) {
+void WebSocketService::main() {
   Json json;
   Json esp_cpu_usage_json;
   Json stm_cpu_usage_json;
@@ -172,23 +172,23 @@ void WebSocketService::main(WebSocketService* self) {
   Json motor_data_json;
 
   while (true) {
-    self->wait_for_notification();
+    this->wait_for_notification();
 
     while (true) {
       uint64_t microseconds = esp_timer_get_time();
-      if (!self->has_connections()) {
+      if (!this->has_connections()) {
         break;
       }
-      if (self->should_wait_for_eoc()) {
-        auto packet = self->queue.receive(100);
+      if (this->should_wait_for_eoc()) {
+        auto packet = this->queue.receive(100);
         if (!packet.has_value())
           continue;
         if (packet->header.b.type == RsspType::EOC) {
-          self->queue.flush();
-          if (self->esp_cpu_usage_enabled) {
-            self->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
+          this->queue.flush();
+          if (this->esp_cpu_usage_enabled) {
+            this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
           }
-          self->fill_root_json(&json,
+          this->fill_root_json(&json,
                                &stm_cpu_usage_json,
                                &esp_cpu_usage_json,
                                &imu_data_json,
@@ -196,7 +196,7 @@ void WebSocketService::main(WebSocketService* self) {
           if (!json.is_empty()) {
             json.set_number("microseconds", microseconds);
             char* json_str = json.stringify();
-            self->send_to_connections(json_str);
+            this->send_to_connections(json_str);
             json = Json();
             esp_cpu_usage_json = Json();
             stm_cpu_usage_json = Json();
@@ -205,7 +205,7 @@ void WebSocketService::main(WebSocketService* self) {
           }
 
         } else {
-          self->fill_json_with_packet_data(packet.value(),
+          this->fill_json_with_packet_data(packet.value(),
                                            &stm_cpu_usage_json,
                                            &imu_data_json,
                                            &motor_data_json);
@@ -214,8 +214,8 @@ void WebSocketService::main(WebSocketService* self) {
       }
 
       else {
-        self->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
-        self->fill_root_json(&json,
+        this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
+        this->fill_root_json(&json,
                              &stm_cpu_usage_json,
                              &esp_cpu_usage_json,
                              &imu_data_json,
@@ -227,7 +227,7 @@ void WebSocketService::main(WebSocketService* self) {
           esp_cpu_usage_json = Json();
           stm_cpu_usage_json = Json();
           imu_data_json = Json();
-          self->send_to_connections(json_str);
+          this->send_to_connections(json_str);
           free(json_str);
         }
         vTaskDelay(25);
@@ -287,8 +287,4 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
-}
-
-void WebSocketService::start() {
-  START_SERVICE("ws_service");
 }

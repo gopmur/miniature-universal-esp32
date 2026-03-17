@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include "cc.h"
 
-#include "config.hpp"
 #include "esp_err.h"
-#include "freertos/idf_additions.h"
 #include "lwip/sockets.h"
 
 #include "service.hpp"
@@ -14,7 +12,7 @@
 #include "services/dns.hpp"
 
 DnsService::DnsService(int priority, const char* iface_address)
-    : AbstractService(priority) {
+    : AbstractService(priority, "dns") {
   inet_pton(AF_INET, iface_address, &this->iface_address);
 }
 
@@ -56,11 +54,11 @@ void DnsService::make_dns_response(DNSPacket& packet, int parse_err) {
   }
 }
 
-void DnsService::main(DnsService* service) {
+void DnsService::main() {
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in sock_addres = {};
-  sock_addres.sin_addr.s_addr = service->iface_address;
+  sock_addres.sin_addr.s_addr = this->iface_address;
   sock_addres.sin_port = htons(53);
   sock_addres.sin_family = AF_INET;
 
@@ -83,10 +81,10 @@ void DnsService::main(DnsService* service) {
              &client_address_len);
 
     int ret = packet.parse(buf, BUFFER_SIZE, nullptr);
-    if (service->drop_packet(packet)) {
+    if (this->drop_packet(packet)) {
       continue;
     }
-    service->make_dns_response(packet, ret);
+    this->make_dns_response(packet, ret);
     int answer_size;
     packet.copy(buf, BUFFER_SIZE, &answer_size);
     sendto(sock,
@@ -97,7 +95,3 @@ void DnsService::main(DnsService* service) {
            client_address_len);
   }
 };
-
-void DnsService::start() {
-  START_SERVICE("dns_service")
-}

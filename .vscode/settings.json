@@ -1,11 +1,11 @@
 {
   "cSpell.words": [
     "APSTA",
+    "bssid",
     "EINVAL",
     "FLOWCTRL",
     "Gopmur",
     "hexa",
-    "Rssp",
     "LOGI",
     "LOGW",
     "netif",
@@ -14,6 +14,7 @@
     "Rssp",
     "SRCS",
     "TXTFILES",
+    "Wifis",
     "Wmissing"
   ]
 }

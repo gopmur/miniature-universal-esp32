@@ -52,10 +52,5 @@ namespace config {
       constexpr auto stack_size = 4096;
     }
 
-    namespace http_async_handler {
-      constexpr auto priority = 2;
-      constexpr auto stack_size = 4096;
-    }
-
   }
 }

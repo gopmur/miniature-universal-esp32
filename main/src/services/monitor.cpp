@@ -2,14 +2,16 @@
 #include "freertos/idf_additions.h"
 #include "service.hpp"
 
+#include "context/monitoring_data.hpp"
 #include "context/services/dns.hpp"
 #include "context/services/led.hpp"
 #include "context/services/stm_uart_rx.hpp"
 #include "context/services/ws.hpp"
 
-MonitorService::MonitorService(int priority) : AbstractService(priority) {}
+MonitorService::MonitorService(int priority)
+    : AbstractService(priority, "monitor") {}
 
-void MonitorService::main(MonitorService* self) {
+void MonitorService::main() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wvla-cxx-extension"
   TaskStatus_t task_status[32];
@@ -34,14 +36,10 @@ void MonitorService::main(MonitorService* self) {
       } else if (task_handle == ws_service.get_thread_id()) {
         monitoring_data.ws_service_cpu_usage =
             ws_service.calculate_cpu_usage(runtime, total_runtime);
-      } else if (task_handle == self->thread_id) {
+      } else if (task_handle == this->thread_id) {
         monitoring_data.monitor_service_cpu_usage =
-            self->calculate_cpu_usage(runtime, total_runtime);
+            this->calculate_cpu_usage(runtime, total_runtime);
       }
     }
   }
-}
-
-void MonitorService::start() {
-  START_SERVICE("monitor_service");
 }
