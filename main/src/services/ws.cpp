@@ -57,7 +57,7 @@ bool WebSocketService::should_wait_for_eoc() {
          this->motor_data_enabled;
 }
 
-void WebSocketService::fill_esp_cpu_usage_json(Json* esp_cpu_usage_json) {
+void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
   esp_cpu_usage_json->set_number("dns", monitoring_data.dns_service_cpu_usage);
   esp_cpu_usage_json->set_number("led", monitoring_data.led_service_cpu_usage);
   esp_cpu_usage_json->set_number("monitor",
@@ -68,9 +68,9 @@ void WebSocketService::fill_esp_cpu_usage_json(Json* esp_cpu_usage_json) {
 }
 
 void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
-                                                  Json* stm_cpu_usage_json,
-                                                  Json* imu_data_json,
-                                                  Json* motor_data_json) {
+                                                  JsonObject* stm_cpu_usage_json,
+                                                  JsonObject* imu_data_json,
+                                                  JsonObject* motor_data_json) {
   if (this->stm_cpu_usage_enabled) {
     switch (packet.address) {
       case RsspAddress::LED_SERVICE_CPU_USAGE:
@@ -130,11 +130,11 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
   }
 }
 
-void WebSocketService::fill_root_json(Json* json,
-                                      Json* stm_cpu_usage_json,
-                                      Json* esp_cpu_usage_json,
-                                      Json* imu_data_json,
-                                      Json* motor_data_json) {
+void WebSocketService::fill_root_json(JsonObject* json,
+                                      JsonObject* stm_cpu_usage_json,
+                                      JsonObject* esp_cpu_usage_json,
+                                      JsonObject* imu_data_json,
+                                      JsonObject* motor_data_json) {
   if (this->stm_cpu_usage_enabled)
     json->set_object("stmCpuUsage", stm_cpu_usage_json);
   if (this->esp_cpu_usage_enabled)
@@ -165,11 +165,11 @@ void WebSocketService::send_to_connections(const char* data) {
 }
 
 void WebSocketService::main() {
-  Json json;
-  Json esp_cpu_usage_json;
-  Json stm_cpu_usage_json;
-  Json imu_data_json;
-  Json motor_data_json;
+  JsonObject json;
+  JsonObject esp_cpu_usage_json;
+  JsonObject stm_cpu_usage_json;
+  JsonObject imu_data_json;
+  JsonObject motor_data_json;
 
   while (true) {
     this->wait_for_notification();
@@ -197,10 +197,10 @@ void WebSocketService::main() {
             json.set_number("microseconds", microseconds);
             char* json_str = json.stringify();
             this->send_to_connections(json_str);
-            json = Json();
-            esp_cpu_usage_json = Json();
-            stm_cpu_usage_json = Json();
-            imu_data_json = Json();
+            json = JsonObject();
+            esp_cpu_usage_json = JsonObject();
+            stm_cpu_usage_json = JsonObject();
+            imu_data_json = JsonObject();
             free(json_str);
           }
 
@@ -223,10 +223,10 @@ void WebSocketService::main() {
         if (!json.is_empty()) {
           json.set_number("microseconds", microseconds);
           char* json_str = json.stringify();
-          json = Json();
-          esp_cpu_usage_json = Json();
-          stm_cpu_usage_json = Json();
-          imu_data_json = Json();
+          json = JsonObject();
+          esp_cpu_usage_json = JsonObject();
+          stm_cpu_usage_json = JsonObject();
+          imu_data_json = JsonObject();
           this->send_to_connections(json_str);
           free(json_str);
         }

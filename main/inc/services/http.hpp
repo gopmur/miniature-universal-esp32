@@ -46,8 +46,10 @@ class HttpService {
                             esp_err_t (*handler)(httpd_req_t* req));
   static void allow_cors(httpd_req_t* req);
 
-  static void set_rtc_time(Json* time_json, Json* time_error_json);
-  static void set_rtc_date(Json* date_json, Json* date_error_json);
+  static void set_rtc_time(JsonObject* time_json, JsonObject* time_error_json);
+  static void set_rtc_date(JsonObject* date_json, JsonObject* date_error_json);
+
+  static esp_err_t null_request_handler(httpd_req_t* req); 
 
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
   static esp_err_t start_handler(httpd_req_t* req);

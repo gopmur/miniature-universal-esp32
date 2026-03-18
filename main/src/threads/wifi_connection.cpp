@@ -1,5 +1,7 @@
 #include "threads/wifi_connection.hpp"
+#include <variant>
 #include "esp_err.h"
+#include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
@@ -30,10 +32,21 @@ void WifiConnectionThread::main(httpd_req_t** req_p) {
   }
 
   req_body[total] = 0;
+  JsonObject error_json;
 
-  Json req_json(req_body);
+  auto req_json_result = JsonObject::parse(req_body);
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    error_json.set_string("message", "parse error");
+    auto res_str = error_json.stringify();
+    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str);
+    free(res_str);
+    free(req_body);
+    return;
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
+
   free(req_body);
-  Json error_json;
   auto ssid_result = req_json.get_string("ssid", &error_json);
   auto password_result = req_json.get_string("password", &error_json);
   wifi_config_t sta_config = {};

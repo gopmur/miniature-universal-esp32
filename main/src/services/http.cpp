@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <variant>
 
 #include "services/http.hpp"
@@ -82,6 +83,12 @@ const char* get_contorl_mode_str(ControlMode control_mode) {
 //   return ESP_OK;
 // }
 
+esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
+  allow_cors(req);
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
   allow_cors(req);
   httpd_req_t* async_req;
@@ -95,7 +102,7 @@ esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
   allow_cors(req);
   wifi_ap_record_t ap_info;
   auto result = esp_wifi_sta_get_ap_info(&ap_info);
-  Json res_json;
+  JsonObject res_json;
   if (result == ESP_ERR_WIFI_NOT_CONNECT) {
     res_json.set_bool("connected", false);
     res_json.set_string("errorMessage", "not connected");
@@ -123,7 +130,7 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-void HttpService::set_rtc_time(Json* time_json, Json* time_error_json) {
+void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_json) {
   auto hours_item = time_json->get_number("hours", time_error_json);
   auto minutes_item = time_json->get_number("minutes", time_error_json);
   auto seconds_item = time_json->get_number("seconds", time_error_json);
@@ -139,7 +146,7 @@ void HttpService::set_rtc_time(Json* time_json, Json* time_error_json) {
   write_address(RsspAddress::RTC_TIME, time_data);
 }
 
-void HttpService::set_rtc_date(Json* date_json, Json* date_error_json) {
+void HttpService::set_rtc_date(JsonObject* date_json, JsonObject* date_error_json) {
   auto year_item = date_json->get_number("year", date_error_json);
   auto month_item = date_json->get_number("month", date_error_json);
   auto day_item = date_json->get_number("day", date_error_json);
@@ -164,25 +171,35 @@ esp_err_t HttpService::set_rtc(httpd_req_t* req) {
   int received = httpd_req_recv(req, req_body, req->content_len);
   req_body[received] = 0;
 
-  Json res_json;
-  Json req_json(req_body);
+  JsonObject res_json;
+  auto req_json_result = JsonObject::parse(req_body);
   free(req_body);
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    res_json.set_string("message", "parse error");
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
+    free(res_str);
+    return ESP_OK;
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
 
   auto time_item = req_json.get_object("time", &res_json);
   auto date_item = req_json.get_object("date", &res_json);
 
-  if (std::holds_alternative<Json>(time_item)) {
-    Json time_json = std::get<Json>(time_item);
-    Json time_error_json;
+  if (std::holds_alternative<JsonObject>(time_item)) {
+    JsonObject time_json = std::get<JsonObject>(time_item);
+    JsonObject time_error_json;
     set_rtc_time(&time_json, &time_error_json);
     if (!time_error_json.is_empty()) {
       res_json.set_object("time", &time_error_json);
     }
   }
 
-  if (std::holds_alternative<Json>(date_item)) {
-    Json date_json = std::get<Json>(date_item);
-    Json date_error_json;
+  if (std::holds_alternative<JsonObject>(date_item)) {
+    JsonObject date_json = std::get<JsonObject>(date_item);
+    JsonObject date_error_json;
     set_rtc_date(&date_json, &date_error_json);
     if (!date_error_json.is_empty()) {
       res_json.set_object("date", &date_error_json);
@@ -218,7 +235,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
                   RsspAddress::LEFT_TORQUE,
                   RsspAddress::CONTROL_MODE});
 
-  Json res_json;
+  JsonObject res_json;
 
   for (int i = 0; i < 4; i++) {
     auto response = http_service.queue.receive(200);
@@ -282,9 +299,19 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
   int received = httpd_req_recv(req, body, len);
   body[received] = 0;
 
-  Json res_json;
-  Json req_json(body);
+  JsonObject res_json;
+  auto req_json_result = JsonObject::parse(body);
   free(body);
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    res_json.set_string("message", "parse error");
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
+    free(res_str);
+    return ESP_OK;
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
 
   auto torque = req_json.get_number("torque", &res_json);
 
@@ -312,9 +339,19 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
   int received = httpd_req_recv(req, body, len);
   body[received] = 0;
 
-  Json res_json;
-  Json req_json(body);
+  JsonObject res_json;
+  auto req_json_result = JsonObject::parse(body);
   free(body);
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    res_json.set_string("message", "parse error");
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
+    free(res_str);
+    return ESP_OK;
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
 
   auto torque = req_json.get_number("torque", &res_json);
 
@@ -490,25 +527,33 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   memset(&ws_frame, 0, sizeof(ws_frame));
   ws_frame.type = HTTPD_WS_TYPE_TEXT;
   httpd_ws_recv_frame(req, &ws_frame, 0);
-  if (ws_frame.len) {
-    ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
-    httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
-    ws_frame.payload[ws_frame.len] = 0;
-
-    Json data(reinterpret_cast<char*>(ws_frame.payload));
-    auto left_torque = data.get_number("leftTorque");
-    auto right_torque = data.get_number("rightTorque");
-    if (std::holds_alternative<double>(left_torque)) {
-      write_address(RsspAddress::LEFT_TORQUE,
-                    static_cast<float>(std::get<double>(left_torque)));
-    }
-    if (std::holds_alternative<double>(right_torque)) {
-      write_address(RsspAddress::RIGHT_TORQUE,
-                    static_cast<float>(std::get<double>(right_torque)));
-    }
-
-    free(ws_frame.payload);
+  if (!ws_frame.len) {
+    return ESP_OK;
   }
+  ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
+  httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
+  ws_frame.payload[ws_frame.len] = 0;
+  auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
+
+  if (std::holds_alternative<JsonError>(data_result)) {
+    free(ws_frame.payload);
+    return ESP_OK;
+  }
+
+  auto data = std::get<JsonObject>(data_result);
+
+  auto left_torque = data.get_number("leftTorque");
+  auto right_torque = data.get_number("rightTorque");
+  if (std::holds_alternative<double>(left_torque)) {
+    write_address(RsspAddress::LEFT_TORQUE,
+                  static_cast<float>(std::get<double>(left_torque)));
+  }
+  if (std::holds_alternative<double>(right_torque)) {
+    write_address(RsspAddress::RIGHT_TORQUE,
+                  static_cast<float>(std::get<double>(right_torque)));
+  }
+
+  free(ws_frame.payload);
   return ESP_OK;
 }
 
@@ -589,6 +634,9 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
 }
 
 esp_err_t HttpService::register_dynamic_endpoints() {
+  this->register_http_uri("/api/null",
+                          HTTP_GET,
+                          HttpService::null_request_handler);
   this->register_http_uri("/api/restart",
                           HTTP_GET,
                           HttpService::restart_handler);

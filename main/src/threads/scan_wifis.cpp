@@ -46,11 +46,12 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
 
   esp_wifi_scan_get_ap_records(&number, ap_records);
 
-  Json root_json;
+  JsonArray root_json;
   for (int i = 0; i < number; i++) {
-    Json ap_json;
+    JsonObject ap_json;
     ap_json.set_number("rssi", ap_records[i].rssi);
-    root_json.set_object(reinterpret_cast<char*>(ap_records[i].ssid), &ap_json);
+    ap_json.set_string("ssid", reinterpret_cast<char*>(ap_records[i].ssid));
+    root_json.append_object(&ap_json);
   }
   auto res_str = root_json.stringify();
 
