@@ -1,5 +1,7 @@
 #include "threads/wifi_connection.hpp"
+#include "esp_err.h"
 #include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
 
 WifiConnectionThread::WifiConnectionThread(const char* name,
@@ -34,7 +36,7 @@ void WifiConnectionThread::main(httpd_req_t** req_p) {
   Json error_json;
   auto ssid_result = req_json.get_string("ssid", &error_json);
   auto password_result = req_json.get_string("password", &error_json);
-  wifi_config_t sta_config;
+  wifi_config_t sta_config = {};
 
   if (std::holds_alternative<char*>(ssid_result)) {
     auto ssid = std::get<char*>(ssid_result);
@@ -63,8 +65,10 @@ void WifiConnectionThread::main(httpd_req_t** req_p) {
   }
 
   else {
-    esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-    esp_wifi_connect();
+    sta_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    ESP_ERROR_CHECK(esp_wifi_disconnect());
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
+    ESP_ERROR_CHECK(esp_wifi_connect());
     httpd_resp_send(req, nullptr, 0);
   }
 

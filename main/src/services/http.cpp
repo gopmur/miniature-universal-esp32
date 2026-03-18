@@ -11,6 +11,7 @@
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_wifi.h"
 #include "helper.hpp"
 #include "helper/json.hpp"
 #include "http_assets.hpp"
@@ -91,6 +92,24 @@ esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
+  allow_cors(req);
+  wifi_ap_record_t ap_info;
+  auto result = esp_wifi_sta_get_ap_info(&ap_info);
+  Json res_json;
+  if (result == ESP_ERR_WIFI_NOT_CONNECT) {
+    res_json.set_bool("connected", false);
+    res_json.set_string("errorMessage", "not connected");
+  } else if (result == ESP_ERR_WIFI_CONN) {
+    res_json.set_bool("connected", false);
+    res_json.set_string("errorMessage", "wifi not initialized");
+  } else {
+    res_json.set_bool("connected", true);
+    res_json.set_string("ssid", reinterpret_cast<char*>(ap_info.ssid));
+    res_json.set_number("rssi", ap_info.rssi);
+  };
+  auto res_str = res_json.stringify();
+  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
+  free(res_str);
   return ESP_OK;
 }
 
@@ -603,6 +622,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/wifi/scan",
                           HTTP_GET,
                           HttpService::scan_wifi_handler);
+  this->register_http_uri("/api/wifi",
+                          HTTP_GET,
+                          HttpService::get_connected_wifi);
   this->register_http_uri("/api/wifi/connect",
                           HTTP_POST,
                           HttpService::connect_to_wifi_handler);

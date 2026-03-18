@@ -43,6 +43,25 @@ class App {
     esp_netif_create_default_wifi_ap();
   }
 
+  static void wifi_event_handler(void* arg,
+                                 esp_event_base_t event_base,
+                                 int32_t event_id,
+                                 void* event_data) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+      esp_wifi_connect();
+    }
+
+    else if (event_base == WIFI_EVENT &&
+             event_id == WIFI_EVENT_STA_DISCONNECTED) {
+      esp_wifi_connect();  // retry
+    }
+
+    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+      ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
+      printf("Got IP: " IPSTR "\n", IP2STR(&event->ip_info.ip));
+    }
+  }
+
   void setup_wifi() {
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_config));
@@ -63,6 +82,18 @@ class App {
     if (strlen(config::wifi::password) == 0) {
       wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        &wifi_event_handler,
+                                                        NULL,
+                                                        NULL));
+
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                        IP_EVENT_STA_GOT_IP,
+                                                        &wifi_event_handler,
+                                                        NULL,
+                                                        NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
