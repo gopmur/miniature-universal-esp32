@@ -89,13 +89,13 @@ const char* get_contorl_mode_str(ControlMode control_mode) {
 // }
 
 esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
-  allow_cors(req);
+  set_header(req);
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
 
 esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
-  allow_cors(req);
+  set_header(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
   ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
@@ -104,7 +104,7 @@ esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
-  allow_cors(req);
+  set_header(req);
   wifi_ap_record_t ap_info;
   auto result = esp_wifi_sta_get_ap_info(&ap_info);
   JsonObject res_json;
@@ -126,8 +126,7 @@ esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
-  allow_cors(req);
-  httpd_resp_set_type(req, "application/json");
+  set_header(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
   WifiConnectionThread wifi_connection_thread("wifi_connection", 5, 4096);
@@ -166,7 +165,7 @@ void HttpService::set_rtc_date(JsonObject* date_json, JsonObject* date_error_jso
 }
 
 esp_err_t HttpService::set_rtc(httpd_req_t* req) {
-  allow_cors(req);
+  set_header(req);
   char* req_body = static_cast<char*>(malloc(req->content_len + 1));
   int received = httpd_req_recv(req, req_body, req->content_len);
   req_body[received] = 0;
@@ -224,9 +223,20 @@ void HttpService::allow_cors(httpd_req_t* req) {
   httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
 }
 
-esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
+void HttpService::set_close_connection(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Connection", "close");
+}
+void HttpService::set_type_json(httpd_req_t* req) {
+  httpd_resp_set_type(req, "application/json");
+}
+void HttpService::set_header(httpd_req_t* req) {
   HttpService::allow_cors(req);
+  HttpService::set_close_connection(req);
+  HttpService::set_type_json(req);
+}
 
+esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
+  set_header(req);
   JsonObject res_json;
 
   res_json.set_number("led", led_service.stack_size);
@@ -245,7 +255,7 @@ esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::get_stm_task_stack_size(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   http_service.task_stack_size_queue.flush();
 
   read_addresses({RsspAddress::LED_SERVICE_STACK_SIZE,
@@ -302,7 +312,7 @@ esp_err_t HttpService::get_stm_task_stack_size(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   http_service.state_queue.flush();
 
   read_addresses(
@@ -335,7 +345,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   }
 
   auto json_str = res_json.stringify();
-  httpd_resp_set_type(req, "application/json");
+  ;
   auto ret = httpd_resp_send(req, json_str, HTTPD_RESP_USE_STRLEN);
   if (ret != ESP_OK) {
     ESP_LOGE(HttpService::LOG_TAG, "Get running response transmission failed");
@@ -345,20 +355,20 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   write_address(RsspAddress::RUNNING, true);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start response transmission failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   write_address(RsspAddress::RUNNING, false);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   int len = req->content_len;
   char* body = static_cast<char*>(malloc(len + 1));
 
@@ -395,7 +405,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   int len = req->content_len;
   char* body = static_cast<char*>(malloc(len + 1));
 
@@ -432,25 +442,25 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::MANUAL));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SEMI_AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SMART));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
@@ -458,7 +468,7 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ws_service.enable_stm_cpu_usage();
   start_streams({
       RsspAddress::LED_SERVICE_CPU_USAGE,
@@ -485,7 +495,7 @@ esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ws_service.disable_stm_cpu_usage();
   stop_streams({
       RsspAddress::LED_SERVICE_CPU_USAGE,
@@ -512,27 +522,27 @@ esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::start_esp_cpu_usage_stream_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ws_service.enable_esp_cpu_usage();
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
 esp_err_t HttpService::stop_esp_cpu_usage_stream_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ws_service.disable_esp_cpu_usage();
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
 
 esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ws_service.enable_imu_data();
   start_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start imu data stream failed");
   return ESP_OK;
 }
 esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ws_service.disable_imu_data();
   stop_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop imu data stream failed");
@@ -540,7 +550,7 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
-  allow_cors(req);
+  set_header(req);
   ws_service.enable_motor_data();
   start_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start motor data stream failed");
@@ -548,7 +558,7 @@ esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
-  allow_cors(req);
+  set_header(req);
   ws_service.disable_motor_data();
   stop_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop motor data stream failed");
@@ -556,7 +566,7 @@ esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::restart_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   send_command(RsspCommand::RESTART);
   uart_flush(config::stm_uart::port);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
@@ -566,14 +576,14 @@ esp_err_t HttpService::restart_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::restart_stm32_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   send_command(RsspCommand::RESTART);
   uart_flush(config::stm_uart::port);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
   return ESP_OK;
 }
 esp_err_t HttpService::restart_esp32_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
   vTaskDelay(10);
   esp_restart();
@@ -581,7 +591,7 @@ esp_err_t HttpService::restart_esp32_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::options_handler(httpd_req_t* req) {
-  HttpService::allow_cors(req);
+  set_header(req);
   httpd_resp_send(req, NULL, 0);
   return ESP_OK;
 }

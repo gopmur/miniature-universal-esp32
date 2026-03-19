@@ -54,6 +54,9 @@ class HttpService {
   esp_err_t register_ws_uri(const char* uri_address,
                             esp_err_t (*handler)(httpd_req_t* req));
   static void allow_cors(httpd_req_t* req);
+  static void set_close_connection(httpd_req_t* req);
+  static void set_type_json(httpd_req_t* req);
+  static void set_header(httpd_req_t* req);
 
   static void set_rtc_time(JsonObject* time_json, JsonObject* time_error_json);
   static void set_rtc_date(JsonObject* date_json, JsonObject* date_error_json);

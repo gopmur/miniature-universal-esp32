@@ -47,6 +47,10 @@ def generate_c_code(output_path: str, asset_uris: dict[str, str]):
     if (res) {{ \\
       return res; \\
     }} \\
+    res = httpd_resp_set_hdr(req, "Connection", "close"); \\
+    if (res) {{ \\
+      return res; \\
+    }} \\
     return httpd_resp_send(req, file_name##_start, size); \\
   }}
 
