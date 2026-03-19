@@ -28,7 +28,7 @@ namespace config {
   namespace service {
     namespace stm_uart {
       constexpr auto stack_size = 4096;
-      constexpr auto priority = 2;
+      constexpr auto priority = 3;
     }
     namespace dns {
       constexpr auto priority = 2;
@@ -42,7 +42,7 @@ namespace config {
     }
 
     namespace ws {
-      constexpr auto priority = 2;
+      constexpr auto priority = 3;
       constexpr auto stack_size = 4096;
       constexpr auto max_connection = 3;
     }

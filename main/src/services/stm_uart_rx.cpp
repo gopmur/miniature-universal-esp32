@@ -226,9 +226,8 @@ void StmUartRxService::main() {
     int bytes_read = uart_read_bytes(this->port,
                                      this->rx_buffer,
                                      config::stm_uart::rx_buffer_size,
-                                     0);
+                                     4);
     if (bytes_read <= 0) {
-      vTaskDelay(20);
       continue;
     }
     // ESP_LOGW("UART", "Bytes received");
@@ -288,7 +287,7 @@ void StmUartRxService::main() {
           default:
             if (ws_service.has_connections()) {
               if (ws_service.uart_streams_enabled()) {
-                ws_service.queue.send(packet.value(), 1000);
+                ws_service.queue.send(packet.value(), 1500);
               } else {
                 ws_service.queue.flush();
               }
@@ -301,7 +300,7 @@ void StmUartRxService::main() {
                packet->header.b.type == RsspType::EOC) {
         if (ws_service.has_connections()) {
           if (ws_service.uart_streams_enabled()) {
-            ws_service.queue.send(packet.value(), 1000);
+            ws_service.queue.send(packet.value(), 1500);
           } else {
             ws_service.queue.flush();
           }
