@@ -54,25 +54,40 @@ bool WebSocketService::has_connections() {
 }
 
 bool WebSocketService::should_wait_for_eoc() {
-  return this->imu_data_enabled || this->stm_cpu_usage_enabled ||
-         this->motor_data_enabled;
+  return this->imu_data_enabled || this->stm_cpu_usage_enabled || this->motor_data_enabled;
 }
 
 void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
-  esp_cpu_usage_json->set_number("dns", monitoring_data.dns_service_cpu_usage);
-  esp_cpu_usage_json->set_number("led", monitoring_data.led_service_cpu_usage);
-  esp_cpu_usage_json->set_number("monitor",
-                                 monitoring_data.monitor_service_cpu_usage);
-  esp_cpu_usage_json->set_number("uartRx",
-                                 monitoring_data.stm_uart_rx_service_cpu_usage);
-  esp_cpu_usage_json->set_number("ws", monitoring_data.ws_service_cpu_usage);
+  esp_cpu_usage_json->add_object("dns");
+  auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("dns"));
+  service_object.set_number("cpuUsage", monitoring_data.dns_service_cpu_usage);
+  service_object.set_number("maxStackUsage", monitoring_data.dns_service_stack_usage);
+
+  esp_cpu_usage_json->add_object("led");
+  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("led"));
+  service_object.set_number("cpuUsage", monitoring_data.led_service_cpu_usage);
+  service_object.set_number("maxStackUsage", monitoring_data.led_service_stack_usage);
+
+  esp_cpu_usage_json->add_object("monitor");
+  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("monitor"));
+  service_object.set_number("cpuUsage", monitoring_data.monitor_service_cpu_usage);
+  service_object.set_number("maxStackUsage", monitoring_data.monitor_service_stack_usage);
+
+  esp_cpu_usage_json->add_object("uartRx");
+  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("uartRx"));
+  service_object.set_number("cpuUsage", monitoring_data.stm_uart_rx_service_cpu_usage);
+  service_object.set_number("maxStackUsage", monitoring_data.stm_uart_rx_service_stack_usage);
+
+  esp_cpu_usage_json->add_object("ws");
+  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("ws"));
+  service_object.set_number("cpuUsage", monitoring_data.ws_service_cpu_usage);
+  service_object.set_number("maxStackUsage", monitoring_data.ws_service_stack_usage);
 }
 
-void WebSocketService::fill_json_with_packet_data(
-    RsspPacket packet,
-    JsonObject* stm_cpu_usage_json,
-    JsonObject* imu_data_json,
-    JsonObject* motor_data_json) {
+void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
+                                                  JsonObject* stm_cpu_usage_json,
+                                                  JsonObject* imu_data_json,
+                                                  JsonObject* motor_data_json) {
   if (this->stm_cpu_usage_enabled) {
     switch (packet.address) {
       case RsspAddress::LED_SERVICE_CPU_USAGE: {
@@ -247,8 +262,7 @@ void WebSocketService::send_to_connections(const char* data) {
   };
   for (int i = 0; i < this->connection_count; i++) {
     int fd = this->connection_fds[i];
-    esp_err_t ret =
-        httpd_ws_send_frame_async(http_service.server_instance, fd, &ws_packet);
+    esp_err_t ret = httpd_ws_send_frame_async(http_service.server_instance, fd, &ws_packet);
     if (ret != ESP_OK) {
       ESP_LOGW("WS", "Client disconnected or send failed");
       this->stop_sending(fd);
@@ -280,11 +294,7 @@ void WebSocketService::main() {
           if (this->esp_cpu_usage_enabled) {
             this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
           }
-          this->fill_root_json(&json,
-                               &stm_cpu_usage_json,
-                               &esp_cpu_usage_json,
-                               &imu_data_json,
-                               &motor_data_json);
+          this->fill_root_json(&json, &stm_cpu_usage_json, &esp_cpu_usage_json, &imu_data_json, &motor_data_json);
           if (!json.is_empty()) {
             json.set_number("microseconds", microseconds);
             char* json_str = json.stringify();
@@ -297,21 +307,14 @@ void WebSocketService::main() {
           }
 
         } else {
-          this->fill_json_with_packet_data(packet.value(),
-                                           &stm_cpu_usage_json,
-                                           &imu_data_json,
-                                           &motor_data_json);
+          this->fill_json_with_packet_data(packet.value(), &stm_cpu_usage_json, &imu_data_json, &motor_data_json);
         }
 
       }
 
       else {
         this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
-        this->fill_root_json(&json,
-                             &stm_cpu_usage_json,
-                             &esp_cpu_usage_json,
-                             &imu_data_json,
-                             &motor_data_json);
+        this->fill_root_json(&json, &stm_cpu_usage_json, &esp_cpu_usage_json, &imu_data_json, &motor_data_json);
         if (!json.is_empty()) {
           json.set_number("microseconds", microseconds);
           char* json_str = json.stringify();
@@ -382,6 +385,5 @@ void WebSocketService::stop_sending(int fd) {
 }
 
 bool WebSocketService::uart_streams_enabled() {
-  return this->imu_data_enabled || this->motor_data_enabled ||
-         this->stm_cpu_usage_enabled;
+  return this->imu_data_enabled || this->motor_data_enabled || this->stm_cpu_usage_enabled;
 }
