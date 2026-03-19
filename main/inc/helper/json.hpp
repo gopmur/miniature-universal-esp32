@@ -63,6 +63,7 @@ class JsonObject : public Json {
   void set_number(const char* name, double number);
   void set_string(const char* name, const char* string);
   void set_object(const char* name, JsonObject* object);
+  void add_object(const char* name);
   void set_bool(const char* name, bool boolean);
   void set_array(const char* name, JsonArray* array);
 

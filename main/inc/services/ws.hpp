@@ -32,9 +32,10 @@ class WebSocketService
   
   public:
   void main();
-  Queue<RsspPacket, 32> queue;
+  Queue<RsspPacket, 64> queue;
   WebSocketService(int priority);
   bool has_connections();
+  bool uart_streams_enabled();
   void start_sending(int fd);
   void stop_sending(int fd);
 

@@ -6,6 +6,7 @@
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "helper/json.hpp"
 #include "portmacro.h"
 #include "service.hpp"
 #include "services/stm_uart/rssp.hpp"
@@ -67,36 +68,127 @@ void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
   esp_cpu_usage_json->set_number("ws", monitoring_data.ws_service_cpu_usage);
 }
 
-void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
-                                                  JsonObject* stm_cpu_usage_json,
-                                                  JsonObject* imu_data_json,
-                                                  JsonObject* motor_data_json) {
+void WebSocketService::fill_json_with_packet_data(
+    RsspPacket packet,
+    JsonObject* stm_cpu_usage_json,
+    JsonObject* imu_data_json,
+    JsonObject* motor_data_json) {
   if (this->stm_cpu_usage_enabled) {
     switch (packet.address) {
-      case RsspAddress::LED_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("led", packet.get_float());
+      case RsspAddress::LED_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("led");
+        auto child_object_result = stm_cpu_usage_json->get_object("led");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::IMU_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("imu", packet.get_float());
+      }
+      case RsspAddress::IMU_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("imu");
+        auto child_object_result = stm_cpu_usage_json->get_object("imu");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::MOTOR_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("motor", packet.get_float());
+      }
+
+      case RsspAddress::MOTOR_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("motor");
+        auto child_object_result = stm_cpu_usage_json->get_object("motor");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::SD_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("sd", packet.get_float());
+      }
+      case RsspAddress::SD_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("sd");
+        auto child_object_result = stm_cpu_usage_json->get_object("sd");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::CAN_RECV_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("canRecv", packet.get_float());
+      }
+      case RsspAddress::CAN_RECV_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("canRecv");
+        auto child_object_result = stm_cpu_usage_json->get_object("canRecv");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("uartRx", packet.get_float());
+      }
+      case RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("uartRx");
+        auto child_object_result = stm_cpu_usage_json->get_object("uartRx");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("uartTx", packet.get_float());
+      }
+      case RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("uartTx");
+        auto child_object_result = stm_cpu_usage_json->get_object("uartTx");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
-      case RsspAddress::MONITOR_SERVICE_CPU_USAGE:
-        stm_cpu_usage_json->set_number("monitor", packet.get_float());
+      }
+      case RsspAddress::MONITOR_SERVICE_CPU_USAGE: {
+        stm_cpu_usage_json->add_object("monitor");
+        auto child_object_result = stm_cpu_usage_json->get_object("monitor");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("cpuUsage", packet.get_float());
         break;
+      }
+      case RsspAddress::LED_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("led");
+        auto child_object_result = stm_cpu_usage_json->get_object("led");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+      case RsspAddress::IMU_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("imu");
+        auto child_object_result = stm_cpu_usage_json->get_object("imu");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+
+      case RsspAddress::MOTOR_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("motor");
+        auto child_object_result = stm_cpu_usage_json->get_object("motor");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+      case RsspAddress::SD_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("sd");
+        auto child_object_result = stm_cpu_usage_json->get_object("sd");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+      case RsspAddress::CAN_RECV_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("canRecv");
+        auto child_object_result = stm_cpu_usage_json->get_object("canRecv");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+      case RsspAddress::ESP_UART_RX_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("uartRx");
+        auto child_object_result = stm_cpu_usage_json->get_object("uartRx");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+      case RsspAddress::ESP_UART_TX_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("uartTx");
+        auto child_object_result = stm_cpu_usage_json->get_object("uartTx");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
+      case RsspAddress::MONITOR_SERVICE_MAX_STACK_USAGE: {
+        stm_cpu_usage_json->add_object("monitor");
+        auto child_object_result = stm_cpu_usage_json->get_object("monitor");
+        auto child_object = std::get<JsonObject>(child_object_result);
+        child_object.set_number("maxStackUsage", packet.get_uint32());
+        break;
+      }
       default:
         break;
     }
@@ -287,4 +379,9 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
+}
+
+bool WebSocketService::uart_streams_enabled() {
+  return this->imu_data_enabled || this->motor_data_enabled ||
+         this->stm_cpu_usage_enabled;
 }

@@ -18,10 +18,19 @@ enum class HttpQueueMessageHeader {
   RIGHT_MANUAL_TORQUE,
   LEFT_MANUAL_TORQUE,
   MODE,
+  LED_SERVICE_STACK_SIZE,
+  IMU_SERVICE_STACK_SIZE,
+  ESP_UART_TX_SERVICE_STACK_SIZE,
+  ESP_UART_RX_SERVICE_STACK_SIZE,
+  MOTOR_SERVICE_STACK_SIZE,
+  CAN_RECV_SERVICE_STACK_SIZE,
+  SD_SERVICE_STACK_SIZE,
+  MONITOR_SERVICE_STACK_SIZE,
 };
 
 union HttpQueueMessagePayload {
   float f;
+  uint32_t u32;
   bool b;
   ControlMode control_mode;
 };
@@ -49,7 +58,7 @@ class HttpService {
   static void set_rtc_time(JsonObject* time_json, JsonObject* time_error_json);
   static void set_rtc_date(JsonObject* date_json, JsonObject* date_error_json);
 
-  static esp_err_t null_request_handler(httpd_req_t* req); 
+  static esp_err_t null_request_handler(httpd_req_t* req);
 
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
   static esp_err_t start_handler(httpd_req_t* req);
@@ -74,6 +83,8 @@ class HttpService {
   static esp_err_t start_motor_data_stream_handler(httpd_req_t* req);
   static esp_err_t stop_motor_data_stream_handler(httpd_req_t* req);
 
+  static esp_err_t get_stm_task_stack_size(httpd_req_t* req);
+
   static esp_err_t scan_wifi_handler(httpd_req_t* req);
   static esp_err_t connect_to_wifi_handler(httpd_req_t* req);
   static esp_err_t get_connected_wifi(httpd_req_t* req);
@@ -84,6 +95,7 @@ class HttpService {
 
   public:
   httpd_handle_t server_instance;
-  Queue<HttpQueueMessage, 8> queue;
+  Queue<HttpQueueMessage, 8> state_queue;
+  Queue<HttpQueueMessage, 16> task_stack_size_queue;
   void start();
 };

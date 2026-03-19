@@ -94,6 +94,14 @@ void JsonObject::set_object(const char* name, JsonObject* object) {
   }
 }
 
+void JsonObject::add_object(const char* name) {
+  auto object = cJSON_GetObjectItem(this->root, name);
+  if (object && cJSON_IsObject(object)) {
+    return;
+  }
+  cJSON_AddObjectToObject(this->root, name);
+}
+
 void JsonObject::set_array(const char* name, JsonArray* array) {
   cJSON* copy = cJSON_Duplicate(array->root, true);
   if (!copy) {

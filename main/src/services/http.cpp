@@ -130,7 +130,8 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_json) {
+void HttpService::set_rtc_time(JsonObject* time_json,
+                               JsonObject* time_error_json) {
   auto hours_item = time_json->get_number("hours", time_error_json);
   auto minutes_item = time_json->get_number("minutes", time_error_json);
   auto seconds_item = time_json->get_number("seconds", time_error_json);
@@ -146,7 +147,8 @@ void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_jso
   write_address(RsspAddress::RTC_TIME, time_data);
 }
 
-void HttpService::set_rtc_date(JsonObject* date_json, JsonObject* date_error_json) {
+void HttpService::set_rtc_date(JsonObject* date_json,
+                               JsonObject* date_error_json) {
   auto year_item = date_json->get_number("year", date_error_json);
   auto month_item = date_json->get_number("month", date_error_json);
   auto day_item = date_json->get_number("day", date_error_json);
@@ -226,9 +228,68 @@ void HttpService::allow_cors(httpd_req_t* req) {
   httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
 }
 
+esp_err_t HttpService::get_stm_task_stack_size(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  http_service.task_stack_size_queue.flush();
+
+  read_addresses({RsspAddress::LED_SERVICE_STACK_SIZE,
+                  RsspAddress::IMU_SERVICE_STACK_SIZE,
+                  RsspAddress::ESP_UART_TX_SERVICE_STACK_SIZE,
+                  RsspAddress::ESP_UART_RX_SERVICE_STACK_SIZE,
+                  RsspAddress::MOTOR_SERVICE_STACK_SIZE,
+                  RsspAddress::CAN_RECV_SERVICE_STACK_SIZE,
+                  RsspAddress::SD_SERVICE_STACK_SIZE,
+                  RsspAddress::MONITOR_SERVICE_STACK_SIZE});
+
+  JsonObject res_json;
+
+  for (int i = 0; i < 8; i++) {
+    auto response = http_service.task_stack_size_queue.receive(200);
+    if (!response.has_value()) {
+      httpd_resp_send_err(req,
+                          HTTPD_500_INTERNAL_SERVER_ERROR,
+                          "STM32 not responding");
+      return ESP_OK;
+    }
+    switch (response->header) {
+      case HttpQueueMessageHeader::LED_SERVICE_STACK_SIZE:
+        res_json.set_number("led", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::IMU_SERVICE_STACK_SIZE:
+        res_json.set_number("imu", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::ESP_UART_TX_SERVICE_STACK_SIZE:
+        res_json.set_number("uartTx", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::ESP_UART_RX_SERVICE_STACK_SIZE:
+        res_json.set_number("uartRx", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::MOTOR_SERVICE_STACK_SIZE:
+        res_json.set_number("motor", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::CAN_RECV_SERVICE_STACK_SIZE:
+        res_json.set_number("canRecv", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::SD_SERVICE_STACK_SIZE:
+        res_json.set_number("sd", response->payload.u32);
+        break;
+      case HttpQueueMessageHeader::MONITOR_SERVICE_STACK_SIZE:
+        res_json.set_number("monitor", response->payload.u32);
+        break;
+      default:
+        break;
+    }
+  }
+
+  auto res_str = res_json.stringify();
+  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
+  free(res_str);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  http_service.queue.flush();
+  http_service.state_queue.flush();
 
   read_addresses({RsspAddress::RUNNING,
                   RsspAddress::RIGHT_TORQUE,
@@ -238,7 +299,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   JsonObject res_json;
 
   for (int i = 0; i < 4; i++) {
-    auto response = http_service.queue.receive(200);
+    auto response = http_service.state_queue.receive(200);
     if (!response.has_value()) {
       httpd_resp_send_err(req,
                           HTTPD_500_INTERNAL_SERVER_ERROR,
@@ -259,7 +320,8 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
         res_json.set_string(
             "mode",
             get_contorl_mode_str(response->payload.control_mode));
-
+        break;
+      default:
         break;
     }
   }
@@ -421,6 +483,16 @@ esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
       RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
       RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
       RsspAddress::MONITOR_SERVICE_CPU_USAGE,
+      RsspAddress::LED_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::IMU_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::MOTOR_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::SD_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::CAN_RECV_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::ESP_UART_RX_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::ESP_UART_TX_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::MONITOR_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::HEAP_USAGE,
+      RsspAddress::MAX_HEAP_USAGE,
   });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -440,6 +512,16 @@ esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
       RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
       RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
       RsspAddress::MONITOR_SERVICE_CPU_USAGE,
+      RsspAddress::LED_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::IMU_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::MOTOR_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::SD_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::CAN_RECV_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::ESP_UART_RX_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::ESP_UART_TX_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::MONITOR_SERVICE_MAX_STACK_USAGE,
+      RsspAddress::HEAP_USAGE,
+      RsspAddress::MAX_HEAP_USAGE,
   });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -533,7 +615,8 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
   httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
   ws_frame.payload[ws_frame.len] = 0;
-  auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
+  auto data_result =
+      JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
 
   if (std::holds_alternative<JsonError>(data_result)) {
     free(ws_frame.payload);
@@ -643,6 +726,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/states",
                           HTTP_GET,
                           HttpService::get_state_handler);
+  this->register_http_uri("/api/stm_stack_size",
+                          HTTP_GET,
+                          HttpService::get_stm_task_stack_size);
   this->register_http_uri("/api/streams/start/imu",
                           HTTP_GET,
                           HttpService::start_imu_data_stream_handler);
