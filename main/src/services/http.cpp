@@ -13,6 +13,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "freertos/idf_additions.h"
 #include "helper.hpp"
 #include "helper/json.hpp"
 #include "http_assets.hpp"
@@ -558,8 +559,24 @@ esp_err_t HttpService::restart_handler(httpd_req_t* req) {
   HttpService::allow_cors(req);
   send_command(RsspCommand::RESTART);
   uart_flush(config::stm_uart::port);
-  esp_restart();
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
+  vTaskDelay(10);
+  esp_restart();
+  return ESP_OK;
+}
+
+esp_err_t HttpService::restart_stm32_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  send_command(RsspCommand::RESTART);
+  uart_flush(config::stm_uart::port);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
+  return ESP_OK;
+}
+esp_err_t HttpService::restart_esp32_handler(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
+  vTaskDelay(10);
+  esp_restart();
   return ESP_OK;
 }
 
@@ -682,6 +699,8 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address, esp_err_t (*hand
 esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
   this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
+  this->register_http_uri("/api/restart/stm", HTTP_GET, HttpService::restart_stm32_handler);
+  this->register_http_uri("/api/restart/esp", HTTP_GET, HttpService::restart_esp32_handler);
   this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
   this->register_http_uri("/api/stm_stack_size", HTTP_GET, HttpService::get_stm_task_stack_size);
   this->register_http_uri("/api/esp_stack_size", HTTP_GET, HttpService::get_esp_task_stack_size);

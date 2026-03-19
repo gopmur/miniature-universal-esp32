@@ -91,6 +91,8 @@ class HttpService {
   static esp_err_t get_connected_wifi(httpd_req_t* req);
 
   static esp_err_t restart_handler(httpd_req_t* req);
+  static esp_err_t restart_stm32_handler(httpd_req_t* req);
+  static esp_err_t restart_esp32_handler(httpd_req_t* req);
 
   esp_err_t register_dynamic_endpoints();
 
