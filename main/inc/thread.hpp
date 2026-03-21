@@ -7,7 +7,11 @@ class Thread {
   private:
   uint32_t last_total_runtime = 0;
   uint32_t last_service_runtime = 0;
+  float cpu_usage = 0;
+  uint32_t max_stack_usage;
   Thread() = default;
+  float calculate_cpu_usage(uint32_t service_runtime, uint32_t total_runtime);
+  float calculate_max_stack_usage(uint32_t stack_high_water_mark);
 
   protected:
   char* name;
@@ -26,7 +30,9 @@ class Thread {
   void resume_from_isr();
   void notify();
   bool notify_from_isr();
-  float calculate_cpu_usage(uint32_t service_runtime, uint32_t total_runtime);
+  void update_runtime_stats();
+  float get_cpu_usage();
+  uint32_t get_max_stack_usage();
   TaskHandle_t get_handle();
   ~Thread();
 };
@@ -74,7 +80,8 @@ void ThreadWithArg<Derived, Param>::_main(ThreadMainParam<Derived, Param>* main_
 
 template <typename Derived, typename Param>
 void ThreadWithArg<Derived, Param>::start(Param* param) {
-  auto main_param = static_cast<ThreadMainParam<Derived, Param>*>(malloc(sizeof(ThreadMainParam<Derived, Param>)));
+  auto main_param = static_cast<ThreadMainParam<Derived, Param>*>(
+      malloc(sizeof(ThreadMainParam<Derived, Param>)));
   main_param->param = static_cast<Param*>(malloc(sizeof(Param)));
   memcpy(main_param->param, param, sizeof(Param));
   main_param->self = new Derived(*static_cast<Derived*>(this));

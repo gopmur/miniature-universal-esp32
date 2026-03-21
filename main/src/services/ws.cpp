@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "context/monitoring_data.hpp"
 #include "context/services/http.hpp"
+#include "context/services/monitor.hpp"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -10,6 +11,11 @@
 #include "portmacro.h"
 #include "service.hpp"
 #include "services/stm_uart/rssp.hpp"
+
+#include "context/services/dns.hpp"
+#include "context/services/led.hpp"
+#include "context/services/stm_uart_rx.hpp"
+#include "context/services/ws.hpp"
 
 WebSocketService::WebSocketService(int priority)
     : Service(priority, "ws"),
@@ -60,28 +66,28 @@ bool WebSocketService::should_wait_for_eoc() {
 void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
   esp_cpu_usage_json->add_object("dns");
   auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("dns"));
-  service_object.set_number("cpuUsage", monitoring_data.dns_service_cpu_usage);
-  service_object.set_number("maxStackUsage", monitoring_data.dns_service_stack_usage);
+  service_object.set_number("cpuUsage", dns_service.get_cpu_usage());
+  service_object.set_number("maxStackUsage", dns_service.get_max_stack_usage());
 
   esp_cpu_usage_json->add_object("led");
   service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("led"));
-  service_object.set_number("cpuUsage", monitoring_data.led_service_cpu_usage);
-  service_object.set_number("maxStackUsage", monitoring_data.led_service_stack_usage);
+  service_object.set_number("cpuUsage", led_service.get_cpu_usage());
+  service_object.set_number("maxStackUsage", led_service.get_max_stack_usage());
 
   esp_cpu_usage_json->add_object("monitor");
   service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("monitor"));
-  service_object.set_number("cpuUsage", monitoring_data.monitor_service_cpu_usage);
-  service_object.set_number("maxStackUsage", monitoring_data.monitor_service_stack_usage);
+  service_object.set_number("cpuUsage", monitor_service.get_cpu_usage());
+  service_object.set_number("maxStackUsage", monitor_service.get_max_stack_usage());
 
   esp_cpu_usage_json->add_object("uartRx");
   service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("uartRx"));
-  service_object.set_number("cpuUsage", monitoring_data.stm_uart_rx_service_cpu_usage);
-  service_object.set_number("maxStackUsage", monitoring_data.stm_uart_rx_service_stack_usage);
+  service_object.set_number("cpuUsage", stm_uart_rx_service.get_cpu_usage());
+  service_object.set_number("maxStackUsage", stm_uart_rx_service.get_max_stack_usage());
 
   esp_cpu_usage_json->add_object("ws");
   service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("ws"));
-  service_object.set_number("cpuUsage", monitoring_data.ws_service_cpu_usage);
-  service_object.set_number("maxStackUsage", monitoring_data.ws_service_stack_usage);
+  service_object.set_number("cpuUsage", ws_service.get_cpu_usage());
+  service_object.set_number("maxStackUsage", ws_service.get_max_stack_usage());
 }
 
 void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
@@ -294,7 +300,11 @@ void WebSocketService::main() {
           if (this->esp_cpu_usage_enabled) {
             this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
           }
-          this->fill_root_json(&json, &stm_cpu_usage_json, &esp_cpu_usage_json, &imu_data_json, &motor_data_json);
+          this->fill_root_json(&json,
+                               &stm_cpu_usage_json,
+                               &esp_cpu_usage_json,
+                               &imu_data_json,
+                               &motor_data_json);
           if (!json.is_empty()) {
             json.set_number("microseconds", microseconds);
             char* json_str = json.stringify();
@@ -307,14 +317,21 @@ void WebSocketService::main() {
           }
 
         } else {
-          this->fill_json_with_packet_data(packet.value(), &stm_cpu_usage_json, &imu_data_json, &motor_data_json);
+          this->fill_json_with_packet_data(packet.value(),
+                                           &stm_cpu_usage_json,
+                                           &imu_data_json,
+                                           &motor_data_json);
         }
 
       }
 
       else {
         this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
-        this->fill_root_json(&json, &stm_cpu_usage_json, &esp_cpu_usage_json, &imu_data_json, &motor_data_json);
+        this->fill_root_json(&json,
+                             &stm_cpu_usage_json,
+                             &esp_cpu_usage_json,
+                             &imu_data_json,
+                             &motor_data_json);
         if (!json.is_empty()) {
           json.set_number("microseconds", microseconds);
           char* json_str = json.stringify();
