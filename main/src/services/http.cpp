@@ -27,21 +27,11 @@
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
 #include "services/stm_uart/rssp.hpp"
+#include "services/ws.hpp"
+#include "threads/get_stack_sizes.hpp"
+#include "threads/get_states.hpp"
 #include "threads/scan_wifis.hpp"
 #include "threads/wifi_connection.hpp"
-
-const char* get_contorl_mode_str(ControlMode control_mode) {
-  switch (control_mode) {
-    case ControlMode::MANUAL:
-      return "manual";
-    case ControlMode::AUTO:
-      return "automatic";
-    case ControlMode::SEMI_AUTO:
-      return "semi-automatic";
-    case ControlMode::SMART:
-      return "smart";
-  }
-}
 
 // esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 //   constexpr int record_count = 8;
@@ -138,7 +128,8 @@ void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_jso
   auto hours_item = time_json->get_number("hours", time_error_json);
   auto minutes_item = time_json->get_number("minutes", time_error_json);
   auto seconds_item = time_json->get_number("seconds", time_error_json);
-  if (std::holds_alternative<JsonError>(hours_item) || std::holds_alternative<JsonError>(minutes_item) ||
+  if (std::holds_alternative<JsonError>(hours_item) ||
+      std::holds_alternative<JsonError>(minutes_item) ||
       std::holds_alternative<JsonError>(seconds_item)) {
     return;
   }
@@ -153,7 +144,8 @@ void HttpService::set_rtc_date(JsonObject* date_json, JsonObject* date_error_jso
   auto year_item = date_json->get_number("year", date_error_json);
   auto month_item = date_json->get_number("month", date_error_json);
   auto day_item = date_json->get_number("day", date_error_json);
-  if (std::holds_alternative<JsonError>(year_item) || std::holds_alternative<JsonError>(month_item) ||
+  if (std::holds_alternative<JsonError>(year_item) ||
+      std::holds_alternative<JsonError>(month_item) ||
       std::holds_alternative<JsonError>(day_item)) {
     return;
   }
@@ -267,47 +259,10 @@ esp_err_t HttpService::get_stm_task_stack_size(httpd_req_t* req) {
                   RsspAddress::SD_SERVICE_STACK_SIZE,
                   RsspAddress::MONITOR_SERVICE_STACK_SIZE});
 
-  JsonObject res_json;
-
-  for (int i = 0; i < 8; i++) {
-    auto response = http_service.task_stack_size_queue.receive(200);
-    if (!response.has_value()) {
-      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "STM32 not responding");
-      return ESP_OK;
-    }
-    switch (response->header) {
-      case HttpQueueMessageHeader::LED_SERVICE_STACK_SIZE:
-        res_json.set_number("led", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::IMU_SERVICE_STACK_SIZE:
-        res_json.set_number("imu", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::ESP_UART_TX_SERVICE_STACK_SIZE:
-        res_json.set_number("uartTx", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::ESP_UART_RX_SERVICE_STACK_SIZE:
-        res_json.set_number("uartRx", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::MOTOR_SERVICE_STACK_SIZE:
-        res_json.set_number("motor", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::CAN_RECV_SERVICE_STACK_SIZE:
-        res_json.set_number("canRecv", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::SD_SERVICE_STACK_SIZE:
-        res_json.set_number("sd", response->payload.u32);
-        break;
-      case HttpQueueMessageHeader::MONITOR_SERVICE_STACK_SIZE:
-        res_json.set_number("monitor", response->payload.u32);
-        break;
-      default:
-        break;
-    }
-  }
-
-  auto res_str = res_json.stringify();
-  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
-  free(res_str);
+  GetStackSizes async_handler("get_stack_sized", 5, 4096);
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  async_handler.start(&async_req);
   return ESP_OK;
 }
 
@@ -315,56 +270,34 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   set_header(req);
   http_service.state_queue.flush();
 
-  read_addresses(
-      {RsspAddress::RUNNING, RsspAddress::RIGHT_TORQUE, RsspAddress::LEFT_TORQUE, RsspAddress::CONTROL_MODE});
+  read_addresses({RsspAddress::RUNNING,
+                  RsspAddress::RIGHT_TORQUE,
+                  RsspAddress::LEFT_TORQUE,
+                  RsspAddress::CONTROL_MODE});
 
-  JsonObject res_json;
+  GetStates async_handler("get_states", 5, 4096);
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  async_handler.start(&async_req);
 
-  for (int i = 0; i < 4; i++) {
-    auto response = http_service.state_queue.receive(200);
-    if (!response.has_value()) {
-      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "STM32 not responding");
-      return ESP_OK;
-    }
-    switch (response->header) {
-      case HttpQueueMessageHeader::RUNNING:
-        res_json.set_bool("running", response->payload.b);
-        break;
-      case HttpQueueMessageHeader::LEFT_MANUAL_TORQUE:
-        res_json.set_number("leftTorque", response->payload.f);
-        break;
-      case HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE:
-        res_json.set_number("rightTorque", response->payload.f);
-        break;
-      case HttpQueueMessageHeader::MODE:
-        res_json.set_string("mode", get_contorl_mode_str(response->payload.control_mode));
-        break;
-      default:
-        break;
-    }
-  }
-
-  auto json_str = res_json.stringify();
-  ;
-  auto ret = httpd_resp_send(req, json_str, HTTPD_RESP_USE_STRLEN);
-  if (ret != ESP_OK) {
-    ESP_LOGE(HttpService::LOG_TAG, "Get running response transmission failed");
-  }
-  free(json_str);
   return ESP_OK;
 }
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   set_header(req);
   write_address(RsspAddress::RUNNING, true);
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start response transmission failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   set_header(req);
   write_address(RsspAddress::RUNNING, false);
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
@@ -400,7 +333,9 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
 
   write_address(RsspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(torque)));
 
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 
@@ -437,39 +372,49 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
   write_address(RsspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(torque)));
 
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::MANUAL));
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::AUTO));
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SEMI_AUTO));
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   set_header(req);
   write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SMART));
 
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop response transmission failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop response transmission failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.enable_stm_cpu_usage();
+  ws_service.enable_stream(WsStream::STM_TASK_DATA);
   start_streams({
       RsspAddress::LED_SERVICE_CPU_USAGE,
       RsspAddress::IMU_SERVICE_CPU_USAGE,
@@ -490,13 +435,15 @@ esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
       RsspAddress::HEAP_USAGE,
       RsspAddress::MAX_HEAP_USAGE,
   });
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start CPU usage stream failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start CPU usage stream failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.disable_stm_cpu_usage();
+  ws_service.disable_stream(WsStream::STM_TASK_DATA);
   stop_streams({
       RsspAddress::LED_SERVICE_CPU_USAGE,
       RsspAddress::IMU_SERVICE_CPU_USAGE,
@@ -517,51 +464,61 @@ esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
       RsspAddress::HEAP_USAGE,
       RsspAddress::MAX_HEAP_USAGE,
   });
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop CPU usage stream failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop CPU usage stream failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::start_esp_cpu_usage_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.enable_esp_cpu_usage();
+  ws_service.enable_stream(WsStream::ESP_TASK_DATA);
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
 esp_err_t HttpService::stop_esp_cpu_usage_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.disable_esp_cpu_usage();
+  ws_service.disable_stream(WsStream::ESP_TASK_DATA);
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
 
 esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.enable_imu_data();
+  ws_service.enable_stream(WsStream::IMU_DATA);
   start_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start imu data stream failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start imu data stream failed");
   return ESP_OK;
 }
 esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.disable_imu_data();
+  ws_service.disable_stream(WsStream::IMU_DATA);
   stop_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop imu data stream failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop imu data stream failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.enable_motor_data();
+  ws_service.enable_stream(WsStream::MOTOR_DATA);
   start_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Start motor data stream failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start motor data stream failed");
   return ESP_OK;
 }
 
 esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_service.disable_motor_data();
+  ws_service.disable_stream(WsStream::MOTOR_DATA);
   stop_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Stop motor data stream failed");
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Stop motor data stream failed");
   return ESP_OK;
 }
 
@@ -688,7 +645,8 @@ esp_err_t HttpService::register_http_uri_with_option(const char* uri_address,
   return ESP_OK;
 }
 
-esp_err_t HttpService::register_ws_uri(const char* uri_address, esp_err_t (*handler)(httpd_req_t* req)) {
+esp_err_t HttpService::register_ws_uri(const char* uri_address,
+                                       esp_err_t (*handler)(httpd_req_t* req)) {
   httpd_uri_t uri = {
       .uri = uri_address,
       .method = HTTP_GET,
@@ -714,31 +672,53 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
   this->register_http_uri("/api/stm_stack_size", HTTP_GET, HttpService::get_stm_task_stack_size);
   this->register_http_uri("/api/esp_stack_size", HTTP_GET, HttpService::get_esp_task_stack_size);
-  this->register_http_uri("/api/streams/start/imu", HTTP_GET, HttpService::start_imu_data_stream_handler);
-  this->register_http_uri("/api/streams/stop/imu", HTTP_GET, HttpService::stop_imu_data_stream_handler);
+  this->register_http_uri("/api/streams/start/imu",
+                          HTTP_GET,
+                          HttpService::start_imu_data_stream_handler);
+  this->register_http_uri("/api/streams/stop/imu",
+                          HTTP_GET,
+                          HttpService::stop_imu_data_stream_handler);
   this->register_http_uri("/api/streams/start/stm_cpu_usage",
                           HTTP_GET,
                           HttpService::start_stm_cpu_usage_stream_handler);
-  this->register_http_uri("/api/streams/stop/stm_cpu_usage", HTTP_GET, HttpService::stop_stm_cpu_usage_stream_handler);
-  this->register_http_uri("/api/streams/start/motor", HTTP_GET, HttpService::start_motor_data_stream_handler);
-  this->register_http_uri("/api/streams/stop/motor", HTTP_GET, HttpService::stop_motor_data_stream_handler);
+  this->register_http_uri("/api/streams/stop/stm_cpu_usage",
+                          HTTP_GET,
+                          HttpService::stop_stm_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/start/motor",
+                          HTTP_GET,
+                          HttpService::start_motor_data_stream_handler);
+  this->register_http_uri("/api/streams/stop/motor",
+                          HTTP_GET,
+                          HttpService::stop_motor_data_stream_handler);
   this->register_http_uri("/api/streams/start/esp_cpu_usage",
                           HTTP_GET,
                           HttpService::start_esp_cpu_usage_stream_handler);
-  this->register_http_uri("/api/streams/stop/esp_cpu_usage", HTTP_GET, HttpService::stop_esp_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/stop/esp_cpu_usage",
+                          HTTP_GET,
+                          HttpService::stop_esp_cpu_usage_stream_handler);
   this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
   this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
   this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
-  this->register_http_uri_with_option("/api/right_torque", HTTP_PUT, HttpService::set_right_torque_handler);
-  this->register_http_uri_with_option("/api/left_torque", HTTP_PUT, HttpService::set_left_torque_handler);
-  this->register_http_uri_with_option("/api/set-mode/manual", HTTP_PUT, HttpService::set_mode_manual_handler);
-  this->register_http_uri_with_option("/api/set-mode/automatic", HTTP_PUT, HttpService::set_mode_automatic_handler);
+  this->register_http_uri_with_option("/api/right_torque",
+                                      HTTP_PUT,
+                                      HttpService::set_right_torque_handler);
+  this->register_http_uri_with_option("/api/left_torque",
+                                      HTTP_PUT,
+                                      HttpService::set_left_torque_handler);
+  this->register_http_uri_with_option("/api/set-mode/manual",
+                                      HTTP_PUT,
+                                      HttpService::set_mode_manual_handler);
+  this->register_http_uri_with_option("/api/set-mode/automatic",
+                                      HTTP_PUT,
+                                      HttpService::set_mode_automatic_handler);
   this->register_http_uri_with_option("/api/set-mode/semi-automatic",
                                       HTTP_PUT,
                                       HttpService::set_mode_semi_automatic_handler);
-  this->register_http_uri_with_option("/api/set-mode/smart", HTTP_PUT, HttpService::set_mode_smart_handler);
+  this->register_http_uri_with_option("/api/set-mode/smart",
+                                      HTTP_PUT,
+                                      HttpService::set_mode_smart_handler);
   this->register_http_uri_with_option("/api/date-time", HTTP_PUT, HttpService::set_rtc);
   this->register_ws_uri("/api/data", HttpService::ws_data_handler);
   return ESP_OK;

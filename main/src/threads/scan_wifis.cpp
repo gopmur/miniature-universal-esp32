@@ -9,7 +9,6 @@ ScanWifisThread::ScanWifisThread(const char* name, int priority, int stack_size)
     : ThreadWithArg(name, priority, stack_size) {}
 
 void ScanWifisThread::main(httpd_req_t** req_p) {
-  ESP_LOGW("DEBUG", "IN MAIN");
   auto req = *req_p;
   wifi_scan_config_t scan_config = {
       .ssid = nullptr,
@@ -33,10 +32,8 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
               .ghz_5_channels = 0,
           },
   };
-  ESP_LOGW("DEBUG", "Before scan");
   ESP_ERROR_CHECK(esp_wifi_scan_stop());
   ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
-  ESP_LOGW("DEBUG", "After scan");
   
   uint16_t ap_count = 0;
   esp_wifi_scan_get_ap_num(&ap_count);

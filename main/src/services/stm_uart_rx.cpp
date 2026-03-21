@@ -16,8 +16,7 @@
 StmUartRxService::StmUartRxService(int priority, uart_port_t port)
     : Service(priority, "stm_uart_rx"), port(port) {}
 
-std::optional<HttpQueueMessageHeader>
-StmUartRxService::rssp_address_to_http_queue_message_header(
+std::optional<HttpQueueMessageHeader> StmUartRxService::rssp_address_to_http_queue_message_header(
     RsspAddress rssp_address) {
   switch (rssp_address) {
     case RsspAddress::RUNNING:
@@ -223,23 +222,18 @@ void log_packet(RsspPacket packet) {
 
 void StmUartRxService::main() {
   while (true) {
-    int bytes_read = uart_read_bytes(this->port,
-                                     this->rx_buffer,
-                                     config::stm_uart::rx_buffer_size,
-                                     4);
+    int bytes_read =
+        uart_read_bytes(this->port, this->rx_buffer, config::stm_uart::rx_buffer_size, 4);
     if (bytes_read <= 0) {
       continue;
     }
-    // ESP_LOGW("UART", "Bytes received");
     for (int i = 0; i < bytes_read; i++) {
       auto packet = Rssp::read_stream(this->rx_buffer[i]);
       if (!packet.has_value()) {
         continue;
       }
-      // log_packet(packet.value());
       HttpQueueMessage http_queue_message;
-      if (packet->header.b.resp == 1 &&
-          packet->header.b.type == RsspType::READ) {
+      if (packet->header.b.resp == 1 && packet->header.b.type == RsspType::READ) {
         switch (static_cast<RsspAddress>(packet->address)) {
           case RsspAddress::RUNNING:
             http_queue_message.header = HttpQueueMessageHeader::RUNNING;
@@ -247,21 +241,18 @@ void StmUartRxService::main() {
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
           case RsspAddress::RIGHT_TORQUE:
-            http_queue_message.header =
-                HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
+            http_queue_message.header = HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
             http_queue_message.payload.f = packet->get_float();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
           case RsspAddress::LEFT_TORQUE:
-            http_queue_message.header =
-                HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
+            http_queue_message.header = HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
             http_queue_message.payload.f = packet->get_float();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
           case RsspAddress::CONTROL_MODE:
             http_queue_message.header = HttpQueueMessageHeader::MODE;
-            http_queue_message.payload.control_mode =
-                static_cast<ControlMode>(packet->get_uint8());
+            http_queue_message.payload.control_mode = static_cast<ControlMode>(packet->get_uint8());
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
           case RsspAddress::LED_SERVICE_STACK_SIZE:
@@ -279,15 +270,14 @@ void StmUartRxService::main() {
             }
             http_queue_message.header = http_queue_message_header.value();
             http_queue_message.payload.u32 = packet->get_uint32();
-            http_service.task_stack_size_queue.send(http_queue_message,
-                                                    portMAX_DELAY);
+            http_service.task_stack_size_queue.send(http_queue_message, portMAX_DELAY);
             break;
           }
 
           default:
             if (ws_service.has_connections()) {
               if (ws_service.uart_streams_enabled()) {
-                ws_service.queue.send(packet.value(), 1500);
+                ws_service.queue.send(packet.value(), portMAX_DELAY);
               } else {
                 ws_service.queue.flush();
               }
@@ -296,11 +286,10 @@ void StmUartRxService::main() {
         }
       }
 
-      else if (packet->header.b.resp == 1 &&
-               packet->header.b.type == RsspType::EOC) {
+      else if (packet->header.b.resp == 1 && packet->header.b.type == RsspType::EOC) {
         if (ws_service.has_connections()) {
           if (ws_service.uart_streams_enabled()) {
-            ws_service.queue.send(packet.value(), 1500);
+            ws_service.queue.send(packet.value(), portMAX_DELAY);
           } else {
             ws_service.queue.flush();
           }

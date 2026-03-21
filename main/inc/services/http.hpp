@@ -42,17 +42,13 @@ struct HttpQueueMessage {
 
 class HttpService {
   private:
-  static constexpr const char* LOG_TAG = "HTTP Service";
-
   esp_err_t register_http_uri(const char* uri_address,
                               httpd_method_t method,
                               esp_err_t (*handler)(httpd_req_t* req));
-  esp_err_t register_http_uri_with_option(
-      const char* uri_address,
-      httpd_method_t method,
-      esp_err_t (*handler)(httpd_req_t* req));
-  esp_err_t register_ws_uri(const char* uri_address,
-                            esp_err_t (*handler)(httpd_req_t* req));
+  esp_err_t register_http_uri_with_option(const char* uri_address,
+                                          httpd_method_t method,
+                                          esp_err_t (*handler)(httpd_req_t* req));
+  esp_err_t register_ws_uri(const char* uri_address, esp_err_t (*handler)(httpd_req_t* req));
   static void allow_cors(httpd_req_t* req);
   static void set_close_connection(httpd_req_t* req);
   static void set_type_json(httpd_req_t* req);
@@ -100,6 +96,7 @@ class HttpService {
   esp_err_t register_dynamic_endpoints();
 
   public:
+  static constexpr const char* LOG_TAG = "HTTP Service";
   httpd_handle_t server_instance;
   Queue<HttpQueueMessage, 8> state_queue;
   Queue<HttpQueueMessage, 16> task_stack_size_queue;

@@ -1,14 +1,12 @@
 #include "services/ws.hpp"
 #include <optional>
 #include "config.hpp"
-#include "context/monitoring_data.hpp"
 #include "context/services/http.hpp"
 #include "context/services/monitor.hpp"
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "helper/json.hpp"
-#include "portmacro.h"
 #include "service.hpp"
 #include "services/stm_uart/rssp.hpp"
 
@@ -17,42 +15,36 @@
 #include "context/services/stm_uart_rx.hpp"
 #include "context/services/ws.hpp"
 
-WebSocketService::WebSocketService(int priority)
-    : Service(priority, "ws"),
-      esp_cpu_usage_enabled(false),
-      stm_cpu_usage_enabled(false),
-      imu_data_enabled(false) {
+WebSocketService::WebSocketService(int priority) : Service(priority, "ws") {
   connection_age.fill(-1);
   connection_fds.fill(-1);
   connection_count = 0;
+  stream_enabled.fill(false);
 };
 
-void WebSocketService::enable_esp_cpu_usage() {
-  this->esp_cpu_usage_enabled = true;
+bool WebSocketService::stream_is_enabled(WsStream stream) {
+  return this->stream_enabled[static_cast<size_t>(stream)];
 }
 
-void WebSocketService::disable_esp_cpu_usage() {
-  this->esp_cpu_usage_enabled = false;
+void WebSocketService::enable_stream(WsStream stream) {
+  if (this->stream_is_enabled(stream)) {
+    return;
+  }
+  enabled_stream_count++;
+  this->stream_enabled[static_cast<size_t>(stream)] = true;
+  if (enabled_stream_count == 1) {
+    this->resume();
+  }
 }
-
-void WebSocketService::enable_stm_cpu_usage() {
-  this->stm_cpu_usage_enabled = true;
-}
-void WebSocketService::disable_stm_cpu_usage() {
-  this->stm_cpu_usage_enabled = false;
-}
-void WebSocketService::enable_imu_data() {
-  this->imu_data_enabled = true;
-}
-void WebSocketService::disable_imu_data() {
-  this->imu_data_enabled = false;
-}
-
-void WebSocketService::enable_motor_data() {
-  this->motor_data_enabled = true;
-}
-void WebSocketService::disable_motor_data() {
-  this->motor_data_enabled = false;
+void WebSocketService::disable_stream(WsStream stream) {
+  if (!this->stream_is_enabled(stream)) {
+    return;
+  }
+  enabled_stream_count--;
+  this->stream_enabled[static_cast<size_t>(stream)] = false;
+  if (enabled_stream_count == 0) {
+    this->suspend();
+  }
 }
 
 bool WebSocketService::has_connections() {
@@ -60,7 +52,9 @@ bool WebSocketService::has_connections() {
 }
 
 bool WebSocketService::should_wait_for_eoc() {
-  return this->imu_data_enabled || this->stm_cpu_usage_enabled || this->motor_data_enabled;
+  return this->stream_enabled[static_cast<size_t>(WsStream::IMU_DATA)] ||
+         this->stream_enabled[static_cast<size_t>(WsStream::MOTOR_DATA)] ||
+         this->stream_enabled[static_cast<size_t>(WsStream::STM_TASK_DATA)];
 }
 
 void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
@@ -94,7 +88,7 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
                                                   JsonObject* stm_cpu_usage_json,
                                                   JsonObject* imu_data_json,
                                                   JsonObject* motor_data_json) {
-  if (this->stm_cpu_usage_enabled) {
+  if (this->stream_is_enabled(WsStream::STM_TASK_DATA)) {
     switch (packet.address) {
       case RsspAddress::LED_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("led");
@@ -214,7 +208,7 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
         break;
     }
   }
-  if (this->imu_data_enabled) {
+  if (this->stream_is_enabled(WsStream::IMU_DATA)) {
     switch (packet.address) {
       case RsspAddress::IMU_GX:
         imu_data_json->set_number("x", packet.get_float());
@@ -229,7 +223,7 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
         break;
     }
   }
-  if (this->motor_data_enabled) {
+  if (this->stream_is_enabled(WsStream::MOTOR_DATA)) {
     switch (packet.address) {
       case RsspAddress::MOTOR_POS_LEFT:
         motor_data_json->set_number("leftPosition", packet.get_uint16());
@@ -248,13 +242,13 @@ void WebSocketService::fill_root_json(JsonObject* json,
                                       JsonObject* esp_cpu_usage_json,
                                       JsonObject* imu_data_json,
                                       JsonObject* motor_data_json) {
-  if (this->stm_cpu_usage_enabled)
+  if (this->stream_is_enabled(WsStream::STM_TASK_DATA))
     json->set_object("stmCpuUsage", stm_cpu_usage_json);
-  if (this->esp_cpu_usage_enabled)
+  if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
     json->set_object("espCpuUsage", esp_cpu_usage_json);
-  if (this->imu_data_enabled)
+  if (this->stream_is_enabled(WsStream::IMU_DATA))
     json->set_object("imu", imu_data_json);
-  if (this->motor_data_enabled)
+  if (this->stream_is_enabled(WsStream::MOTOR_DATA))
     json->set_object("motor", motor_data_json);
 }
 
@@ -284,7 +278,7 @@ void WebSocketService::main() {
   JsonObject motor_data_json;
 
   while (true) {
-    this->wait_for_notification();
+    this->suspend();
 
     while (true) {
       uint64_t microseconds = esp_timer_get_time();
@@ -296,8 +290,7 @@ void WebSocketService::main() {
         if (!packet.has_value())
           continue;
         if (packet->header.b.type == RsspType::EOC) {
-          this->queue.flush();
-          if (this->esp_cpu_usage_enabled) {
+          if (this->stream_is_enabled(WsStream::ESP_TASK_DATA)) {
             this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
           }
           this->fill_root_json(&json,
@@ -326,6 +319,8 @@ void WebSocketService::main() {
       }
 
       else {
+        this->queue.flush();
+        ESP_LOGI("WS", "HERE");
         this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
         this->fill_root_json(&json,
                              &stm_cpu_usage_json,
@@ -369,8 +364,9 @@ void WebSocketService::start_sending(int fd) {
     this->connection_age[max_age_connection] = 0;
     this->connection_fds[max_age_connection] = fd;
   }
-
-  this->notify();
+  if (enabled_stream_count > 0) {
+    this->resume();
+  }
 }
 
 void WebSocketService::stop_sending(int fd) {
@@ -399,8 +395,12 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
+  if (this->connection_count == 0) {
+    this->queue.flush();
+    this->suspend();
+  }
 }
 
 bool WebSocketService::uart_streams_enabled() {
-  return this->imu_data_enabled || this->motor_data_enabled || this->stm_cpu_usage_enabled;
+  return this->should_wait_for_eoc();
 }
