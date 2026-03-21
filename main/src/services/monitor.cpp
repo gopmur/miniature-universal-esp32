@@ -8,7 +8,7 @@
 #include "context/services/stm_uart_rx.hpp"
 #include "context/services/ws.hpp"
 
-MonitorService::MonitorService(int priority) : AbstractService(priority, "monitor") {}
+MonitorService::MonitorService(int priority) : Service(priority, "monitor") {}
 
 void MonitorService::main() {
 #pragma clang diagnostic push
@@ -25,7 +25,7 @@ void MonitorService::main() {
       auto task_handle = task_status[i].xHandle;
       auto runtime = task_status[i].ulRunTimeCounter;
       float cpu_usage;
-      for (auto service : _AbstractService::service_list) {
+      for (auto service : ServiceThread::service_list) {
         if (service->get_handle() == task_handle) {
           cpu_usage = service->calculate_cpu_usage(runtime, total_runtime);
         }

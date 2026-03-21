@@ -12,7 +12,7 @@
 #include "services/stm_uart/rssp.hpp"
 
 WebSocketService::WebSocketService(int priority)
-    : AbstractService(priority, "ws"),
+    : Service(priority, "ws"),
       esp_cpu_usage_enabled(false),
       stm_cpu_usage_enabled(false),
       imu_data_enabled(false) {

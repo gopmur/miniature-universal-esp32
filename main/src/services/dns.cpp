@@ -12,7 +12,7 @@
 #include "services/dns.hpp"
 
 DnsService::DnsService(int priority, const char* iface_address, const char* name)
-    : AbstractService(priority, "dns") {
+    : Service(priority, "dns") {
   inet_pton(AF_INET, iface_address, &this->iface_address);
   this->name = static_cast<char*>(malloc(strlen(name) + 1));
   strcpy(this->name, name);

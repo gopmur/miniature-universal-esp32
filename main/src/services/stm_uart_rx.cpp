@@ -14,7 +14,7 @@
 #include "services/stm_uart/rssp.hpp"
 
 StmUartRxService::StmUartRxService(int priority, uart_port_t port)
-    : AbstractService(priority, "stm_uart_rx"), port(port) {}
+    : Service(priority, "stm_uart_rx"), port(port) {}
 
 std::optional<HttpQueueMessageHeader>
 StmUartRxService::rssp_address_to_http_queue_message_header(

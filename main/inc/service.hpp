@@ -6,33 +6,33 @@
 #include "freertos/idf_additions.h"
 #include "thread.hpp"
 
-class _AbstractService : public _AbstractThread {
+class ServiceThread : public Thread {
   protected:
-  static void _main(_AbstractService* self);
+  static void _main(ServiceThread* self);
   StaticTask_t tcb;
   char* name;
 
   virtual void main() = 0;
-  _AbstractService(int stack_size, int priority, const char* name);
+  ServiceThread(int stack_size, int priority, const char* name);
 
   public:
-  static std::vector<_AbstractService*> service_list;
+  static std::vector<ServiceThread*> service_list;
 };
 
 template <int STACK_SIZE>
-class AbstractService : public _AbstractService {
+class Service : public ServiceThread {
   private:
-  StackType_t stack[STACK_SIZE]; /**< Stack memory for the task */
+  StackType_t stack[STACK_SIZE];
 
   protected:
-  AbstractService(int priority, const char* name);
+  Service(int priority, const char* name);
 
   public:
   void start();
 };
 
 template <int STACK_SIZE>
-void AbstractService<STACK_SIZE>::start() {
+void Service<STACK_SIZE>::start() {
   service_list.push_back(this);
   this->handle = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(_main),
                                    this->name,
@@ -44,5 +44,5 @@ void AbstractService<STACK_SIZE>::start() {
 }
 
 template <int STACK_SIZE>
-AbstractService<STACK_SIZE>::AbstractService(int priority, const char* name)
-    : _AbstractService(STACK_SIZE, priority, name) {}
+Service<STACK_SIZE>::Service(int priority, const char* name)
+    : ServiceThread(STACK_SIZE, priority, name) {}

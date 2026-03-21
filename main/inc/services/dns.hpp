@@ -6,7 +6,7 @@
 #include "service.hpp"
 #include "services/dns/packet.hpp"
 
-class DnsService : public AbstractService<config::service::dns::stack_size> {
+class DnsService : public Service<config::service::dns::stack_size> {
   private:
   in_addr_t iface_address;
   char* name;

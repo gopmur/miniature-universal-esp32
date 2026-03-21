@@ -4,7 +4,7 @@
 #include "hal/gpio_types.h"
 #include "service.hpp"
 
-LedService::LedService(int priority) : AbstractService(priority, "led") {}
+LedService::LedService(int priority) : Service(priority, "led") {}
 
 void LedService::main() {
   gpio_config_t led_config = {

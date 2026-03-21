@@ -6,7 +6,7 @@
 #include "helper/json.hpp"
 
 ScanWifisThread::ScanWifisThread(const char* name, int priority, int stack_size)
-    : AbstractThread(name, priority, stack_size) {}
+    : ThreadWithArg(name, priority, stack_size) {}
 
 void ScanWifisThread::main(httpd_req_t** req_p) {
   ESP_LOGW("DEBUG", "IN MAIN");

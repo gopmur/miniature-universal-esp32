@@ -6,7 +6,7 @@
 #include "services/http.hpp"
 #include "services/stm_uart/rssp.hpp"
 
-class StmUartRxService : public AbstractService<config::service::stm_uart::stack_size> {
+class StmUartRxService : public Service<config::service::stm_uart::stack_size> {
   private:
   uint8_t rx_buffer[config::stm_uart::rx_buffer_size];
   const uart_port_t port;

@@ -9,7 +9,7 @@
 WifiConnectionThread::WifiConnectionThread(const char* name,
                                            int priority,
                                            int stack_size)
-    : AbstractThread(name, priority, stack_size) {}
+    : ThreadWithArg(name, priority, stack_size) {}
 
 void WifiConnectionThread::main(httpd_req_t** req_p) {
   auto req = *req_p;
