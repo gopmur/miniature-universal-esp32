@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstring>
-#include "esp_log.h"
 #include "freertos/idf_additions.h"
 
 class _AbstractThread {

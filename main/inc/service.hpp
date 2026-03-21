@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 #include "freertos/idf_additions.h"
 #include "thread.hpp"
 
@@ -13,6 +14,9 @@ class _AbstractService : public _AbstractThread {
 
   virtual void main() = 0;
   _AbstractService(int stack_size, int priority, const char* name);
+
+  public:
+  static std::vector<_AbstractService*> service_list;
 };
 
 template <int STACK_SIZE>
@@ -29,8 +33,14 @@ class AbstractService : public _AbstractService {
 
 template <int STACK_SIZE>
 void AbstractService<STACK_SIZE>::start() {
-  this->handle =
-      xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(_main), this->name, stack_size, this, priority, stack, &tcb);
+  service_list.push_back(this);
+  this->handle = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(_main),
+                                   this->name,
+                                   stack_size,
+                                   this,
+                                   priority,
+                                   stack,
+                                   &tcb);
 }
 
 template <int STACK_SIZE>
