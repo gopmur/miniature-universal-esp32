@@ -72,9 +72,6 @@ void ThreadWithArg<Derived, Param>::_main(ThreadMainParam<Derived, Param>* main_
   delete main_param->self;
   free(main_param->param);
   free(main_param);
-  while (true) {
-    vTaskDelay(1000);
-  };
   vTaskDelete(nullptr);
 }
 

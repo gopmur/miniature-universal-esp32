@@ -27,9 +27,12 @@ void GetStates::main(httpd_req_t** req_p) {
   JsonObject res_json;
 
   for (int i = 0; i < 4; i++) {
-    auto response = http_service.state_queue.receive(portMAX_DELAY);
+    auto response = http_service.state_queue.receive(1000);
     if (!response.has_value()) {
-      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "STM32 not responding");
+      res_json.set_string("message", "timed out");
+      auto res_str = res_json.stringify();
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str);
+      free(res_str);
       httpd_req_async_handler_complete(req);
       return;
     }
