@@ -6,7 +6,7 @@
 #include "service.hpp"
 
 class LedService
-    : public AbstractService<LedService, config::service::led::stack_size> {
+    : public AbstractService<config::service::led::stack_size> {
   public:
   void main();
   LedService(int priority);

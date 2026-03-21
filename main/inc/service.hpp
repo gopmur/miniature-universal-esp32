@@ -4,12 +4,12 @@
 #include <cstring>
 #include "freertos/idf_additions.h"
 
-template <typename Derived, int STACK_SIZE>
+template <int STACK_SIZE>
 class AbstractService {
   private:
   uint32_t last_total_runtime = 0;
   uint32_t last_service_runtime = 0;
-  static void _main(Derived* self);
+  static void _main(AbstractService* self);
 
   protected:
   StackType_t stack[STACK_SIZE]; /**< Stack memory for the task */
@@ -20,7 +20,7 @@ class AbstractService {
 
   void wait_for_notification();
   void wait_for_notification(int ticks_to_wait);
-  void main();
+  virtual void main() = 0;
   AbstractService(int priority, const char* name);
 
   public:
@@ -37,61 +37,56 @@ class AbstractService {
   void start();
 };
 
-template <typename Derived, int STACK_SIZE>
-AbstractService<Derived, STACK_SIZE>::AbstractService(int priority,
-                                                      const char* name)
-    : priority(priority) {
+template <int STACK_SIZE>
+AbstractService<STACK_SIZE>::AbstractService(int priority, const char* name) : priority(priority) {
   this->name = static_cast<char*>(malloc(strlen(name)));
   strcpy(this->name, name);
 }
 
-template <typename Derived, int STACK_SIZE>
-TaskHandle_t AbstractService<Derived, STACK_SIZE>::get_thread_id() {
+template <int STACK_SIZE>
+TaskHandle_t AbstractService<STACK_SIZE>::get_thread_id() {
   return this->thread_id;
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::suspend() {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::suspend() {
   vTaskSuspend(this->thread_id);
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::resume() {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::resume() {
   vTaskResume(this->thread_id);
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::resume_from_isr() {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::resume_from_isr() {
   xTaskResumeFromISR(this->thread_id);
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::wait_for_notification() {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::wait_for_notification() {
   ulTaskNotifyTake(true, portMAX_DELAY);
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::wait_for_notification(
-    int ticks_to_wait) {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::wait_for_notification(int ticks_to_wait) {
   ulTaskNotifyTake(true, ticks_to_wait);
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::notify() {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::notify() {
   xTaskNotifyGive(this->thread_id);
 }
 
-template <typename Derived, int STACK_SIZE>
-bool AbstractService<Derived, STACK_SIZE>::notify_from_isr() {
+template <int STACK_SIZE>
+bool AbstractService<STACK_SIZE>::notify_from_isr() {
   BaseType_t higher_priority_task_woken = false;
   vTaskNotifyGiveFromISR(this->thread_id, &higher_priority_task_woken);
   return higher_priority_task_woken;
 }
 
-template <typename Derived, int STACK_SIZE>
-float AbstractService<Derived, STACK_SIZE>::calculate_cpu_usage(
-    uint32_t service_runtime,
-    uint32_t total_runtime) {
+template <int STACK_SIZE>
+float AbstractService<STACK_SIZE>::calculate_cpu_usage(uint32_t service_runtime, uint32_t total_runtime) {
   uint32_t d_service_runtime = service_runtime - last_service_runtime;
   uint32_t d_total_runtime = total_runtime - last_total_runtime;
   last_service_runtime = service_runtime;
@@ -99,21 +94,19 @@ float AbstractService<Derived, STACK_SIZE>::calculate_cpu_usage(
   return d_service_runtime * 100.0 / d_total_runtime;
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::start() {
-  this->thread_id =
-      xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(
-                            AbstractService<Derived, STACK_SIZE>::_main),
-                        this->name,
-                        stack_size,
-                        this,
-                        priority,
-                        stack,
-                        &tcb);
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::start() {
+  this->thread_id = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(AbstractService<STACK_SIZE>::_main),
+                                      this->name,
+                                      stack_size,
+                                      this,
+                                      priority,
+                                      stack,
+                                      &tcb);
 }
 
-template <typename Derived, int STACK_SIZE>
-void AbstractService<Derived, STACK_SIZE>::_main(Derived* self) {
+template <int STACK_SIZE>
+void AbstractService<STACK_SIZE>::_main(AbstractService* self) {
   self->main();
   self->suspend();
 }

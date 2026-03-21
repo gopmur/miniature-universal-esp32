@@ -6,8 +6,7 @@
 #include "service.hpp"
 #include "services/stm_uart/rssp.hpp"
 
-class WebSocketService
-    : public AbstractService<WebSocketService, config::service::ws::stack_size> {
+class WebSocketService : public AbstractService<config::service::ws::stack_size> {
   private:
   bool esp_cpu_usage_enabled;
   bool stm_cpu_usage_enabled;
@@ -29,7 +28,6 @@ class WebSocketService
                       JsonObject* motor_data_json);
   void send_to_connections(const char* data);
 
-  
   public:
   void main();
   Queue<RsspPacket, 64> queue;
