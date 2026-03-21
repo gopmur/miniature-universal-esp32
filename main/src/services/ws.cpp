@@ -320,7 +320,6 @@ void WebSocketService::main() {
 
       else {
         this->queue.flush();
-        ESP_LOGI("WS", "HERE");
         this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
         this->fill_root_json(&json,
                              &stm_cpu_usage_json,
