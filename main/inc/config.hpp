@@ -7,10 +7,10 @@ namespace config {
   namespace pins {}
 
   namespace wifi {
-    constexpr auto ssid = "Gopmur ESP-32";
+    constexpr auto ssid = "Mini Universal";
     constexpr auto password = "12345678";
     constexpr auto channel = 6;
-    constexpr auto max_connection = 2;
+    constexpr auto max_connection = 3;
   }
 
   namespace stm_uart {
@@ -33,6 +33,7 @@ namespace config {
     namespace dns {
       constexpr auto priority = 2;
       constexpr auto stack_size = 4096;
+      constexpr auto name = "hexa.lan";
     }
 
     namespace led {

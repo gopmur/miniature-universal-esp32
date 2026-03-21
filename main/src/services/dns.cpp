@@ -11,9 +11,10 @@
 
 #include "services/dns.hpp"
 
-DnsService::DnsService(int priority, const char* iface_address)
-    : AbstractService(priority, "dns") {
+DnsService::DnsService(int priority, const char* iface_address, const char* name) : AbstractService(priority, "dns") {
   inet_pton(AF_INET, iface_address, &this->iface_address);
+  this->name = static_cast<char*>(malloc(strlen(name) + 1));
+  strcpy(this->name, name);
 }
 
 bool DnsService::drop_packet(DNSPacket& packet) {
@@ -25,12 +26,10 @@ void DnsService::set_dns_rcode(DNSPacket& packet, int parse_err) {
   auto& question = packet.get_question();
   if (parse_err) {
     header.set_rcode(RCODE_SERVER_FAILURE);
-  } else if (header.get_number_of_questions() != 1 ||
-             header.get_opcode() == OPCODE_IQUERY ||
-             header.get_opcode() == OPCODE_STATUS ||
-             question.get_type() != RRTYPE_A) {
+  } else if (header.get_number_of_questions() != 1 || header.get_opcode() == OPCODE_IQUERY ||
+             header.get_opcode() == OPCODE_STATUS || question.get_type() != RRTYPE_A) {
     header.set_rcode(RCODE_NOT_IMPLEMENTED);
-  } else if (strcmp(packet.get_question().get_name(), "app.lan") != 0) {
+  } else if (strcmp(packet.get_question().get_name(), name) != 0) {
     header.set_rcode(RCODE_NAME_ERR);
   } else {
     header.set_rcode(RCODE_NO_ERR);
@@ -62,8 +61,7 @@ void DnsService::main() {
   sock_addres.sin_port = htons(53);
   sock_addres.sin_family = AF_INET;
 
-  ESP_ERROR_CHECK(
-      bind(sock, (struct sockaddr*)&sock_addres, sizeof(struct sockaddr_in)));
+  ESP_ERROR_CHECK(bind(sock, (struct sockaddr*)&sock_addres, sizeof(struct sockaddr_in)));
 
   constexpr int BUFFER_SIZE = 64;
   static char buf[BUFFER_SIZE];
@@ -73,12 +71,7 @@ void DnsService::main() {
   while (true) {
     struct sockaddr_in client_address;
     socklen_t client_address_len = sizeof(struct sockaddr_in);
-    recvfrom(sock,
-             buf,
-             BUFFER_SIZE,
-             0,
-             (struct sockaddr*)&client_address,
-             &client_address_len);
+    recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr*)&client_address, &client_address_len);
 
     int ret = packet.parse(buf, BUFFER_SIZE, nullptr);
     if (this->drop_packet(packet)) {
@@ -87,11 +80,6 @@ void DnsService::main() {
     this->make_dns_response(packet, ret);
     int answer_size;
     packet.copy(buf, BUFFER_SIZE, &answer_size);
-    sendto(sock,
-           buf,
-           answer_size,
-           0,
-           (struct sockaddr*)&client_address,
-           client_address_len);
+    sendto(sock, buf, answer_size, 0, (struct sockaddr*)&client_address, client_address_len);
   }
 };
