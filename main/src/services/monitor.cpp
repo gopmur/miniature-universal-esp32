@@ -7,7 +7,8 @@ MonitorService::MonitorService(int priority) : Service(priority, "monitor") {}
 void MonitorService::main() {
   while (true) {
     vTaskDelay(250);
-    for (auto service : ServiceThread::service_list) {
+    auto thread_list = Thread::get_thread_list();
+    for (auto service : thread_list) {
       service->update_runtime_stats();
     }
   }

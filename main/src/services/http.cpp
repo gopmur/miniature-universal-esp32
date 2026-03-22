@@ -86,10 +86,10 @@ esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
+  ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
   set_header(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
-  ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
   scan_wifis_thread.start(&async_req);
   return ESP_OK;
 }
@@ -232,11 +232,11 @@ esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
   set_header(req);
   JsonObject res_json;
 
-  for (const auto service : ServiceThread::service_list) {
+  for (const auto service : Thread::get_thread_list()) {
     auto service_name = service->get_name();
     res_json.set_number(service_name, service->stack_size);
   }
-  
+
   auto res_str = res_json.stringify();
 
   httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);

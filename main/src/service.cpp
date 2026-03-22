@@ -1,8 +1,6 @@
 #include "service.hpp"
 #include "thread.hpp"
 
-std::vector<ServiceThread*> ServiceThread::service_list;
-
 ServiceThread::ServiceThread(int stack_size, int priority, const char* name)
     : Thread(name, priority, stack_size) {}
 

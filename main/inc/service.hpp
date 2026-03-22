@@ -13,9 +13,6 @@ class ServiceThread : public Thread {
 
   virtual void main() = 0;
   ServiceThread(int stack_size, int priority, const char* name);
-
-  public:
-  static std::vector<ServiceThread*> service_list;
 };
 
 template <int STACK_SIZE>
@@ -32,7 +29,6 @@ class Service : public ServiceThread {
 
 template <int STACK_SIZE>
 void Service<STACK_SIZE>::start() {
-  service_list.push_back(this);
   this->handle = xTaskCreateStatic(reinterpret_cast<void (*)(void*)>(_main),
                                    this->name,
                                    stack_size,
@@ -40,6 +36,9 @@ void Service<STACK_SIZE>::start() {
                                    priority,
                                    stack,
                                    &tcb);
+  Thread::thread_list_mutex.take();
+  Thread::thread_list.push_back(new Thread(*this));
+  Thread::thread_list_mutex.give();
 }
 
 template <int STACK_SIZE>

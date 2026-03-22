@@ -1,5 +1,8 @@
 #include "thread.hpp"
 
+std::vector<Thread*> Thread::thread_list;
+Mutex Thread::thread_list_mutex;
+
 Thread::Thread(const char* name, int priority, int stack_size)
     : priority(priority), stack_size(stack_size) {
   this->name = static_cast<char*>(malloc(strlen(name) + 1));
@@ -92,5 +95,12 @@ Thread::Thread(Thread& other)
 }
 
 const char* Thread::get_name() {
-  return this->name;
+  return pcTaskGetName(this->get_handle());
+}
+
+const std::vector<Thread*> Thread::get_thread_list() {
+  thread_list_mutex.take();
+  auto thread_list_copy = Thread::thread_list;
+  thread_list_mutex.give();
+  return thread_list_copy;
 }

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <cstring>
+#include <vector>
 #include "freertos/idf_additions.h"
+#include "ipc/mutex.hpp"
 
 class Thread {
   private:
@@ -14,16 +17,18 @@ class Thread {
   float calculate_max_stack_usage(uint32_t stack_high_water_mark);
 
   protected:
+  static Mutex thread_list_mutex;
   char* name;
   int priority;
   TaskHandle_t handle;
   void wait_for_notification();
   void wait_for_notification(int ticks_to_wait);
   Thread(const char* name, int priority, int stack_size);
-  Thread(Thread& other);
-
+  static std::vector<Thread*> thread_list;
+  
   public:
   const int stack_size = 0;
+  Thread(Thread& other);
 
   void suspend();
   void resume();
@@ -36,6 +41,7 @@ class Thread {
   uint32_t get_max_stack_usage();
   TaskHandle_t get_handle();
   ~Thread();
+  static const std::vector<Thread*> get_thread_list();
 };
 
 template <typename Derived, typename Param>
@@ -70,6 +76,11 @@ void ThreadWithArg<Derived, Param>::_main(ThreadMainParam<Derived, Param>* main_
   auto self = main_param->self;
   auto param = main_param->param;
   self->main(param);
+  Thread::thread_list_mutex.take();
+  auto index_in_thread_list =
+      std::find(Thread::thread_list.begin(), Thread::thread_list.end(), main_param->self);
+  Thread::thread_list.erase(index_in_thread_list);
+  Thread::thread_list_mutex.give();
   delete main_param->self;
   free(main_param->param);
   free(main_param);
@@ -89,4 +100,7 @@ void ThreadWithArg<Derived, Param>::start(Param* param) {
               main_param,
               this->priority,
               &this->handle);
+  Thread::thread_list_mutex.take();
+  Thread::thread_list.push_back(new Thread(*this));
+  Thread::thread_list_mutex.give();
 }
