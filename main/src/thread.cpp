@@ -90,3 +90,7 @@ Thread::Thread(Thread& other)
   this->name = static_cast<char*>(malloc(strlen(other.name)));
   strcpy(this->name, other.name);
 }
+
+const char* Thread::get_name() {
+  return this->name;
+}

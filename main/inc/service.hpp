@@ -10,7 +10,6 @@ class ServiceThread : public Thread {
   protected:
   static void _main(ServiceThread* self);
   StaticTask_t tcb;
-  char* name;
 
   virtual void main() = 0;
   ServiceThread(int stack_size, int priority, const char* name);

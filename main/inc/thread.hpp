@@ -31,6 +31,7 @@ class Thread {
   void notify();
   bool notify_from_isr();
   void update_runtime_stats();
+  const char* get_name();
   float get_cpu_usage();
   uint32_t get_max_stack_usage();
   TaskHandle_t get_handle();

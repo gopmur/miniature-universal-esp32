@@ -26,6 +26,7 @@
 #include "context/services/stm_uart_rx.hpp"
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
+#include "service.hpp"
 #include "services/stm_uart/rssp.hpp"
 #include "services/ws.hpp"
 #include "threads/get_stack_sizes.hpp"
@@ -231,12 +232,11 @@ esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
   set_header(req);
   JsonObject res_json;
 
-  res_json.set_number("led", led_service.stack_size);
-  res_json.set_number("dns", dns_service.stack_size);
-  res_json.set_number("ws", ws_service.stack_size);
-  res_json.set_number("uartRx", stm_uart_rx_service.stack_size);
-  res_json.set_number("monitor", monitor_service.stack_size);
-
+  for (const auto service : ServiceThread::service_list) {
+    auto service_name = service->get_name();
+    res_json.set_number(service_name, service->stack_size);
+  }
+  
   auto res_str = res_json.stringify();
 
   httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);

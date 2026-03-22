@@ -58,30 +58,13 @@ bool WebSocketService::should_wait_for_eoc() {
 }
 
 void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
-  esp_cpu_usage_json->add_object("dns");
-  auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("dns"));
-  service_object.set_number("cpuUsage", dns_service.get_cpu_usage());
-  service_object.set_number("maxStackUsage", dns_service.get_max_stack_usage());
-
-  esp_cpu_usage_json->add_object("led");
-  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("led"));
-  service_object.set_number("cpuUsage", led_service.get_cpu_usage());
-  service_object.set_number("maxStackUsage", led_service.get_max_stack_usage());
-
-  esp_cpu_usage_json->add_object("monitor");
-  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("monitor"));
-  service_object.set_number("cpuUsage", monitor_service.get_cpu_usage());
-  service_object.set_number("maxStackUsage", monitor_service.get_max_stack_usage());
-
-  esp_cpu_usage_json->add_object("uartRx");
-  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("uartRx"));
-  service_object.set_number("cpuUsage", stm_uart_rx_service.get_cpu_usage());
-  service_object.set_number("maxStackUsage", stm_uart_rx_service.get_max_stack_usage());
-
-  esp_cpu_usage_json->add_object("ws");
-  service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object("ws"));
-  service_object.set_number("cpuUsage", ws_service.get_cpu_usage());
-  service_object.set_number("maxStackUsage", ws_service.get_max_stack_usage());
+  for (const auto service : ServiceThread::service_list) {
+    auto service_name = service->get_name();
+    esp_cpu_usage_json->add_object(service_name);
+    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(service_name));
+    service_object.set_number("cpuUsage", service->get_cpu_usage());
+    service_object.set_number("maxStackUsage", service->get_max_stack_usage());
+  }
 }
 
 void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
