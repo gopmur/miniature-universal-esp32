@@ -31,8 +31,7 @@ class App {
 
   void setup_flash() {
     res = nvs_flash_init();
-    if (res == ESP_ERR_NVS_NO_FREE_PAGES ||
-        res == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    if (res == ESP_ERR_NVS_NO_FREE_PAGES || res == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
       ESP_ERROR_CHECK(nvs_flash_init());
     } else {

@@ -1,4 +1,7 @@
 #include "thread.hpp"
+#include "freertos/idf_additions.h"
+
+#include "esp_log.h"
 
 std::vector<Thread*> Thread::thread_list;
 Mutex Thread::thread_list_mutex;
@@ -73,15 +76,15 @@ void Thread::update_runtime_stats() {
     }
   }
   this->cpu_usage = this->calculate_cpu_usage(service_runtime, total_runtime);
-  this->max_stack_usage = this->calculate_max_stack_usage(stack_high_water_mark);
+  this->min_free_stack = stack_high_water_mark;
 }
 
 float Thread::get_cpu_usage() {
   return this->cpu_usage;
 }
 
-uint32_t Thread::get_max_stack_usage() {
-  return this->max_stack_usage;
+uint32_t Thread::get_min_free_stack() {
+  return this->min_free_stack;
 }
 
 TaskHandle_t Thread::get_handle() {
@@ -95,7 +98,7 @@ Thread::Thread(Thread& other)
 }
 
 const char* Thread::get_name() {
-  return pcTaskGetName(this->get_handle());
+  return this->name;
 }
 
 const std::vector<Thread*> Thread::get_thread_list() {
@@ -103,4 +106,24 @@ const std::vector<Thread*> Thread::get_thread_list() {
   auto thread_list_copy = Thread::thread_list;
   thread_list_mutex.give();
   return thread_list_copy;
+}
+
+ThreadWrapper::ThreadWrapper(TaskHandle_t handle)
+    : Thread(pcTaskGetName(handle), uxTaskPriorityGet(handle), 0  ) {
+  this->handle = handle;
+}
+
+void ThreadWrapper::register_to_list() {
+  thread_list_mutex.take();
+  bool already_registered = false;
+  for (const auto thread : thread_list) {
+    if (thread->get_handle() == this->handle) {
+      already_registered = true;
+      break;
+    }
+  }
+  if (!already_registered) {
+    thread_list.push_back(new Thread(*this));
+  }
+  thread_list_mutex.give();
 }

@@ -63,8 +63,10 @@ void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
     esp_cpu_usage_json->add_object(service_name);
     auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(service_name));
     service_object.set_number("cpuUsage", service->get_cpu_usage());
-    service_object.set_number("maxStackUsage", service->get_max_stack_usage());
-    service_object.set_number("stackSize", service->stack_size);
+    service_object.set_number("minFreeStack", service->get_min_free_stack());
+    if (service->stack_size) {
+      service_object.set_number("stackSize", service->stack_size);
+    }
   }
 }
 

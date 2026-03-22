@@ -11,7 +11,7 @@ class Thread {
   uint32_t last_total_runtime = 0;
   uint32_t last_service_runtime = 0;
   float cpu_usage = 0;
-  uint32_t max_stack_usage;
+  uint32_t min_free_stack;
   Thread() = default;
   float calculate_cpu_usage(uint32_t service_runtime, uint32_t total_runtime);
   float calculate_max_stack_usage(uint32_t stack_high_water_mark);
@@ -25,7 +25,7 @@ class Thread {
   void wait_for_notification(int ticks_to_wait);
   Thread(const char* name, int priority, int stack_size);
   static std::vector<Thread*> thread_list;
-  
+
   public:
   const int stack_size = 0;
   Thread(Thread& other);
@@ -38,10 +38,16 @@ class Thread {
   void update_runtime_stats();
   const char* get_name();
   float get_cpu_usage();
-  uint32_t get_max_stack_usage();
+  uint32_t get_min_free_stack();
   TaskHandle_t get_handle();
   ~Thread();
   static const std::vector<Thread*> get_thread_list();
+};
+
+class ThreadWrapper : public Thread {
+  public:
+  ThreadWrapper(TaskHandle_t handle);
+  void register_to_list();
 };
 
 template <typename Derived, typename Param>
