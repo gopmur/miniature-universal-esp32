@@ -21,7 +21,7 @@ class Thread {
 
   protected:
   static Mutex thread_list_mutex;
-  static std::vector<Thread*> thread_list;
+  static std::vector<Thread> thread_list;
   char* name;
   int priority;
   TaskHandle_t handle;
@@ -30,7 +30,7 @@ class Thread {
   Thread(const char* name, int priority, int stack_size);
 
   public:
-  static std::vector<Thread*> get_thread_list();
+  static std::vector<Thread> get_thread_list();
   int stack_size = 0;
   Thread(const Thread& other);
 
@@ -92,12 +92,11 @@ void ThreadWithArg<Derived, Param>::_main(ThreadMainParam<Derived, Param>* main_
   int index_in_thread_list = -1;
   for (int i = 0; i < thread_list.size(); i++) {
     auto thread = thread_list[i];
-    if (thread->get_handle() == self->get_handle()) {
+    if (thread.get_handle() == self->get_handle()) {
       index_in_thread_list = i;
     }
   }
   if (index_in_thread_list >= 0) {
-    delete thread_list[index_in_thread_list];
     Thread::thread_list.erase(thread_list.begin() + index_in_thread_list);
   }
   Thread::thread_list_mutex.give();
@@ -122,6 +121,6 @@ void ThreadWithArg<Derived, Param>::start(Param* param) {
               &main_param->self->handle);
   this->handle = main_param->self->handle;
   thread_list_mutex.take();
-  thread_list.push_back(new Thread(*this));
+  thread_list.push_back(*this);
   thread_list_mutex.give();
 }

@@ -37,7 +37,7 @@ void Service<STACK_SIZE>::start() {
                                    stack,
                                    &tcb);
   Thread::thread_list_mutex.take();
-  Thread::thread_list.push_back(new Thread(*this));
+  Thread::thread_list.push_back(*this);
   Thread::thread_list_mutex.give();
 }
 

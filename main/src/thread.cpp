@@ -4,7 +4,7 @@
 
 #include "esp_log.h"
 
-std::vector<Thread*> Thread::thread_list;
+std::vector<Thread> Thread::thread_list;
 Mutex Thread::thread_list_mutex;
 
 Thread::Thread(const char* name, int priority, int stack_size)
@@ -115,7 +115,7 @@ ThreadWrapper::ThreadWrapper(TaskHandle_t handle)
   this->handle = handle;
 }
 
-std::vector<Thread*> Thread::get_thread_list() {
+std::vector<Thread> Thread::get_thread_list() {
   thread_list_mutex.take();
   auto thread_list_copy = thread_list;
   thread_list_mutex.give();

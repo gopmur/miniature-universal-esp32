@@ -233,9 +233,9 @@ esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
   JsonObject res_json;
 
   for (auto service : Thread::get_thread_list()) {
-    auto service_name = service->get_name();
-    if (service->stack_size) {
-      res_json.set_number(service_name, service->stack_size);
+    auto service_name = service.get_name();
+    if (service.stack_size) {
+      res_json.set_number(service_name, service.stack_size);
     }
   }
 

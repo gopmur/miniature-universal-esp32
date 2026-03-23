@@ -23,7 +23,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
   std::array<int, config::service::ws::max_connection> connection_age;
   int connection_count;
   bool should_wait_for_eoc();
-  void fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json);
+  void fill_esp_task_data_json(JsonObject* esp_cpu_usage_json, JsonObject* esp_heap_json);
   void fill_json_with_packet_data(RsspPacket packet,
                                   JsonObject* stm_cpu_usage_json,
                                   JsonObject* imu_data_json,
@@ -32,7 +32,8 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
                       JsonObject* stm_cpu_usage_json,
                       JsonObject* esp_cpu_usage_json,
                       JsonObject* imu_data_json,
-                      JsonObject* motor_data_json);
+                      JsonObject* motor_data_json,
+                      JsonObject* esp_heap);
   void send_to_connections(const char* data);
   bool stream_is_enabled(WsStream stream);
 

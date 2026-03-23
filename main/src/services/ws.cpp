@@ -3,8 +3,10 @@
 #include "config.hpp"
 #include "context/services/http.hpp"
 #include "context/services/monitor.hpp"
+#include "esp_heap_caps.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_timer.h"
 #include "helper/json.hpp"
 #include "service.hpp"
@@ -57,7 +59,8 @@ bool WebSocketService::should_wait_for_eoc() {
          this->stream_enabled[static_cast<size_t>(WsStream::STM_TASK_DATA)];
 }
 
-void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
+void WebSocketService::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
+                                               JsonObject* esp_heap_json) {
   auto thread_list = Thread::get_thread_list();
   auto task_list = monitor_service.get_task_list();
   for (auto task : task_list) {
@@ -67,13 +70,18 @@ void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
     service_object.set_number("cpuUsage", task.get_cpu_usage());
     service_object.set_number("minFreeStack", task.get_min_free_stack());
   }
-  
+
   for (auto thread : thread_list) {
-    auto name = thread->get_name();
+    auto name = thread.get_name();
     esp_cpu_usage_json->add_object(name);
     auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
-    service_object.set_number("stackSize", thread->stack_size);
+    service_object.set_number("stackSize", thread.stack_size);
   }
+
+  esp_heap_json->set_number("free", esp_get_free_heap_size());
+  esp_heap_json->set_number("minFree", esp_get_minimum_free_heap_size());
+  esp_heap_json->set_number("totalSize", heap_caps_get_total_size(MALLOC_CAP_DEFAULT));
+  esp_heap_json->set_number("largestBlock", heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 }
 
 void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
@@ -233,11 +241,14 @@ void WebSocketService::fill_root_json(JsonObject* json,
                                       JsonObject* stm_cpu_usage_json,
                                       JsonObject* esp_cpu_usage_json,
                                       JsonObject* imu_data_json,
-                                      JsonObject* motor_data_json) {
+                                      JsonObject* motor_data_json,
+                                      JsonObject* esp_heap) {
   if (this->stream_is_enabled(WsStream::STM_TASK_DATA))
     json->set_object("stmCpuUsage", stm_cpu_usage_json);
   if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
     json->set_object("espCpuUsage", esp_cpu_usage_json);
+  if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
+    json->set_object("espHeap", esp_heap);
   if (this->stream_is_enabled(WsStream::IMU_DATA))
     json->set_object("imu", imu_data_json);
   if (this->stream_is_enabled(WsStream::MOTOR_DATA))
@@ -268,6 +279,7 @@ void WebSocketService::main() {
   JsonObject stm_cpu_usage_json;
   JsonObject imu_data_json;
   JsonObject motor_data_json;
+  JsonObject esp_heap;
 
   while (true) {
     this->suspend();
@@ -283,13 +295,14 @@ void WebSocketService::main() {
           continue;
         if (packet->header.b.type == RsspType::EOC) {
           if (this->stream_is_enabled(WsStream::ESP_TASK_DATA)) {
-            this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
+            this->fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
           }
           this->fill_root_json(&json,
                                &stm_cpu_usage_json,
                                &esp_cpu_usage_json,
                                &imu_data_json,
-                               &motor_data_json);
+                               &motor_data_json,
+                               &esp_heap);
           if (!json.is_empty()) {
             json.set_number("microseconds", microseconds);
             char* json_str = json.stringify();
@@ -312,12 +325,13 @@ void WebSocketService::main() {
 
       else {
         this->queue.flush();
-        this->fill_esp_cpu_usage_json(&esp_cpu_usage_json);
+        this->fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
         this->fill_root_json(&json,
                              &stm_cpu_usage_json,
                              &esp_cpu_usage_json,
                              &imu_data_json,
-                             &motor_data_json);
+                             &motor_data_json,
+                             &esp_heap);
         if (!json.is_empty()) {
           json.set_number("microseconds", microseconds);
           char* json_str = json.stringify();
