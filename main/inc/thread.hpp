@@ -3,8 +3,11 @@
 #include <algorithm>
 #include <cstring>
 #include <vector>
+#include "esp_log.h"
 #include "freertos/idf_additions.h"
 #include "ipc/mutex.hpp"
+
+class ThreadWrapper;
 
 class Thread {
   private:
@@ -18,17 +21,18 @@ class Thread {
 
   protected:
   static Mutex thread_list_mutex;
+  static std::vector<Thread*> thread_list;
   char* name;
   int priority;
   TaskHandle_t handle;
   void wait_for_notification();
   void wait_for_notification(int ticks_to_wait);
   Thread(const char* name, int priority, int stack_size);
-  static std::vector<Thread*> thread_list;
 
   public:
-  const int stack_size = 0;
-  Thread(Thread& other);
+  static std::vector<Thread*> get_thread_list();
+  int stack_size = 0;
+  Thread(const Thread& other);
 
   void suspend();
   void resume();
@@ -41,13 +45,15 @@ class Thread {
   uint32_t get_min_free_stack();
   TaskHandle_t get_handle();
   ~Thread();
-  static const std::vector<Thread*> get_thread_list();
+
+  Thread& operator=(const Thread& other);
 };
 
 class ThreadWrapper : public Thread {
   public:
+  ThreadWrapper& operator=(const ThreadWrapper& other) = default;
   ThreadWrapper(TaskHandle_t handle);
-  void register_to_list();
+  ThreadWrapper(const ThreadWrapper& other) = default;
 };
 
 template <typename Derived, typename Param>
@@ -83,9 +89,17 @@ void ThreadWithArg<Derived, Param>::_main(ThreadMainParam<Derived, Param>* main_
   auto param = main_param->param;
   self->main(param);
   Thread::thread_list_mutex.take();
-  auto index_in_thread_list =
-      std::find(Thread::thread_list.begin(), Thread::thread_list.end(), main_param->self);
-  Thread::thread_list.erase(index_in_thread_list);
+  int index_in_thread_list = -1;
+  for (int i = 0; i < thread_list.size(); i++) {
+    auto thread = thread_list[i];
+    if (thread->get_handle() == self->get_handle()) {
+      index_in_thread_list = i;
+    }
+  }
+  if (index_in_thread_list >= 0) {
+    delete thread_list[index_in_thread_list];
+    Thread::thread_list.erase(thread_list.begin() + index_in_thread_list);
+  }
   Thread::thread_list_mutex.give();
   delete main_param->self;
   free(main_param->param);
@@ -105,8 +119,9 @@ void ThreadWithArg<Derived, Param>::start(Param* param) {
               this->stack_size,
               main_param,
               this->priority,
-              &this->handle);
-  Thread::thread_list_mutex.take();
-  Thread::thread_list.push_back(new Thread(*this));
-  Thread::thread_list_mutex.give();
+              &main_param->self->handle);
+  this->handle = main_param->self->handle;
+  thread_list_mutex.take();
+  thread_list.push_back(new Thread(*this));
+  thread_list_mutex.give();
 }

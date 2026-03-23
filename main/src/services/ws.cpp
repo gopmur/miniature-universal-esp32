@@ -58,15 +58,21 @@ bool WebSocketService::should_wait_for_eoc() {
 }
 
 void WebSocketService::fill_esp_cpu_usage_json(JsonObject* esp_cpu_usage_json) {
-  for (const auto service : Thread::get_thread_list()) {
-    auto service_name = service->get_name();
-    esp_cpu_usage_json->add_object(service_name);
-    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(service_name));
-    service_object.set_number("cpuUsage", service->get_cpu_usage());
-    service_object.set_number("minFreeStack", service->get_min_free_stack());
-    if (service->stack_size) {
-      service_object.set_number("stackSize", service->stack_size);
-    }
+  auto thread_list = Thread::get_thread_list();
+  auto task_list = monitor_service.get_task_list();
+  for (auto task : task_list) {
+    auto name = task.get_name();
+    esp_cpu_usage_json->add_object(name);
+    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
+    service_object.set_number("cpuUsage", task.get_cpu_usage());
+    service_object.set_number("minFreeStack", task.get_min_free_stack());
+  }
+  
+  for (auto thread : thread_list) {
+    auto name = thread->get_name();
+    esp_cpu_usage_json->add_object(name);
+    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
+    service_object.set_number("stackSize", thread->stack_size);
   }
 }
 

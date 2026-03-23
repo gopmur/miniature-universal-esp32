@@ -1,4 +1,5 @@
 #include "thread.hpp"
+#include <vector>
 #include "freertos/idf_additions.h"
 
 #include "esp_log.h"
@@ -59,23 +60,25 @@ float Thread::calculate_max_stack_usage(uint32_t stack_high_water_mark) {
 }
 
 void Thread::update_runtime_stats() {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wvla-cxx-extension"
   TaskStatus_t runtime_status[32];
-#pragma clang diagnostic pop
-  int task_count = uxTaskGetNumberOfTasks();
   uint32_t total_runtime;
-  uint32_t service_runtime;
-  uint32_t stack_high_water_mark;
-  uxTaskGetSystemState(runtime_status, 32, &total_runtime);
+
+  int task_count = uxTaskGetSystemState(runtime_status, 32, &total_runtime);
+
+  uint32_t service_runtime = 0;
+  uint32_t stack_high_water_mark = 0;
+
   for (int i = 0; i < task_count; i++) {
-    auto task_status = runtime_status[i];
+    auto& task_status = runtime_status[i];
+
     if (this->handle == task_status.xHandle) {
       service_runtime = task_status.ulRunTimeCounter;
       stack_high_water_mark = task_status.usStackHighWaterMark;
+      break;
     }
   }
-  this->cpu_usage = this->calculate_cpu_usage(service_runtime, total_runtime);
+
+  this->cpu_usage = calculate_cpu_usage(service_runtime, total_runtime);
   this->min_free_stack = stack_high_water_mark;
 }
 
@@ -91,9 +94,15 @@ TaskHandle_t Thread::get_handle() {
   return this->handle;
 }
 
-Thread::Thread(Thread& other)
-    : priority(other.priority), handle(other.handle), stack_size(other.stack_size) {
-  this->name = static_cast<char*>(malloc(strlen(other.name)));
+Thread::Thread(const Thread& other)
+    : last_total_runtime(other.last_total_runtime),
+      last_service_runtime(other.last_service_runtime),
+      cpu_usage(other.cpu_usage),
+      min_free_stack(other.min_free_stack),
+      priority(other.priority),
+      handle(other.handle),
+      stack_size(other.stack_size) {
+  this->name = static_cast<char*>(malloc(strlen(other.name) + 1));
   strcpy(this->name, other.name);
 }
 
@@ -101,29 +110,47 @@ const char* Thread::get_name() {
   return this->name;
 }
 
-const std::vector<Thread*> Thread::get_thread_list() {
+ThreadWrapper::ThreadWrapper(TaskHandle_t handle)
+    : Thread(pcTaskGetName(handle), uxTaskPriorityGet(handle), 0) {
+  this->handle = handle;
+}
+
+std::vector<Thread*> Thread::get_thread_list() {
   thread_list_mutex.take();
-  auto thread_list_copy = Thread::thread_list;
+  auto thread_list_copy = thread_list;
   thread_list_mutex.give();
   return thread_list_copy;
 }
 
-ThreadWrapper::ThreadWrapper(TaskHandle_t handle)
-    : Thread(pcTaskGetName(handle), uxTaskPriorityGet(handle), 0  ) {
-  this->handle = handle;
+Thread& Thread::operator=(const Thread& other) {
+  if (this == &other) {
+    return *this;
+  }
+  if (this->name) {
+    free(this->name);
+  }
+  this->name = static_cast<char*>(malloc(strlen(other.name) + 1));
+  strcpy(this->name, other.name);
+  this->cpu_usage = other.cpu_usage;
+  this->handle = other.handle;
+  this->last_service_runtime = other.last_service_runtime;
+  this->last_total_runtime = other.last_total_runtime;
+  this->min_free_stack = other.min_free_stack;
+  this->priority = other.priority;
+  this->stack_size = other.stack_size;
+  return *this;
 }
 
-void ThreadWrapper::register_to_list() {
-  thread_list_mutex.take();
-  bool already_registered = false;
-  for (const auto thread : thread_list) {
-    if (thread->get_handle() == this->handle) {
-      already_registered = true;
-      break;
-    }
-  }
-  if (!already_registered) {
-    thread_list.push_back(new Thread(*this));
-  }
-  thread_list_mutex.give();
-}
+// std::vector<ThreadWrapper> Thread::get_thread_list() {
+//   TaskStatus_t runtime_status[32];
+//   uint32_t total_runtime;
+//   int task_count = uxTaskGetSystemState(runtime_status, 32, &total_runtime);
+//   std::vector<ThreadWrapper> thread_list;
+//   for (int i = 0; i < task_count; i++) {
+//     auto task_status = runtime_status[i];
+//     auto task_handle = task_status.xHandle;
+//     auto thread = ThreadWrapper(task_handle);
+//     thread_list.push_back(thread);
+//   }
+//   return thread_list;
+// }
