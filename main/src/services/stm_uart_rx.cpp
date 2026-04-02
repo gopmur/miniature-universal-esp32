@@ -51,7 +51,7 @@ std::optional<HttpQueueMessageHeader> StmUartRxService::rssp_address_to_http_que
 void log_packet(RsspPacket packet) {
   switch (packet.address) {
     case RsspAddress::ZERO:
-      ESP_LOGI("UART", "ZERO received");
+      ESP_LOGW("UART", "ZERO received");
       break;
 
     case RsspAddress::RAND:
@@ -118,36 +118,36 @@ void log_packet(RsspPacket packet) {
       ESP_LOGI("UART", "MONITOR_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::LED_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "LED_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::LED_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "LED_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::IMU_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "IMU_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::IMU_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "IMU_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::ESP_UART_TX_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "ESP_UART_TX_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "ESP_UART_TX_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::ESP_UART_RX_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "ESP_UART_RX_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "ESP_UART_RX_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::MOTOR_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "MOTOR_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::MOTOR_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "MOTOR_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::CAN_RECV_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "CAN_RECV_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "CAN_RECV_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::SD_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "SD_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::SD_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "SD_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::MONITOR_SERVICE_MAX_STACK_USAGE:
-      ESP_LOGI("UART", "MONITOR_SERVICE_MAX_STACK_USAGE received");
+    case RsspAddress::MONITOR_SERVICE_MIN_STACK_FREE:
+      ESP_LOGI("UART", "MONITOR_SERVICE_MIN_STACK_FREE received");
       break;
 
     case RsspAddress::LED_SERVICE_STACK_SIZE:
@@ -182,17 +182,17 @@ void log_packet(RsspPacket packet) {
       ESP_LOGI("UART", "MONITOR_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::HEAP_USAGE:
-      ESP_LOGI("UART", "HEAP_USAGE received");
-      break;
+    // case RsspAddress::HEAP_USAGE:
+    //   ESP_LOGI("UART", "HEAP_USAGE received");
+    //   break;
 
-    case RsspAddress::MAX_HEAP_USAGE:
-      ESP_LOGI("UART", "MAX_HEAP_USAGE received");
-      break;
+    // case RsspAddress::MAX_HEAP_USAGE:
+    //   ESP_LOGI("UART", "MAX_HEAP_USAGE received");
+    //   break;
 
-    case RsspAddress::HEAP_SIZE:
-      ESP_LOGI("UART", "HEAP_SIZE received");
-      break;
+    // case RsspAddress::HEAP_SIZE:
+    //   ESP_LOGI("UART", "HEAP_SIZE received");
+    //   break;
 
     case RsspAddress::RTC_TIME:
       ESP_LOGI("UART", "RTC_TIME received");

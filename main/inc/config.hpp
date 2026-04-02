@@ -53,5 +53,12 @@ namespace config {
       constexpr auto stack_size = 4096;
     }
 
+    namespace telnet {
+      constexpr auto priority = 2;
+      constexpr auto stack_size = 4096;
+      constexpr auto username = "ali";
+      constexpr auto password = "12345678";
+    }
+
   }
 }

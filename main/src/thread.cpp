@@ -2,8 +2,6 @@
 #include <vector>
 #include "freertos/idf_additions.h"
 
-#include "esp_log.h"
-
 std::vector<Thread> Thread::thread_list;
 Mutex Thread::thread_list_mutex;
 
@@ -140,17 +138,3 @@ Thread& Thread::operator=(const Thread& other) {
   this->stack_size = other.stack_size;
   return *this;
 }
-
-// std::vector<ThreadWrapper> Thread::get_thread_list() {
-//   TaskStatus_t runtime_status[32];
-//   uint32_t total_runtime;
-//   int task_count = uxTaskGetSystemState(runtime_status, 32, &total_runtime);
-//   std::vector<ThreadWrapper> thread_list;
-//   for (int i = 0; i < task_count; i++) {
-//     auto task_status = runtime_status[i];
-//     auto task_handle = task_status.xHandle;
-//     auto thread = ThreadWrapper(task_handle);
-//     thread_list.push_back(thread);
-//   }
-//   return thread_list;
-// }

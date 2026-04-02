@@ -27,7 +27,8 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
   void fill_json_with_packet_data(RsspPacket packet,
                                   JsonObject* stm_cpu_usage_json,
                                   JsonObject* imu_data_json,
-                                  JsonObject* motor_data_json);
+                                  JsonObject* motor_data_json,
+                                  JsonObject* stm_heap);
   void fill_root_json(JsonObject* json,
                       JsonObject* stm_cpu_usage_json,
                       JsonObject* esp_cpu_usage_json,

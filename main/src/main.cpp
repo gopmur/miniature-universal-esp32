@@ -4,12 +4,10 @@
 #include <freertos/FreeRTOS.h>
 
 #include "driver/uart.h"
-#include "esp_console.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
-#include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_types_generic.h"
@@ -24,6 +22,7 @@
 #include "context/services/monitor.hpp"
 #include "context/services/stm_uart_rx.hpp"
 #include "context/services/ws.hpp"
+#include "context/services/telnet.hpp"
 
 class App {
   private:
@@ -143,6 +142,7 @@ class App {
     stm_uart_rx_service.start();
     ws_service.start();
     monitor_service.start();
+    telnet_service.start();
   }
 
   public:
