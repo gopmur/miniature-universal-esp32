@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <optional>
 
-enum class RsspAddress : uint8_t {
+enum class SspAddress : uint8_t {
   ZERO,
   RAND,
   RUNNING,
@@ -48,9 +48,9 @@ enum class RsspAddress : uint8_t {
   ADDRESS_COUNT,
 };
 
-enum class RsspCommand : uint8_t { RESTART };
+enum class SspCommand : uint8_t { RESTART };
 
-enum class RsspType : uint8_t {
+enum class SspType : uint8_t {
   WRITE,
   READ,
   START_STREAM,
@@ -59,47 +59,47 @@ enum class RsspType : uint8_t {
   COMMAND
 };
 
-struct _RsspHeader {
-  RsspType type : 3;  // bits 6..5
+struct _SspHeader {
+  SspType type : 3;  // bits 6..5
   uint8_t ack : 1;    // bit 4
   uint8_t resp : 1;   // bit 3
   uint8_t _res : 2;   // bits 2..0 (must be zero) maybe can be used for version
                       // control ???
 };
 
-union RsspHeader {
+union SspHeader {
   uint8_t u8;
-  _RsspHeader b;
+  _SspHeader b;
 };
 
-struct RsspPacket {
-  RsspHeader header;
+struct SspPacket {
+  SspHeader header;
   uint8_t sign;
-  RsspAddress address;
+  SspAddress address;
   uint8_t data[4];
   uint8_t check_sum;
 
-  static RsspPacket make_read_response_packet(RsspAddress address,
+  static SspPacket make_read_response_packet(SspAddress address,
                                               std::array<uint8_t, 4> data);
-  static RsspPacket make_read_response_packet(RsspAddress address, bool data);
-  static RsspPacket make_read_response_packet(RsspAddress address, float data);
-  static RsspPacket make_read_response_packet(RsspAddress address,
+  static SspPacket make_read_response_packet(SspAddress address, bool data);
+  static SspPacket make_read_response_packet(SspAddress address, float data);
+  static SspPacket make_read_response_packet(SspAddress address,
                                               uint8_t data);
-  static RsspPacket make_read_packet(RsspAddress address);
-  static RsspPacket make_write_packet(RsspAddress address,
+  static SspPacket make_read_packet(SspAddress address);
+  static SspPacket make_write_packet(SspAddress address,
                                       std::array<uint8_t, 4> data);
-  static RsspPacket make_write_packet(RsspAddress address, bool data);
-  static RsspPacket make_write_packet(RsspAddress address, float data);
-  static RsspPacket make_write_packet(RsspAddress address, uint8_t data);
-  static RsspPacket make_write_packet(RsspAddress address, uint16_t data);
-  static RsspPacket make_write_packet(RsspAddress address, uint32_t data);
-  static RsspPacket make_write_packet(RsspAddress address, int8_t data);
-  static RsspPacket make_write_packet(RsspAddress address, int16_t data);
-  static RsspPacket make_write_packet(RsspAddress address, int32_t data);
-  static RsspPacket make_start_stream_packet(RsspAddress address);
-  static RsspPacket make_stop_stream_packet(RsspAddress address);
-  static RsspPacket make_eoc_packet();
-  static RsspPacket make_command_packet(RsspCommand command);
+  static SspPacket make_write_packet(SspAddress address, bool data);
+  static SspPacket make_write_packet(SspAddress address, float data);
+  static SspPacket make_write_packet(SspAddress address, uint8_t data);
+  static SspPacket make_write_packet(SspAddress address, uint16_t data);
+  static SspPacket make_write_packet(SspAddress address, uint32_t data);
+  static SspPacket make_write_packet(SspAddress address, int8_t data);
+  static SspPacket make_write_packet(SspAddress address, int16_t data);
+  static SspPacket make_write_packet(SspAddress address, int32_t data);
+  static SspPacket make_start_stream_packet(SspAddress address);
+  static SspPacket make_stop_stream_packet(SspAddress address);
+  static SspPacket make_eoc_packet();
+  static SspPacket make_command_packet(SspCommand command);
 
   float get_float();
   uint8_t get_uint8();
@@ -119,11 +119,11 @@ struct RsspPacket {
   void pack();
 };
 
-class Rssp {
+class Ssp {
   private:
   static int i;
-  static RsspPacket packet;
+  static SspPacket packet;
 
   public:
-  static std::optional<RsspPacket> read_stream(uint8_t rssp_byte);
+  static std::optional<SspPacket> read_stream(uint8_t ssp_byte);
 };

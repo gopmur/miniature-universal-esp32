@@ -11,206 +11,206 @@
 #include "hal/uart_types.h"
 #include "portmacro.h"
 #include "services/http.hpp"
-#include "services/stm_uart/rssp.hpp"
+#include "services/stm_uart/ssp.hpp"
 
 StmUartRxService::StmUartRxService(int priority, uart_port_t port)
     : Service(priority, "stm_uart_rx"), port(port) {}
 
-std::optional<HttpQueueMessageHeader> StmUartRxService::rssp_address_to_http_queue_message_header(
-    RsspAddress rssp_address) {
-  switch (rssp_address) {
-    case RsspAddress::RUNNING:
+std::optional<HttpQueueMessageHeader> StmUartRxService::ssp_address_to_http_queue_message_header(
+    SspAddress ssp_address) {
+  switch (ssp_address) {
+    case SspAddress::RUNNING:
       return HttpQueueMessageHeader::RUNNING;
-    case RsspAddress::RIGHT_TORQUE:
+    case SspAddress::RIGHT_TORQUE:
       return HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
-    case RsspAddress::LEFT_TORQUE:
+    case SspAddress::LEFT_TORQUE:
       return HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
-    case RsspAddress::CONTROL_MODE:
+    case SspAddress::CONTROL_MODE:
       return HttpQueueMessageHeader::MODE;
-    case RsspAddress::LED_SERVICE_STACK_SIZE:
+    case SspAddress::LED_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::LED_SERVICE_STACK_SIZE;
-    case RsspAddress::IMU_SERVICE_STACK_SIZE:
+    case SspAddress::IMU_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::IMU_SERVICE_STACK_SIZE;
-    case RsspAddress::ESP_UART_TX_SERVICE_STACK_SIZE:
+    case SspAddress::ESP_UART_TX_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::ESP_UART_TX_SERVICE_STACK_SIZE;
-    case RsspAddress::ESP_UART_RX_SERVICE_STACK_SIZE:
+    case SspAddress::ESP_UART_RX_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::ESP_UART_RX_SERVICE_STACK_SIZE;
-    case RsspAddress::MOTOR_SERVICE_STACK_SIZE:
+    case SspAddress::MOTOR_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::MOTOR_SERVICE_STACK_SIZE;
-    case RsspAddress::CAN_RECV_SERVICE_STACK_SIZE:
+    case SspAddress::CAN_RECV_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::CAN_RECV_SERVICE_STACK_SIZE;
-    case RsspAddress::SD_SERVICE_STACK_SIZE:
+    case SspAddress::SD_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::SD_SERVICE_STACK_SIZE;
-    case RsspAddress::MONITOR_SERVICE_STACK_SIZE:
+    case SspAddress::MONITOR_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::MONITOR_SERVICE_STACK_SIZE;
     default:
       return std::nullopt;
   }
 }
 
-void log_packet(RsspPacket packet) {
+void log_packet(SspPacket packet) {
   switch (packet.address) {
-    case RsspAddress::ZERO:
+    case SspAddress::ZERO:
       ESP_LOGW("UART", "ZERO received");
       break;
 
-    case RsspAddress::RAND:
+    case SspAddress::RAND:
       ESP_LOGI("UART", "RAND received");
       break;
 
-    case RsspAddress::RUNNING:
+    case SspAddress::RUNNING:
       ESP_LOGI("UART", "RUNNING received");
       break;
 
-    case RsspAddress::LEFT_TORQUE:
+    case SspAddress::LEFT_TORQUE:
       ESP_LOGI("UART", "LEFT_TORQUE received");
       break;
 
-    case RsspAddress::RIGHT_TORQUE:
+    case SspAddress::RIGHT_TORQUE:
       ESP_LOGI("UART", "RIGHT_TORQUE received");
       break;
 
-    case RsspAddress::CONTROL_MODE:
+    case SspAddress::CONTROL_MODE:
       ESP_LOGI("UART", "CONTROL_MODE received");
       break;
 
-    case RsspAddress::IMU_GX:
+    case SspAddress::IMU_GX:
       ESP_LOGI("UART", "IMU_GX received");
       break;
 
-    case RsspAddress::IMU_GY:
+    case SspAddress::IMU_GY:
       ESP_LOGI("UART", "IMU_GY received");
       break;
 
-    case RsspAddress::IMU_GZ:
+    case SspAddress::IMU_GZ:
       ESP_LOGI("UART", "IMU_GZ received");
       break;
 
-    case RsspAddress::LED_SERVICE_CPU_USAGE:
+    case SspAddress::LED_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "LED_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::IMU_SERVICE_CPU_USAGE:
+    case SspAddress::IMU_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "IMU_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE:
+    case SspAddress::ESP_UART_TX_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "ESP_UART_TX_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE:
+    case SspAddress::ESP_UART_RX_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "ESP_UART_RX_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::MOTOR_SERVICE_CPU_USAGE:
+    case SspAddress::MOTOR_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "MOTOR_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::CAN_RECV_SERVICE_CPU_USAGE:
+    case SspAddress::CAN_RECV_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "CAN_RECV_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::SD_SERVICE_CPU_USAGE:
+    case SspAddress::SD_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "SD_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::MONITOR_SERVICE_CPU_USAGE:
+    case SspAddress::MONITOR_SERVICE_CPU_USAGE:
       ESP_LOGI("UART", "MONITOR_SERVICE_CPU_USAGE received");
       break;
 
-    case RsspAddress::LED_SERVICE_MIN_STACK_FREE:
+    case SspAddress::LED_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "LED_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::IMU_SERVICE_MIN_STACK_FREE:
+    case SspAddress::IMU_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "IMU_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE:
+    case SspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "ESP_UART_TX_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE:
+    case SspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "ESP_UART_RX_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::MOTOR_SERVICE_MIN_STACK_FREE:
+    case SspAddress::MOTOR_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "MOTOR_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE:
+    case SspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "CAN_RECV_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::SD_SERVICE_MIN_STACK_FREE:
+    case SspAddress::SD_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "SD_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::MONITOR_SERVICE_MIN_STACK_FREE:
+    case SspAddress::MONITOR_SERVICE_MIN_STACK_FREE:
       ESP_LOGI("UART", "MONITOR_SERVICE_MIN_STACK_FREE received");
       break;
 
-    case RsspAddress::LED_SERVICE_STACK_SIZE:
+    case SspAddress::LED_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "LED_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::IMU_SERVICE_STACK_SIZE:
+    case SspAddress::IMU_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "IMU_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::ESP_UART_TX_SERVICE_STACK_SIZE:
+    case SspAddress::ESP_UART_TX_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "ESP_UART_TX_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::ESP_UART_RX_SERVICE_STACK_SIZE:
+    case SspAddress::ESP_UART_RX_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "ESP_UART_RX_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::MOTOR_SERVICE_STACK_SIZE:
+    case SspAddress::MOTOR_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "MOTOR_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::CAN_RECV_SERVICE_STACK_SIZE:
+    case SspAddress::CAN_RECV_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "CAN_RECV_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::SD_SERVICE_STACK_SIZE:
+    case SspAddress::SD_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "SD_SERVICE_STACK_SIZE received");
       break;
 
-    case RsspAddress::MONITOR_SERVICE_STACK_SIZE:
+    case SspAddress::MONITOR_SERVICE_STACK_SIZE:
       ESP_LOGI("UART", "MONITOR_SERVICE_STACK_SIZE received");
       break;
 
-    // case RsspAddress::HEAP_USAGE:
+    // case SspAddress::HEAP_USAGE:
     //   ESP_LOGI("UART", "HEAP_USAGE received");
     //   break;
 
-    // case RsspAddress::MAX_HEAP_USAGE:
+    // case SspAddress::MAX_HEAP_USAGE:
     //   ESP_LOGI("UART", "MAX_HEAP_USAGE received");
     //   break;
 
-    // case RsspAddress::HEAP_SIZE:
+    // case SspAddress::HEAP_SIZE:
     //   ESP_LOGI("UART", "HEAP_SIZE received");
     //   break;
 
-    case RsspAddress::RTC_TIME:
+    case SspAddress::RTC_TIME:
       ESP_LOGI("UART", "RTC_TIME received");
       break;
 
-    case RsspAddress::RTC_DATE:
+    case SspAddress::RTC_DATE:
       ESP_LOGI("UART", "RTC_DATE received");
       break;
 
-    case RsspAddress::MOTOR_POS_LEFT:
+    case SspAddress::MOTOR_POS_LEFT:
       ESP_LOGI("UART", "MOTOR_POS_LEFT received");
       break;
 
-    case RsspAddress::MOTOR_POS_RIGHT:
+    case SspAddress::MOTOR_POS_RIGHT:
       ESP_LOGI("UART", "MOTOR_POS_RIGHT received");
       break;
 
-    case RsspAddress::ADDRESS_COUNT:
+    case SspAddress::ADDRESS_COUNT:
       ESP_LOGI("UART", "ADDRESS_COUNT received");
       break;
 
@@ -228,43 +228,43 @@ void StmUartRxService::main() {
       continue;
     }
     for (int i = 0; i < bytes_read; i++) {
-      auto packet = Rssp::read_stream(this->rx_buffer[i]);
+      auto packet = Ssp::read_stream(this->rx_buffer[i]);
       if (!packet.has_value()) {
         continue;
       }
       HttpQueueMessage http_queue_message;
-      if (packet->header.b.resp == 1 && packet->header.b.type == RsspType::READ) {
-        switch (static_cast<RsspAddress>(packet->address)) {
-          case RsspAddress::RUNNING:
+      if (packet->header.b.resp == 1 && packet->header.b.type == SspType::READ) {
+        switch (static_cast<SspAddress>(packet->address)) {
+          case SspAddress::RUNNING:
             http_queue_message.header = HttpQueueMessageHeader::RUNNING;
             http_queue_message.payload.b = packet->get_uint8();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
-          case RsspAddress::RIGHT_TORQUE:
+          case SspAddress::RIGHT_TORQUE:
             http_queue_message.header = HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
             http_queue_message.payload.f = packet->get_float();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
-          case RsspAddress::LEFT_TORQUE:
+          case SspAddress::LEFT_TORQUE:
             http_queue_message.header = HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
             http_queue_message.payload.f = packet->get_float();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
-          case RsspAddress::CONTROL_MODE:
+          case SspAddress::CONTROL_MODE:
             http_queue_message.header = HttpQueueMessageHeader::MODE;
             http_queue_message.payload.control_mode = static_cast<ControlMode>(packet->get_uint8());
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
-          case RsspAddress::LED_SERVICE_STACK_SIZE:
-          case RsspAddress::IMU_SERVICE_STACK_SIZE:
-          case RsspAddress::ESP_UART_TX_SERVICE_STACK_SIZE:
-          case RsspAddress::ESP_UART_RX_SERVICE_STACK_SIZE:
-          case RsspAddress::MOTOR_SERVICE_STACK_SIZE:
-          case RsspAddress::CAN_RECV_SERVICE_STACK_SIZE:
-          case RsspAddress::SD_SERVICE_STACK_SIZE:
-          case RsspAddress::MONITOR_SERVICE_STACK_SIZE: {
+          case SspAddress::LED_SERVICE_STACK_SIZE:
+          case SspAddress::IMU_SERVICE_STACK_SIZE:
+          case SspAddress::ESP_UART_TX_SERVICE_STACK_SIZE:
+          case SspAddress::ESP_UART_RX_SERVICE_STACK_SIZE:
+          case SspAddress::MOTOR_SERVICE_STACK_SIZE:
+          case SspAddress::CAN_RECV_SERVICE_STACK_SIZE:
+          case SspAddress::SD_SERVICE_STACK_SIZE:
+          case SspAddress::MONITOR_SERVICE_STACK_SIZE: {
             auto http_queue_message_header =
-                rssp_address_to_http_queue_message_header(packet->address);
+                ssp_address_to_http_queue_message_header(packet->address);
             if (!http_queue_message_header) {
               break;
             }
@@ -286,7 +286,7 @@ void StmUartRxService::main() {
         }
       }
 
-      else if (packet->header.b.resp == 1 && packet->header.b.type == RsspType::EOC) {
+      else if (packet->header.b.resp == 1 && packet->header.b.type == SspType::EOC) {
         if (ws_service.has_connections()) {
           if (ws_service.uart_streams_enabled()) {
             ws_service.queue.send(packet.value(), portMAX_DELAY);

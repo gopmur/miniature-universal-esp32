@@ -10,7 +10,7 @@
 #include "esp_timer.h"
 #include "helper/json.hpp"
 #include "service.hpp"
-#include "services/stm_uart/rssp.hpp"
+#include "services/stm_uart/ssp.hpp"
 
 #include "context/services/dns.hpp"
 #include "context/services/led.hpp"
@@ -84,21 +84,21 @@ void WebSocketService::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
   esp_heap_json->set_number("largestBlock", heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 }
 
-void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
+void WebSocketService::fill_json_with_packet_data(SspPacket packet,
                                                   JsonObject* stm_cpu_usage_json,
                                                   JsonObject* imu_data_json,
                                                   JsonObject* motor_data_json,
                                                   JsonObject* stm_heap) {
   if (this->stream_is_enabled(WsStream::STM_TASK_DATA)) {
     switch (packet.address) {
-      case RsspAddress::LED_SERVICE_CPU_USAGE: {
+      case SspAddress::LED_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("led");
         auto child_object_result = stm_cpu_usage_json->get_object("led");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::IMU_SERVICE_CPU_USAGE: {
+      case SspAddress::IMU_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("imu");
         auto child_object_result = stm_cpu_usage_json->get_object("imu");
         auto child_object = std::get<JsonObject>(child_object_result);
@@ -106,56 +106,56 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
         break;
       }
 
-      case RsspAddress::MOTOR_SERVICE_CPU_USAGE: {
+      case SspAddress::MOTOR_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("motor");
         auto child_object_result = stm_cpu_usage_json->get_object("motor");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::SD_SERVICE_CPU_USAGE: {
+      case SspAddress::SD_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("sd");
         auto child_object_result = stm_cpu_usage_json->get_object("sd");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::CAN_RECV_SERVICE_CPU_USAGE: {
+      case SspAddress::CAN_RECV_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("canRecv");
         auto child_object_result = stm_cpu_usage_json->get_object("canRecv");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE: {
+      case SspAddress::ESP_UART_RX_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("uartRx");
         auto child_object_result = stm_cpu_usage_json->get_object("uartRx");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE: {
+      case SspAddress::ESP_UART_TX_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("uartTx");
         auto child_object_result = stm_cpu_usage_json->get_object("uartTx");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::MONITOR_SERVICE_CPU_USAGE: {
+      case SspAddress::MONITOR_SERVICE_CPU_USAGE: {
         stm_cpu_usage_json->add_object("monitor");
         auto child_object_result = stm_cpu_usage_json->get_object("monitor");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("cpuUsage", packet.get_float());
         break;
       }
-      case RsspAddress::LED_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::LED_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("led");
         auto child_object_result = stm_cpu_usage_json->get_object("led");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      case RsspAddress::IMU_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::IMU_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("imu");
         auto child_object_result = stm_cpu_usage_json->get_object("imu");
         auto child_object = std::get<JsonObject>(child_object_result);
@@ -163,49 +163,49 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
         break;
       }
 
-      case RsspAddress::MOTOR_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::MOTOR_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("motor");
         auto child_object_result = stm_cpu_usage_json->get_object("motor");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      case RsspAddress::SD_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::SD_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("sd");
         auto child_object_result = stm_cpu_usage_json->get_object("sd");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      case RsspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("canRecv");
         auto child_object_result = stm_cpu_usage_json->get_object("canRecv");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      case RsspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("uartRx");
         auto child_object_result = stm_cpu_usage_json->get_object("uartRx");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      case RsspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("uartTx");
         auto child_object_result = stm_cpu_usage_json->get_object("uartTx");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      case RsspAddress::MONITOR_SERVICE_MIN_STACK_FREE: {
+      case SspAddress::MONITOR_SERVICE_MIN_STACK_FREE: {
         stm_cpu_usage_json->add_object("monitor");
         auto child_object_result = stm_cpu_usage_json->get_object("monitor");
         auto child_object = std::get<JsonObject>(child_object_result);
         child_object.set_number("minFreeStack", packet.get_uint32());
         break;
       }
-      // case RsspAddress::HEAP_FREE:
+      // case SspAddress::HEAP_FREE:
       //   stm_heap.set_
       default:
         break;
@@ -213,13 +213,13 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
   }
   if (this->stream_is_enabled(WsStream::IMU_DATA)) {
     switch (packet.address) {
-      case RsspAddress::IMU_GX:
+      case SspAddress::IMU_GX:
         imu_data_json->set_number("x", packet.get_float());
         break;
-      case RsspAddress::IMU_GY:
+      case SspAddress::IMU_GY:
         imu_data_json->set_number("y", packet.get_float());
         break;
-      case RsspAddress::IMU_GZ:
+      case SspAddress::IMU_GZ:
         imu_data_json->set_number("z", packet.get_float());
         break;
       default:
@@ -228,10 +228,10 @@ void WebSocketService::fill_json_with_packet_data(RsspPacket packet,
   }
   if (this->stream_is_enabled(WsStream::MOTOR_DATA)) {
     switch (packet.address) {
-      case RsspAddress::MOTOR_POS_LEFT:
+      case SspAddress::MOTOR_POS_LEFT:
         motor_data_json->set_number("leftPosition", packet.get_uint16());
         break;
-      case RsspAddress::MOTOR_POS_RIGHT:
+      case SspAddress::MOTOR_POS_RIGHT:
         motor_data_json->set_number("rightPosition", packet.get_uint16());
         break;
       default:
@@ -297,7 +297,7 @@ void WebSocketService::main() {
         auto packet = this->queue.receive(100);
         if (!packet.has_value())
           continue;
-        if (packet->header.b.type == RsspType::EOC) {
+        if (packet->header.b.type == SspType::EOC) {
           if (this->stream_is_enabled(WsStream::ESP_TASK_DATA)) {
             this->fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
           }

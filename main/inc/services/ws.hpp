@@ -5,7 +5,7 @@
 #include "helper/json.hpp"
 #include "ipc/queue.hpp"
 #include "service.hpp"
-#include "services/stm_uart/rssp.hpp"
+#include "services/stm_uart/ssp.hpp"
 
 enum class WsStream {
   ESP_TASK_DATA,
@@ -24,7 +24,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
   int connection_count;
   bool should_wait_for_eoc();
   void fill_esp_task_data_json(JsonObject* esp_cpu_usage_json, JsonObject* esp_heap_json);
-  void fill_json_with_packet_data(RsspPacket packet,
+  void fill_json_with_packet_data(SspPacket packet,
                                   JsonObject* stm_cpu_usage_json,
                                   JsonObject* imu_data_json,
                                   JsonObject* motor_data_json,
@@ -40,7 +40,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
 
   public:
   void main();
-  Queue<RsspPacket, 32> queue;
+  Queue<SspPacket, 32> queue;
   WebSocketService(int priority);
   bool has_connections();
   bool uart_streams_enabled();

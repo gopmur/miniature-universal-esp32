@@ -27,7 +27,7 @@
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
 #include "service.hpp"
-#include "services/stm_uart/rssp.hpp"
+#include "services/stm_uart/ssp.hpp"
 #include "services/ws.hpp"
 #include "threads/get_stack_sizes.hpp"
 #include "threads/get_states.hpp"
@@ -138,7 +138,7 @@ void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_jso
   uint8_t minutes = std::get<double>(minutes_item);
   uint8_t seconds = std::get<double>(seconds_item);
   std::array<uint8_t, 4> time_data = {hours, minutes, seconds, 0};
-  write_address(RsspAddress::RTC_TIME, time_data);
+  write_address(SspAddress::RTC_TIME, time_data);
 }
 
 void HttpService::set_rtc_date(JsonObject* date_json, JsonObject* date_error_json) {
@@ -154,7 +154,7 @@ void HttpService::set_rtc_date(JsonObject* date_json, JsonObject* date_error_jso
   uint8_t month = std::get<double>(month_item);
   uint8_t day = std::get<double>(day_item);
   std::array<uint8_t, 4> date_data = {get_byte(year, 1), get_byte(year, 0), month, day};
-  write_address(RsspAddress::RTC_DATE, date_data);
+  write_address(SspAddress::RTC_DATE, date_data);
 }
 
 esp_err_t HttpService::set_rtc(httpd_req_t* req) {
@@ -252,14 +252,14 @@ esp_err_t HttpService::get_stm_task_stack_size(httpd_req_t* req) {
   set_header(req);
   http_service.task_stack_size_queue.flush();
 
-  read_addresses({RsspAddress::LED_SERVICE_STACK_SIZE,
-                  RsspAddress::IMU_SERVICE_STACK_SIZE,
-                  RsspAddress::ESP_UART_TX_SERVICE_STACK_SIZE,
-                  RsspAddress::ESP_UART_RX_SERVICE_STACK_SIZE,
-                  RsspAddress::MOTOR_SERVICE_STACK_SIZE,
-                  RsspAddress::CAN_RECV_SERVICE_STACK_SIZE,
-                  RsspAddress::SD_SERVICE_STACK_SIZE,
-                  RsspAddress::MONITOR_SERVICE_STACK_SIZE});
+  read_addresses({SspAddress::LED_SERVICE_STACK_SIZE,
+                  SspAddress::IMU_SERVICE_STACK_SIZE,
+                  SspAddress::ESP_UART_TX_SERVICE_STACK_SIZE,
+                  SspAddress::ESP_UART_RX_SERVICE_STACK_SIZE,
+                  SspAddress::MOTOR_SERVICE_STACK_SIZE,
+                  SspAddress::CAN_RECV_SERVICE_STACK_SIZE,
+                  SspAddress::SD_SERVICE_STACK_SIZE,
+                  SspAddress::MONITOR_SERVICE_STACK_SIZE});
 
   GetStackSizes async_handler("get_stack_sized", 5, 4096);
   httpd_req_t* async_req;
@@ -272,10 +272,10 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   set_header(req);
   http_service.state_queue.flush();
 
-  read_addresses({RsspAddress::RUNNING,
-                  RsspAddress::RIGHT_TORQUE,
-                  RsspAddress::LEFT_TORQUE,
-                  RsspAddress::CONTROL_MODE});
+  read_addresses({SspAddress::RUNNING,
+                  SspAddress::RIGHT_TORQUE,
+                  SspAddress::LEFT_TORQUE,
+                  SspAddress::CONTROL_MODE});
 
   GetStates async_handler("get_states", 5, 4096);
   httpd_req_t* async_req;
@@ -287,7 +287,7 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   set_header(req);
-  write_address(RsspAddress::RUNNING, true);
+  write_address(SspAddress::RUNNING, true);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -296,7 +296,7 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   set_header(req);
-  write_address(RsspAddress::RUNNING, false);
+  write_address(SspAddress::RUNNING, false);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -333,7 +333,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
     return ESP_OK;
   }
 
-  write_address(RsspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(torque)));
+  write_address(SspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(torque)));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -372,7 +372,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
     return ESP_OK;
   }
 
-  write_address(RsspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(torque)));
+  write_address(SspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(torque)));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -382,7 +382,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   set_header(req);
-  write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::MANUAL));
+  write_address(SspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::MANUAL));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -390,7 +390,7 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   set_header(req);
-  write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::AUTO));
+  write_address(SspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -398,7 +398,7 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   set_header(req);
-  write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SEMI_AUTO));
+  write_address(SspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SEMI_AUTO));
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -406,7 +406,7 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   set_header(req);
-  write_address(RsspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SMART));
+  write_address(SspAddress::CONTROL_MODE, static_cast<uint8_t>(ControlMode::SMART));
 
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -418,24 +418,24 @@ esp_err_t HttpService::start_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   set_header(req);
   ws_service.enable_stream(WsStream::STM_TASK_DATA);
   start_streams({
-      RsspAddress::LED_SERVICE_CPU_USAGE,
-      RsspAddress::IMU_SERVICE_CPU_USAGE,
-      RsspAddress::MOTOR_SERVICE_CPU_USAGE,
-      RsspAddress::SD_SERVICE_CPU_USAGE,
-      RsspAddress::CAN_RECV_SERVICE_CPU_USAGE,
-      RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
-      RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
-      RsspAddress::MONITOR_SERVICE_CPU_USAGE,
-      RsspAddress::LED_SERVICE_MIN_STACK_FREE,
-      RsspAddress::IMU_SERVICE_MIN_STACK_FREE,
-      RsspAddress::MOTOR_SERVICE_MIN_STACK_FREE,
-      RsspAddress::SD_SERVICE_MIN_STACK_FREE,
-      RsspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE,
-      RsspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE,
-      RsspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE,
-      RsspAddress::MONITOR_SERVICE_MIN_STACK_FREE,
-      // RsspAddress::HEAP_USAGE,
-      // RsspAddress::MAX_HEAP_USAGE,
+      SspAddress::LED_SERVICE_CPU_USAGE,
+      SspAddress::IMU_SERVICE_CPU_USAGE,
+      SspAddress::MOTOR_SERVICE_CPU_USAGE,
+      SspAddress::SD_SERVICE_CPU_USAGE,
+      SspAddress::CAN_RECV_SERVICE_CPU_USAGE,
+      SspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+      SspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
+      SspAddress::MONITOR_SERVICE_CPU_USAGE,
+      SspAddress::LED_SERVICE_MIN_STACK_FREE,
+      SspAddress::IMU_SERVICE_MIN_STACK_FREE,
+      SspAddress::MOTOR_SERVICE_MIN_STACK_FREE,
+      SspAddress::SD_SERVICE_MIN_STACK_FREE,
+      SspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE,
+      SspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE,
+      SspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE,
+      SspAddress::MONITOR_SERVICE_MIN_STACK_FREE,
+      // SspAddress::HEAP_USAGE,
+      // SspAddress::MAX_HEAP_USAGE,
   });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -447,24 +447,24 @@ esp_err_t HttpService::stop_stm_cpu_usage_stream_handler(httpd_req_t* req) {
   set_header(req);
   ws_service.disable_stream(WsStream::STM_TASK_DATA);
   stop_streams({
-      RsspAddress::LED_SERVICE_CPU_USAGE,
-      RsspAddress::IMU_SERVICE_CPU_USAGE,
-      RsspAddress::MOTOR_SERVICE_CPU_USAGE,
-      RsspAddress::SD_SERVICE_CPU_USAGE,
-      RsspAddress::CAN_RECV_SERVICE_CPU_USAGE,
-      RsspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
-      RsspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
-      RsspAddress::MONITOR_SERVICE_CPU_USAGE,
-      RsspAddress::LED_SERVICE_MIN_STACK_FREE,
-      RsspAddress::IMU_SERVICE_MIN_STACK_FREE,
-      RsspAddress::MOTOR_SERVICE_MIN_STACK_FREE,
-      RsspAddress::SD_SERVICE_MIN_STACK_FREE,
-      RsspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE,
-      RsspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE,
-      RsspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE,
-      RsspAddress::MONITOR_SERVICE_MIN_STACK_FREE,
-      // RsspAddress::HEAP_USAGE,
-      // RsspAddress::MAX_HEAP_USAGE,
+      SspAddress::LED_SERVICE_CPU_USAGE,
+      SspAddress::IMU_SERVICE_CPU_USAGE,
+      SspAddress::MOTOR_SERVICE_CPU_USAGE,
+      SspAddress::SD_SERVICE_CPU_USAGE,
+      SspAddress::CAN_RECV_SERVICE_CPU_USAGE,
+      SspAddress::ESP_UART_RX_SERVICE_CPU_USAGE,
+      SspAddress::ESP_UART_TX_SERVICE_CPU_USAGE,
+      SspAddress::MONITOR_SERVICE_CPU_USAGE,
+      SspAddress::LED_SERVICE_MIN_STACK_FREE,
+      SspAddress::IMU_SERVICE_MIN_STACK_FREE,
+      SspAddress::MOTOR_SERVICE_MIN_STACK_FREE,
+      SspAddress::SD_SERVICE_MIN_STACK_FREE,
+      SspAddress::CAN_RECV_SERVICE_MIN_STACK_FREE,
+      SspAddress::ESP_UART_RX_SERVICE_MIN_STACK_FREE,
+      SspAddress::ESP_UART_TX_SERVICE_MIN_STACK_FREE,
+      SspAddress::MONITOR_SERVICE_MIN_STACK_FREE,
+      // SspAddress::HEAP_USAGE,
+      // SspAddress::MAX_HEAP_USAGE,
   });
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
@@ -488,7 +488,7 @@ esp_err_t HttpService::stop_esp_cpu_usage_stream_handler(httpd_req_t* req) {
 esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
   ws_service.enable_stream(WsStream::IMU_DATA);
-  start_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
+  start_streams({SspAddress::IMU_GX, SspAddress::IMU_GY, SspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start imu data stream failed");
@@ -497,7 +497,7 @@ esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
 esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
   ws_service.disable_stream(WsStream::IMU_DATA);
-  stop_streams({RsspAddress::IMU_GX, RsspAddress::IMU_GY, RsspAddress::IMU_GZ});
+  stop_streams({SspAddress::IMU_GX, SspAddress::IMU_GY, SspAddress::IMU_GZ});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop imu data stream failed");
@@ -507,7 +507,7 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
 esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
   set_header(req);
   ws_service.enable_stream(WsStream::MOTOR_DATA);
-  start_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
+  start_streams({SspAddress::MOTOR_POS_LEFT, SspAddress::MOTOR_POS_RIGHT});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start motor data stream failed");
@@ -517,7 +517,7 @@ esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
 esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
   set_header(req);
   ws_service.disable_stream(WsStream::MOTOR_DATA);
-  stop_streams({RsspAddress::MOTOR_POS_LEFT, RsspAddress::MOTOR_POS_RIGHT});
+  stop_streams({SspAddress::MOTOR_POS_LEFT, SspAddress::MOTOR_POS_RIGHT});
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop motor data stream failed");
@@ -526,7 +526,7 @@ esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::restart_handler(httpd_req_t* req) {
   set_header(req);
-  send_command(RsspCommand::RESTART);
+  send_command(SspCommand::RESTART);
   uart_flush(config::stm_uart::port);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
   vTaskDelay(10);
@@ -536,7 +536,7 @@ esp_err_t HttpService::restart_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::restart_stm32_handler(httpd_req_t* req) {
   set_header(req);
-  send_command(RsspCommand::RESTART);
+  send_command(SspCommand::RESTART);
   uart_flush(config::stm_uart::port);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
   return ESP_OK;
@@ -583,10 +583,10 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   auto left_torque = data.get_number("leftTorque");
   auto right_torque = data.get_number("rightTorque");
   if (std::holds_alternative<double>(left_torque)) {
-    write_address(RsspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(left_torque)));
+    write_address(SspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(left_torque)));
   }
   if (std::holds_alternative<double>(right_torque)) {
-    write_address(RsspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(right_torque)));
+    write_address(SspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(right_torque)));
   }
 
   free(ws_frame.payload);
