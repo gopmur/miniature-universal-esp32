@@ -27,6 +27,7 @@
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
 #include "service.hpp"
+#include "services/http/helper.hpp"
 #include "services/stm_uart/ssp.hpp"
 #include "services/ws.hpp"
 #include "threads/get_stack_sizes.hpp"
@@ -109,6 +110,8 @@ esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
     res_json.set_bool("connected", true);
     res_json.set_string("ssid", reinterpret_cast<char*>(ap_info.ssid));
     res_json.set_number("rssi", ap_info.rssi);
+    auto bssid_str = get_bssid_string(ap_info.bssid); 
+    res_json.set_string("bssid", bssid_str.get_data());
   };
   auto res_str = res_json.stringify();
   httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);

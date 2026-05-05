@@ -48,7 +48,11 @@ enum class SspAddress : uint8_t {
   ADDRESS_COUNT,
 };
 
-enum class SspCommand : uint8_t { RESTART };
+enum class SspCommand : uint8_t {
+  RESTART,
+  START_REPORT,
+  STOP_REPORT,
+};
 
 enum class SspType : uint8_t {
   WRITE,
@@ -61,10 +65,10 @@ enum class SspType : uint8_t {
 
 struct _SspHeader {
   SspType type : 3;  // bits 6..5
-  uint8_t ack : 1;    // bit 4
-  uint8_t resp : 1;   // bit 3
-  uint8_t _res : 2;   // bits 2..0 (must be zero) maybe can be used for version
-                      // control ???
+  uint8_t ack : 1;   // bit 4
+  uint8_t resp : 1;  // bit 3
+  uint8_t _res : 2;  // bits 2..0 (must be zero) maybe can be used for version
+                     // control ???
 };
 
 union SspHeader {
@@ -79,15 +83,12 @@ struct SspPacket {
   uint8_t data[4];
   uint8_t check_sum;
 
-  static SspPacket make_read_response_packet(SspAddress address,
-                                              std::array<uint8_t, 4> data);
+  static SspPacket make_read_response_packet(SspAddress address, std::array<uint8_t, 4> data);
   static SspPacket make_read_response_packet(SspAddress address, bool data);
   static SspPacket make_read_response_packet(SspAddress address, float data);
-  static SspPacket make_read_response_packet(SspAddress address,
-                                              uint8_t data);
+  static SspPacket make_read_response_packet(SspAddress address, uint8_t data);
   static SspPacket make_read_packet(SspAddress address);
-  static SspPacket make_write_packet(SspAddress address,
-                                      std::array<uint8_t, 4> data);
+  static SspPacket make_write_packet(SspAddress address, std::array<uint8_t, 4> data);
   static SspPacket make_write_packet(SspAddress address, bool data);
   static SspPacket make_write_packet(SspAddress address, float data);
   static SspPacket make_write_packet(SspAddress address, uint8_t data);
