@@ -3,10 +3,10 @@
 
 #include <freertos/FreeRTOS.h>
 
+#include "callbacks/wifi_event_handler.hpp"
 #include "driver/uart.h"
 #include "esp_err.h"
 #include "esp_event.h"
-#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
@@ -44,55 +44,6 @@ class App {
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
     esp_netif_create_default_wifi_ap();
-  }
-
-  static void wifi_event_handler(void* arg,
-                                 esp_event_base_t event_base,
-                                 int32_t event_id,
-                                 void* event_data) {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-      ESP_LOGI("Wifi", "Connection start");
-      esp_wifi_connect();
-    }
-
-    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-      wifi_event_sta_disconnected_t* disconn = (wifi_event_sta_disconnected_t*)event_data;
-      switch (disconn->reason) {
-        case WIFI_REASON_AUTH_FAIL:
-        case WIFI_REASON_AUTH_EXPIRE:
-        case WIFI_REASON_HANDSHAKE_TIMEOUT:
-        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        ESP_LOGI("WIFI", "WRONG PASSWORD");
-        http_wifi_con_handler_service.connection_result_queue.send(
-          WifiConnectionRequestResult::FAILED,
-          0);
-          break;
-          
-        case WIFI_REASON_NO_AP_FOUND:
-          ESP_LOGI("WIFI", "WRONG SSID");
-          http_wifi_con_handler_service.connection_result_queue.send(
-              WifiConnectionRequestResult::WRONG_SSID,
-              0);
-          break;
-
-        case WIFI_REASON_ASSOC_LEAVE:
-          break;  
-
-        default:
-          ESP_LOGI("WIFI", "IDK WHAT HAPPENED (Reason: %d)", disconn->reason);
-          http_wifi_con_handler_service.connection_result_queue.send(
-              WifiConnectionRequestResult::OTHER,
-              0);
-          break;
-      }
-    }
-
-    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-      ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
-      printf("Got IP: " IPSTR "\n", IP2STR(&event->ip_info.ip));
-      http_wifi_con_handler_service.connection_result_queue.send(WifiConnectionRequestResult::OK,
-                                                                 0);
-    }
   }
 
   void setup_wifi() {
