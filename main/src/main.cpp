@@ -24,7 +24,7 @@
 #include "context/services/stm_uart_rx.hpp"
 #include "context/services/telnet.hpp"
 #include "context/services/ws.hpp"
-#include "threads/wifi_connection.hpp"
+#include "services/http_wifi_con_handler.hpp"
 
 class App {
   private:

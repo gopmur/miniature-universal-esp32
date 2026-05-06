@@ -34,7 +34,7 @@
 #include "threads/get_stack_sizes.hpp"
 #include "threads/get_states.hpp"
 #include "threads/scan_wifis.hpp"
-#include "threads/wifi_connection.hpp"
+#include "services/http_wifi_con_handler.hpp"
 
 // esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 //   constexpr int record_count = 8;
