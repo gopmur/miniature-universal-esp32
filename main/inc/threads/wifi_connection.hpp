@@ -6,7 +6,7 @@
 
 enum WifiConnectionRequestResult {
   OK,
-  WRONG_PASSWORD,
+  FAILED,
   WRONG_SSID,
   OTHER,
 };

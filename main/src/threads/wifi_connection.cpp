@@ -95,8 +95,8 @@ void HttpWifiConHandlerService::main() {
         case WifiConnectionRequestResult::OK:
           httpd_resp_send(req, nullptr, 0);
           break;
-        case WifiConnectionRequestResult::WRONG_PASSWORD: {
-          resp_json.set_string("message", "wrong password");
+        case WifiConnectionRequestResult::FAILED: {
+          resp_json.set_string("message", "connection failed");
           auto resp_str = resp_json.stringify();
           httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, resp_str);
           free(resp_str);

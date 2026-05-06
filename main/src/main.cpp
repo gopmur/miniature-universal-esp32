@@ -61,12 +61,13 @@ class App {
         case WIFI_REASON_AUTH_FAIL:
         case WIFI_REASON_AUTH_EXPIRE:
         case WIFI_REASON_HANDSHAKE_TIMEOUT:
-          ESP_LOGI("WIFI", "WRONG PASSWORD");
-          http_wifi_con_handler_service.connection_result_queue.send(
-              WifiConnectionRequestResult::WRONG_PASSWORD,
-              0);
+        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+        ESP_LOGI("WIFI", "WRONG PASSWORD");
+        http_wifi_con_handler_service.connection_result_queue.send(
+          WifiConnectionRequestResult::FAILED,
+          0);
           break;
-
+          
         case WIFI_REASON_NO_AP_FOUND:
           ESP_LOGI("WIFI", "WRONG SSID");
           http_wifi_con_handler_service.connection_result_queue.send(
@@ -75,9 +76,7 @@ class App {
           break;
 
         case WIFI_REASON_ASSOC_LEAVE:
-          // This happens when you explicitly call esp_wifi_disconnect()
-          ESP_LOGI("WIFI", "INTENTIONAL DISCONNECT");
-          break;  // Do NOT send anything to the queue here
+          break;  
 
         default:
           ESP_LOGI("WIFI", "IDK WHAT HAPPENED (Reason: %d)", disconn->reason);

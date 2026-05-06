@@ -136,6 +136,13 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::disconnect_wifi_handler(httpd_req_t* req) {
+  set_header(req);
+  esp_wifi_disconnect();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
 void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_json) {
   auto hours_item = time_json->get_number("hours", time_error_json);
   auto minutes_item = time_json->get_number("minutes", time_error_json);
@@ -712,6 +719,7 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
   this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
   this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
+  this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
   this->register_http_uri_with_option("/api/right_torque",
