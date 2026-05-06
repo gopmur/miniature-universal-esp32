@@ -2,6 +2,7 @@
   "cSpell.words": [
     "APSTA",
     "bssid",
+    "disconn",
     "EINVAL",
     "FLOWCTRL",
     "Gopmur",
@@ -11,8 +12,8 @@
     "netif",
     "otadata",
     "rssi",
-    "Ssp",
     "SRCS",
+    "Ssp",
     "TXTFILES",
     "Wifis",
     "Wmissing"

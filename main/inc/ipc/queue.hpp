@@ -2,6 +2,7 @@
 
 #include <optional>
 #include "freertos/FreeRTOS.h"
+#include "portmacro.h"
 
 template <typename T, int N>
 class Queue {
@@ -12,8 +13,10 @@ class Queue {
 
   public:
   Queue();
-  void send(T val, int ticks_to_wait);
+  bool send(T val, int ticks_to_wait);
+  bool send(T val);
   std::optional<T> receive(int ticks_to_wait);
+  std::optional<T> receive();
   void flush();
   int get_remaining();
   int get_waiting();
@@ -25,8 +28,13 @@ Queue<T, N>::Queue() {
 }
 
 template <typename T, int N>
-void Queue<T, N>::send(T val, int ticks_to_wait) {
-  xQueueSend(queue, &val, ticks_to_wait);
+bool Queue<T, N>::send(T val, int ticks_to_wait) {
+  return xQueueSend(queue, &val, ticks_to_wait);
+}
+
+template <typename T, int N>
+bool Queue<T, N>::send(T val) {
+  send(val, portMAX_DELAY);
 }
 
 template <typename T, int N>
@@ -38,6 +46,12 @@ std::optional<T> Queue<T, N>::receive(int ticks_to_wait) {
   }
   return std::nullopt;
 }
+
+template <typename T, int N>
+std::optional<T> Queue<T, N>::receive() {
+  return receive(portMAX_DELAY);
+}
+
 
 template <typename T, int N>
 void Queue<T, N>::flush() {

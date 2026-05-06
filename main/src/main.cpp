@@ -18,11 +18,13 @@
 
 #include "context/services/dns.hpp"
 #include "context/services/http.hpp"
+#include "context/services/http_wifi_con_handler.hpp"
 #include "context/services/led.hpp"
 #include "context/services/monitor.hpp"
 #include "context/services/stm_uart_rx.hpp"
-#include "context/services/ws.hpp"
 #include "context/services/telnet.hpp"
+#include "context/services/ws.hpp"
+#include "threads/wifi_connection.hpp"
 
 class App {
   private:
@@ -53,15 +55,44 @@ class App {
       esp_wifi_connect();
     }
 
-    // else if (event_base == WIFI_EVENT &&
-    //          event_id == WIFI_EVENT_STA_DISCONNECTED) {
-    //   ESP_LOGW("Wifi", "Disconnected");
-    //   esp_wifi_connect();  // retry
-    // }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+      wifi_event_sta_disconnected_t* disconn = (wifi_event_sta_disconnected_t*)event_data;
+      switch (disconn->reason) {
+        case WIFI_REASON_AUTH_FAIL:
+        case WIFI_REASON_AUTH_EXPIRE:
+        case WIFI_REASON_HANDSHAKE_TIMEOUT:
+          ESP_LOGI("WIFI", "WRONG PASSWORD");
+          http_wifi_con_handler_service.connection_result_queue.send(
+              WifiConnectionRequestResult::WRONG_PASSWORD,
+              0);
+          break;
+
+        case WIFI_REASON_NO_AP_FOUND:
+          ESP_LOGI("WIFI", "WRONG SSID");
+          http_wifi_con_handler_service.connection_result_queue.send(
+              WifiConnectionRequestResult::WRONG_SSID,
+              0);
+          break;
+
+        case WIFI_REASON_ASSOC_LEAVE:
+          // This happens when you explicitly call esp_wifi_disconnect()
+          ESP_LOGI("WIFI", "INTENTIONAL DISCONNECT");
+          break;  // Do NOT send anything to the queue here
+
+        default:
+          ESP_LOGI("WIFI", "IDK WHAT HAPPENED (Reason: %d)", disconn->reason);
+          http_wifi_con_handler_service.connection_result_queue.send(
+              WifiConnectionRequestResult::OTHER,
+              0);
+          break;
+      }
+    }
 
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
       ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
       printf("Got IP: " IPSTR "\n", IP2STR(&event->ip_info.ip));
+      http_wifi_con_handler_service.connection_result_queue.send(WifiConnectionRequestResult::OK,
+                                                                 0);
     }
   }
 
@@ -143,6 +174,7 @@ class App {
     ws_service.start();
     monitor_service.start();
     telnet_service.start();
+    http_wifi_con_handler_service.start();
   }
 
   public:

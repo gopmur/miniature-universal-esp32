@@ -60,5 +60,10 @@ namespace config {
       constexpr auto password = "12345678";
     }
 
+    namespace http_wifi_con_handler {
+      constexpr auto priority = 2;
+      constexpr auto stack_size = 4096;
+    }
+
   }
 }

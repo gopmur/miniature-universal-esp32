@@ -4,6 +4,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
+#include "services/http/helper.hpp"
 
 ScanWifisThread::ScanWifisThread(const char* name, int priority, int stack_size)
     : ThreadWithArg(name, priority, stack_size) {}
@@ -50,7 +51,8 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
   for (int i = 0; i < number; i++) {
     JsonObject ap_json;
     ap_json.set_number("rssi", ap_records[i].rssi);
-    ap_json.set_string("bssid", reinterpret_cast<char*>(ap_records[i].bssid));
+    auto bssid = get_bssid_string(ap_records[i].bssid);
+    ap_json.set_string("bssid", bssid.get_data());
     ap_json.set_string("ssid", reinterpret_cast<char*>(ap_records[i].ssid));
     ap_json.set_bool("open", ap_records[i].authmode == WIFI_AUTH_OPEN);
     root_json.append_object(&ap_json);

@@ -21,6 +21,7 @@
 
 #include "context/services/dns.hpp"
 #include "context/services/http.hpp"
+#include "context/services/http_wifi_con_handler.hpp"
 #include "context/services/led.hpp"
 #include "context/services/monitor.hpp"
 #include "context/services/stm_uart_rx.hpp"
@@ -110,7 +111,7 @@ esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
     res_json.set_bool("connected", true);
     res_json.set_string("ssid", reinterpret_cast<char*>(ap_info.ssid));
     res_json.set_number("rssi", ap_info.rssi);
-    auto bssid_str = get_bssid_string(ap_info.bssid); 
+    auto bssid_str = get_bssid_string(ap_info.bssid);
     res_json.set_string("bssid", bssid_str.get_data());
   };
   auto res_str = res_json.stringify();
@@ -123,8 +124,15 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
   set_header(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
-  WifiConnectionThread wifi_connection_thread("wifi_connection", 5, 4096);
-  wifi_connection_thread.start(&async_req);
+  auto service_not_busy = http_wifi_con_handler_service.req_queue.send(async_req, 0);
+  if (!service_not_busy) {
+    JsonObject res_json;
+    res_json.set_string("message", "another connection request is pending");
+    ;
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str);
+    free(res_str);
+  }
   return ESP_OK;
 }
 

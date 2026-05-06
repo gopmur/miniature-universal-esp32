@@ -51,7 +51,6 @@ void MonitorService::main() {
       service.update_runtime_stats();
     }
     task_list_mutex.give();
-    ESP_LOGI("MON", "HEAP %d", esp_get_free_heap_size());
     vTaskDelay(250);
   }
 }

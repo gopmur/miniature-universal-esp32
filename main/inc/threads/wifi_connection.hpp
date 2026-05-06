@@ -1,11 +1,20 @@
 #pragma once
 
 #include "esp_http_server.h"
-#include "thread.hpp"
+#include "ipc/queue.hpp"
+#include "service.hpp"
 
-class WifiConnectionThread
-    : public ThreadWithArg<WifiConnectionThread, httpd_req_t*> {
+enum WifiConnectionRequestResult {
+  OK,
+  WRONG_PASSWORD,
+  WRONG_SSID,
+  OTHER,
+};
+
+class HttpWifiConHandlerService : public Service<4096> {
   public:
-  WifiConnectionThread(const char* name, int priority, int stack_size);
-  void main(httpd_req_t** req_p);
+  Queue<httpd_req_t*, 1> req_queue;
+  Queue<WifiConnectionRequestResult, 1> connection_result_queue;
+  HttpWifiConHandlerService(int priority);
+  void main();
 };
