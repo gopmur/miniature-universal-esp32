@@ -1,4 +1,5 @@
-set(API_VERSION "0.0.1")
+set(API_VERSION "0.0.2")
+set(CORE_VERSION "0.0.1")
 
 configure_file(
   "../main/templates/version.h.in"
@@ -7,7 +8,12 @@ configure_file(
 
 file(GLOB_RECURSE SOURCE_CPP_FILES "src/*.cpp")
 file(GLOB_RECURSE SOURCE_C_FILES "src/*.c")
-file(GLOB_RECURSE ASSET_FILES "${CMAKE_SOURCE_DIR}/generated/assets/*.gz")
+file(GLOB_RECURSE ASSET_FILES
+  "${CMAKE_SOURCE_DIR}/generated/assets/*.gz"
+  "${CMAKE_SOURCE_DIR}/main/certs/*.pem"
+)
+
+message("${CMAKE_SOURCE_DIR}/certs/*.pem")
 
 idf_component_register(
   SRCS

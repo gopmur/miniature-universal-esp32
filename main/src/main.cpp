@@ -25,6 +25,7 @@
 #include "context/services/telnet.hpp"
 #include "context/services/ws.hpp"
 #include "services/http_wifi_con_handler.hpp"
+#include "context/services/http_ota_handler.hpp"
 
 class App {
   private:
@@ -125,6 +126,7 @@ class App {
     monitor_service.start();
     telnet_service.start();
     http_wifi_con_handler_service.start();
+    http_ota_handler_service.start();
   }
 
   public:

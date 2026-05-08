@@ -4,8 +4,6 @@
 
 namespace config {
 
-  namespace pins {}
-
   namespace wifi {
     constexpr auto ssid = "Mini Universal";
     constexpr auto password = "12345678";
@@ -23,6 +21,10 @@ namespace config {
     constexpr auto parity = UART_PARITY_DISABLE;
     constexpr auto stop_bits = UART_STOP_BITS_1;
     constexpr auto packet_length = 5;
+  }
+
+  namespace update_server {
+    constexpr auto address = "192.168.4.2:3000";
   }
 
   namespace service {

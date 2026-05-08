@@ -34,7 +34,7 @@ bool Queue<T, N>::send(T val, int ticks_to_wait) {
 
 template <typename T, int N>
 bool Queue<T, N>::send(T val) {
-  send(val, portMAX_DELAY);
+  return send(val, portMAX_DELAY);
 }
 
 template <typename T, int N>

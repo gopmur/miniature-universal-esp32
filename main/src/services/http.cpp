@@ -9,7 +9,9 @@
 #include "driver/uart.h"
 #include "esp_check.h"
 #include "esp_err.h"
+#include "esp_http_client.h"
 #include "esp_http_server.h"
+#include "esp_https_ota.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -21,6 +23,7 @@
 
 #include "context/services/dns.hpp"
 #include "context/services/http.hpp"
+#include "context/services/http_ota_handler.hpp"
 #include "context/services/http_wifi_con_handler.hpp"
 #include "context/services/led.hpp"
 #include "context/services/monitor.hpp"
@@ -29,12 +32,13 @@
 #include "helper/uart.hpp"
 #include "service.hpp"
 #include "services/http/helper.hpp"
+#include "services/http_wifi_con_handler.hpp"
 #include "services/stm_uart/ssp.hpp"
 #include "services/ws.hpp"
 #include "threads/get_stack_sizes.hpp"
 #include "threads/get_states.hpp"
 #include "threads/scan_wifis.hpp"
-#include "services/http_wifi_con_handler.hpp"
+#include "version.hpp"
 
 // esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
 //   constexpr int record_count = 8;
@@ -684,8 +688,57 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
   return ESP_OK;
 }
 
+esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
+  set_header(req);
+  ESP_LOGI("HTTP", "CHECK UPDATE");
+  esp_http_client_config_t config{};
+  config.url = "http://192.168.4.2:3000/latest-version";
+  config.method = HTTP_METHOD_GET;
+  config.timeout_ms = 5000;
+
+  esp_http_client_handle_t client = esp_http_client_init(&config);
+
+  esp_http_client_open(client, 0);
+  esp_http_client_fetch_headers(client);
+
+  char buffer[256];
+  int read_len = esp_http_client_read(client, buffer, sizeof(buffer) - 1);
+
+  if (read_len > 0) {
+    buffer[read_len] = 0;
+    ESP_LOGI("HTTP", "Response: %s", buffer);
+  }
+  httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
+  esp_http_client_close(client);
+  esp_http_client_cleanup(client);
+
+  return ESP_OK;
+}
+esp_err_t HttpService::get_version_handler(httpd_req_t* req) {
+  set_header(req);
+  JsonObject resp_json;
+  resp_json.set_string("api", API_VERSION);
+  resp_json.set_string("core", CORE_VERSION);
+  auto resp_str = resp_json.stringify();
+  httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+  free(resp_str);
+  return ESP_OK;
+}
+
+extern const char cert_pem_start[] asm("_binary_cert_pem_start");
+
+esp_err_t HttpService::update_handler(httpd_req_t* req) {
+  set_header(req);
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  http_ota_handler_service.queue.send(async_req);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
+  this->register_http_uri("/api/version", HTTP_GET, HttpService::get_version_handler);
+  this->register_http_uri("/api/update/check", HTTP_GET, HttpService::check_for_update_handler);
   this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
   this->register_http_uri("/api/restart/stm", HTTP_GET, HttpService::restart_stm32_handler);
   this->register_http_uri("/api/restart/esp", HTTP_GET, HttpService::restart_esp32_handler);
@@ -728,6 +781,7 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri_with_option("/api/left_torque",
                                       HTTP_PUT,
                                       HttpService::set_left_torque_handler);
+  this->register_http_uri_with_option("/api/update", HTTP_PUT, HttpService::update_handler);
   this->register_http_uri_with_option("/api/set-mode/manual",
                                       HTTP_PUT,
                                       HttpService::set_mode_manual_handler);
@@ -747,7 +801,7 @@ esp_err_t HttpService::register_dynamic_endpoints() {
 
 void HttpService::start() {
   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
-  http_config.max_uri_handlers = 64;
+  http_config.max_uri_handlers = 128;
   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
   http_server_register_assets(server_instance);
   ESP_ERROR_CHECK(register_dynamic_endpoints());

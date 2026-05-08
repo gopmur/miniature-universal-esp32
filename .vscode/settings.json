@@ -17,5 +17,8 @@
     "TXTFILES",
     "Wifis",
     "Wmissing"
+  ],
+  "java.project.sourcePaths": [
+    "main/src/services"
   ]
 }

@@ -58,6 +58,8 @@ class HttpService {
   static void set_rtc_date(JsonObject* date_json, JsonObject* date_error_json);
 
   static esp_err_t null_request_handler(httpd_req_t* req);
+  
+  static esp_err_t get_version_handler(httpd_req_t* req);
 
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
   static esp_err_t start_handler(httpd_req_t* req);
@@ -93,6 +95,9 @@ class HttpService {
   static esp_err_t restart_handler(httpd_req_t* req);
   static esp_err_t restart_stm32_handler(httpd_req_t* req);
   static esp_err_t restart_esp32_handler(httpd_req_t* req);
+
+  static esp_err_t check_for_update_handler(httpd_req_t* req);
+  static esp_err_t update_handler(httpd_req_t* req);
 
   esp_err_t register_dynamic_endpoints();
 
