@@ -50,11 +50,11 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
   JsonArray root_json;
   for (int i = 0; i < number; i++) {
     JsonObject ap_json;
-    ap_json.set_number("rssi", ap_records[i].rssi);
+    ap_json.set("rssi", ap_records[i].rssi);
     auto bssid = get_bssid_string(ap_records[i].bssid);
-    ap_json.set_string("bssid", bssid.get_data());
-    ap_json.set_string("ssid", reinterpret_cast<char*>(ap_records[i].ssid));
-    ap_json.set_bool("open", ap_records[i].authmode == WIFI_AUTH_OPEN);
+    ap_json.set("bssid", bssid.get_data());
+    ap_json.set("ssid", reinterpret_cast<char*>(ap_records[i].ssid));
+    ap_json.set("open", ap_records[i].authmode == WIFI_AUTH_OPEN);
     root_json.append_object(&ap_json);
   }
   auto res_str = root_json.stringify();

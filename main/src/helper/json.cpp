@@ -60,7 +60,7 @@ std::variant<JsonObject, JsonError> JsonObject::parse(char* str) {
 
 JsonObject::JsonObject() : JsonObject(cJSON_CreateObject(), true) {}
 
-void JsonObject::set_string(const char* name, const char* string) {
+void JsonObject::set(const char* name, const char* string) {
   auto item = cJSON_GetObjectItem(this->root, name);
   if (item && cJSON_IsString(item)) {
     cJSON_SetValuestring(item, string);
@@ -71,18 +71,7 @@ void JsonObject::set_string(const char* name, const char* string) {
   }
 }
 
-void JsonObject::set_number(const char* name, double number) {
-  auto item = cJSON_GetObjectItem(this->root, name);
-  if (item && cJSON_IsNumber(item)) {
-    cJSON_SetNumberValue(item, number);
-  } else if (item) {
-    cJSON_ReplaceItemInObject(this->root, name, cJSON_CreateNumber(number));
-  } else {
-    cJSON_AddNumberToObject(this->root, name, number);
-  }
-}
-
-void JsonObject::set_object(const char* name, JsonObject* object) {
+void JsonObject::set(const char* name, JsonObject* object) {
   cJSON* copy = cJSON_Duplicate(object->root, true);
   if (!copy)
     return;
@@ -102,7 +91,7 @@ void JsonObject::add_object(const char* name) {
   cJSON_AddObjectToObject(this->root, name);
 }
 
-void JsonObject::set_array(const char* name, JsonArray* array) {
+void JsonObject::set(const char* name, JsonArray* array) {
   cJSON* copy = cJSON_Duplicate(array->root, true);
   if (!copy) {
     return;
@@ -115,7 +104,7 @@ void JsonObject::set_array(const char* name, JsonArray* array) {
   }
 }
 
-void JsonObject::set_bool(const char* name, bool boolean) {
+void JsonObject::set(const char* name, bool boolean) {
   auto item = cJSON_GetObjectItem(this->root, name);
   if (item && cJSON_IsBool(item)) {
     cJSON_SetBoolValue(item, boolean);
@@ -126,7 +115,7 @@ void JsonObject::set_bool(const char* name, bool boolean) {
   }
 }
 
-void JsonObject::set_error(const char* name, JsonError error) {
+void JsonObject::set(const char* name, JsonError error) {
   const char* error_message;
   switch (error) {
     case JsonError::NOT_PROVIDED:
@@ -148,7 +137,7 @@ void JsonObject::set_error(const char* name, JsonError error) {
       error_message = "parse error";
       break;
   }
-  this->set_string(name, error_message);
+  this->set(name, error_message);
 }
 
 std::variant<JsonObject, JsonError> JsonObject::get_object(const char* name) {
@@ -167,7 +156,7 @@ std::variant<JsonObject, JsonError> JsonObject::get_object(
     JsonObject* error_object) {
   auto child_object = this->get_object(name);
   if (std::holds_alternative<JsonError>(child_object)) {
-    error_object->set_error(name, std::get<JsonError>(child_object));
+    error_object->set(name, std::get<JsonError>(child_object));
   };
   return child_object;
 };
@@ -188,7 +177,7 @@ std::variant<double, JsonError> JsonObject::get_number(
     JsonObject* error_object) {
   auto number = this->get_number(name);
   if (std::holds_alternative<JsonError>(number)) {
-    error_object->set_error(name, std::get<JsonError>(number));
+    error_object->set(name, std::get<JsonError>(number));
   }
   return number;
 }
@@ -209,7 +198,7 @@ std::variant<char*, JsonError> JsonObject::get_string(
     JsonObject* error_object) {
   auto string = this->get_string(name);
   if (std::holds_alternative<JsonError>(string)) {
-    error_object->set_error(name, std::get<JsonError>(string));
+    error_object->set(name, std::get<JsonError>(string));
   }
   return string;
 }
@@ -218,8 +207,11 @@ bool JsonObject::is_empty() {
   return cJSON_IsObject(this->root) && this->root->child == nullptr;
 }
 
-char* JsonObject::stringify() {
-  return cJSON_PrintUnformatted(this->root);
+std::string JsonObject::stringify() {
+  auto c_str = cJSON_PrintUnformatted(this->root);
+  auto str = std::string(c_str);
+  free(c_str);
+  return str;
 }
 
 JsonArray::JsonArray(cJSON* root, bool owned) : Json(root, owned) {}

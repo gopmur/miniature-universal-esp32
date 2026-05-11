@@ -106,21 +106,20 @@ esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
   auto result = esp_wifi_sta_get_ap_info(&ap_info);
   JsonObject res_json;
   if (result == ESP_ERR_WIFI_NOT_CONNECT) {
-    res_json.set_bool("connected", false);
-    res_json.set_string("errorMessage", "not connected");
+    res_json.set("connected", false);
+    res_json.set("errorMessage", "not connected");
   } else if (result == ESP_ERR_WIFI_CONN) {
-    res_json.set_bool("connected", false);
-    res_json.set_string("errorMessage", "wifi not initialized");
+    res_json.set("connected", false);
+    res_json.set("errorMessage", "wifi not initialized");
   } else {
-    res_json.set_bool("connected", true);
-    res_json.set_string("ssid", reinterpret_cast<char*>(ap_info.ssid));
-    res_json.set_number("rssi", ap_info.rssi);
+    res_json.set("connected", true);
+    res_json.set("ssid", reinterpret_cast<char*>(ap_info.ssid));
+    res_json.set("rssi", ap_info.rssi);
     auto bssid_str = get_bssid_string(ap_info.bssid);
-    res_json.set_string("bssid", bssid_str.get_data());
+    res_json.set("bssid", bssid_str.get_data());
   };
   auto res_str = res_json.stringify();
-  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
-  free(res_str);
+  httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
 
@@ -131,11 +130,9 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
   auto service_not_busy = http_wifi_con_handler_service.req_queue.send(async_req, 0);
   if (!service_not_busy) {
     JsonObject res_json;
-    res_json.set_string("message", "another connection request is pending");
-    ;
+    res_json.set("message", "another connection request is pending");
     auto res_str = res_json.stringify();
-    httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str);
-    free(res_str);
+    httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
   }
   return ESP_OK;
 }
@@ -190,10 +187,9 @@ esp_err_t HttpService::set_rtc(httpd_req_t* req) {
   free(req_body);
 
   if (std::holds_alternative<JsonError>(req_json_result)) {
-    res_json.set_string("message", "parse error");
+    res_json.set("message", "parse error");
     auto res_str = res_json.stringify();
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
-    free(res_str);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     return ESP_OK;
   }
 
@@ -207,7 +203,7 @@ esp_err_t HttpService::set_rtc(httpd_req_t* req) {
     JsonObject time_error_json;
     set_rtc_time(&time_json, &time_error_json);
     if (!time_error_json.is_empty()) {
-      res_json.set_object("time", &time_error_json);
+      res_json.set("time", &time_error_json);
     }
   }
 
@@ -216,18 +212,16 @@ esp_err_t HttpService::set_rtc(httpd_req_t* req) {
     JsonObject date_error_json;
     set_rtc_date(&date_json, &date_error_json);
     if (!date_error_json.is_empty()) {
-      res_json.set_object("date", &date_error_json);
+      res_json.set("date", &date_error_json);
     }
   }
 
   auto res_str = res_json.stringify();
   if (res_json.is_empty()) {
-    httpd_resp_send(req, res_str, strlen(res_str));
+    httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
   } else {
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
   }
-
-  free(res_str);
 
   return ESP_OK;
 }
@@ -257,15 +251,13 @@ esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
   for (auto service : Thread::get_thread_list()) {
     auto service_name = service.get_name();
     if (service.stack_size) {
-      res_json.set_number(service_name, service.stack_size);
+      res_json.set(service_name, service.stack_size);
     }
   }
 
   auto res_str = res_json.stringify();
 
-  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
-
-  free(res_str);
+  httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
 
   return ESP_OK;
 }
@@ -337,10 +329,9 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
   free(body);
 
   if (std::holds_alternative<JsonError>(req_json_result)) {
-    res_json.set_string("message", "parse error");
+    res_json.set("message", "parse error");
     auto res_str = res_json.stringify();
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
-    free(res_str);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     return ESP_OK;
   }
 
@@ -350,8 +341,7 @@ esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
 
   if (std::holds_alternative<JsonError>(torque)) {
     auto res_str = res_json.stringify();
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
-    free(res_str);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     return ESP_OK;
   }
 
@@ -376,10 +366,9 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
   free(body);
 
   if (std::holds_alternative<JsonError>(req_json_result)) {
-    res_json.set_string("message", "parse error");
+    res_json.set("message", "parse error");
     auto res_str = res_json.stringify();
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
-    free(res_str);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     return ESP_OK;
   }
 
@@ -389,8 +378,7 @@ esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
 
   if (std::holds_alternative<JsonError>(torque)) {
     auto res_str = res_json.stringify();
-    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
-    free(res_str);
+    httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     return ESP_OK;
   }
 
@@ -690,7 +678,6 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
 
 esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
   set_header(req);
-  ESP_LOGI("HTTP", "CHECK UPDATE");
   esp_http_client_config_t config{};
   config.url = "http://192.168.4.2:3000/latest-version";
   config.method = HTTP_METHOD_GET;
@@ -706,7 +693,6 @@ esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
 
   if (read_len > 0) {
     buffer[read_len] = 0;
-    ESP_LOGI("HTTP", "Response: %s", buffer);
   }
   httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
   esp_http_client_close(client);
@@ -717,11 +703,10 @@ esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
 esp_err_t HttpService::get_version_handler(httpd_req_t* req) {
   set_header(req);
   JsonObject resp_json;
-  resp_json.set_string("api", API_VERSION);
-  resp_json.set_string("core", CORE_VERSION);
+  resp_json.set("api", API_VERSION);
+  resp_json.set("core", CORE_VERSION);
   auto resp_str = resp_json.stringify();
-  httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-  free(resp_str);
+  httpd_resp_send(req, resp_str.c_str(), HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
 

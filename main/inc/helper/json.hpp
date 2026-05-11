@@ -1,7 +1,9 @@
 #pragma once
 
+#include <string>
 #include <variant>
 #include "cJSON.h"
+#include "helper.hpp"
 
 enum class JsonError {
   NOT_PROVIDED,
@@ -59,13 +61,14 @@ class JsonObject : public Json {
 
   bool is_empty();
 
-  void set_error(const char* name, JsonError error);
-  void set_number(const char* name, double number);
-  void set_string(const char* name, const char* string);
-  void set_object(const char* name, JsonObject* object);
+  template <Numeric T>
+  void set(const char* name, T number);
+  void set(const char* name, JsonError error);
+  void set(const char* name, const char* string);
+  void set(const char* name, JsonObject* object);
+  void set(const char* name, bool boolean);
+  void set(const char* name, JsonArray* array);
   void add_object(const char* name);
-  void set_bool(const char* name, bool boolean);
-  void set_array(const char* name, JsonArray* array);
 
   std::variant<JsonObject, JsonError> get_object(const char* name);
   std::variant<JsonObject, JsonError> get_object(const char* name,
@@ -77,5 +80,17 @@ class JsonObject : public Json {
   std::variant<char*, JsonError> get_string(const char* name,
                                             JsonObject* error_object);
 
-  char* stringify();
+  std::string stringify();
 };
+
+template <Numeric T>
+void JsonObject::set(const char* name, T number) {
+  auto item = cJSON_GetObjectItem(this->root, name);
+  if (item && cJSON_IsNumber(item)) {
+    cJSON_SetNumberValue(item, number);
+  } else if (item) {
+    cJSON_ReplaceItemInObject(this->root, name, cJSON_CreateNumber(number));
+  } else {
+    cJSON_AddNumberToObject(this->root, name, number);
+  }
+}

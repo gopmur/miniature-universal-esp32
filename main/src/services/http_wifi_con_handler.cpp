@@ -42,10 +42,9 @@ void HttpWifiConHandlerService::main() {
 
     auto req_json_result = JsonObject::parse(req_body);
     if (std::holds_alternative<JsonError>(req_json_result)) {
-      error_json.set_string("message", "parse error");
+      error_json.set("message", "parse error");
       auto res_str = error_json.stringify();
-      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str);
-      free(res_str);
+      httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
       free(req_body);
       continue;
     }
@@ -61,7 +60,7 @@ void HttpWifiConHandlerService::main() {
       auto ssid = std::get<char*>(ssid_result);
       int ssid_len = strlen(ssid);
       if (ssid_len >= 32) {
-        error_json.set_string("ssid", "too long");
+        error_json.set("ssid", "too long");
       } else {
         std::strcpy(reinterpret_cast<char*>(sta_config.sta.ssid), ssid);
       }
@@ -71,7 +70,7 @@ void HttpWifiConHandlerService::main() {
       auto password = std::get<char*>(password_result);
       int password_len = strlen(password);
       if (password_len >= 32) {
-        error_json.set_string("password", "too long");
+        error_json.set("password", "too long");
       } else {
         std::strcpy(reinterpret_cast<char*>(sta_config.sta.password), password);
       }
@@ -79,8 +78,7 @@ void HttpWifiConHandlerService::main() {
 
     if (!error_json.is_empty()) {
       auto res_str = error_json.stringify();
-      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str);
-      free(res_str);
+      httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     }
 
     else {
@@ -96,24 +94,21 @@ void HttpWifiConHandlerService::main() {
           httpd_resp_send(req, nullptr, 0);
           break;
         case WifiConnectionRequestResult::FAILED: {
-          resp_json.set_string("message", "connection failed");
+          resp_json.set("message", "connection failed");
           auto resp_str = resp_json.stringify();
-          httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, resp_str);
-          free(resp_str);
+          httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, resp_str.c_str());
           break;
         }
         case WifiConnectionRequestResult::WRONG_SSID: {
-          resp_json.set_string("message", "ap not found");
+          resp_json.set("message", "ap not found");
           auto resp_str = resp_json.stringify();
-          httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, resp_str);
-          free(resp_str);
+          httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, resp_str.c_str());
           break;
         }
         case WifiConnectionRequestResult::OTHER: {
-          resp_json.set_string("message", "unhandled error");
+          resp_json.set("message", "unhandled error");
           auto resp_str = resp_json.stringify();
-          httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, resp_str);
-          free(resp_str);
+          httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, resp_str.c_str());
           break;
         }
       }
