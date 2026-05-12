@@ -3,7 +3,6 @@
 #include "esp_http_server.h"
 #include "esp_log.h"
 #include "helper/json.hpp"
-#include "portmacro.h"
 #include "services/http.hpp"
 
 const char* GetStates::get_contorl_mode_str(ControlMode control_mode) {

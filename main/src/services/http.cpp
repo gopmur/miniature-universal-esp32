@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <format>
 #include <variant>
 
 #include "services/http.hpp"
@@ -11,8 +12,6 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_http_server.h"
-#include "esp_https_ota.h"
-#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "freertos/idf_additions.h"
@@ -21,16 +20,11 @@
 #include "http_assets.hpp"
 #include "http_parser.h"
 
-#include "context/services/dns.hpp"
 #include "context/services/http.hpp"
 #include "context/services/http_ota_handler.hpp"
 #include "context/services/http_wifi_con_handler.hpp"
-#include "context/services/led.hpp"
-#include "context/services/monitor.hpp"
-#include "context/services/stm_uart_rx.hpp"
 #include "context/services/ws.hpp"
 #include "helper/uart.hpp"
-#include "service.hpp"
 #include "services/http/helper.hpp"
 #include "services/http_wifi_con_handler.hpp"
 #include "services/stm_uart/ssp.hpp"
@@ -679,22 +673,38 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
 esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
   set_header(req);
   esp_http_client_config_t config{};
-  config.url = "http://192.168.4.2:3000/latest-version";
+  config.url = "http://10.85.100.185:3000/latest-version";
   config.method = HTTP_METHOD_GET;
   config.timeout_ms = 5000;
 
   esp_http_client_handle_t client = esp_http_client_init(&config);
 
-  esp_http_client_open(client, 0);
-  esp_http_client_fetch_headers(client);
+  uint32_t status_code = 200;
+  int resp_len;
+  std::string resp_str;
+  std::string status_code_str;
+  JsonObject error_json;
 
-  char buffer[256];
-  int read_len = esp_http_client_read(client, buffer, sizeof(buffer) - 1);
-
-  if (read_len > 0) {
-    buffer[read_len] = 0;
+  auto result = esp_http_client_open(client, 0);
+  if (result != ESP_OK) {
+    status_code = 500;
+    error_json.set("message", "could not reach server");
+    resp_str = error_json.stringify();
+    goto send;
   }
-  httpd_resp_send(req, buffer, HTTPD_RESP_USE_STRLEN);
+
+  result = esp_http_client_fetch_headers(client);
+  resp_len = esp_http_client_get_content_length(client);
+  resp_str.reserve(resp_len);
+  esp_http_client_read(client, resp_str.data(), resp_str.size());
+  status_code = esp_http_client_get_status_code(client);
+
+send:
+  if (!error_json.is_empty()) {
+    resp_str = error_json.stringify();
+  }
+  status_code_str = std::format("{}", status_code);
+  httpd_resp_send_custom_err(req, status_code_str.c_str(), resp_str.c_str());
   esp_http_client_close(client);
   esp_http_client_cleanup(client);
 

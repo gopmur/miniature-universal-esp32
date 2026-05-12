@@ -5,6 +5,9 @@ import shutil
 import gzip
 import mimetypes
 
+def file_is_unused(filename: str):
+  return filename.endswith(".woff2") and not filename.startswith("inter-latin-wght-normal")
+
 def _compress_assets(input_path: str, rel_path: str, output_path: str, asset_uris: dict[str, str]):
   full_path = f"{input_path}/{rel_path}"
   entries = os.scandir(full_path)
@@ -13,14 +16,14 @@ def _compress_assets(input_path: str, rel_path: str, output_path: str, asset_uri
       new_rel_path = f"{rel_path}/{entry.name}" if rel_path else entry.name
       _compress_assets(
           input_path, new_rel_path, output_path, asset_uris)
-    elif entry.is_file():
+    elif entry.is_file() and not file_is_unused(entry.name):
       file_rel_path = f"{rel_path}/{entry.name}" if rel_path else entry.name
       uri = f"/{rel_path}" if entry.name == "index.html" else f"/{file_rel_path}"
       compressed_file_name = f"{file_rel_path}.gz".replace(
           "/", "_").replace("-", "_")
       asset_uris[compressed_file_name] = uri
       with open(entry.path, "rb") as file:
-        with gzip.open(f"{output_path}/assets/{compressed_file_name}", "wb") as compress_file:
+        with gzip.open(f"{output_path}/assets/{compressed_file_name}", "wb", compresslevel=9) as compress_file:
           shutil.copyfileobj(file, compress_file)
 
 
@@ -68,14 +71,14 @@ def generate_c_code(output_path: str, asset_uris: dict[str, str]):
     httpd_register_uri_handler(server_instance, &file_name##_uri); \\
   }}
 """
-  
+
   entries = os.scandir(f"{output_path}/assets")
   for entry in entries:
     if not entry.is_file or not entry.name.endswith(".gz"):
       continue
     c_name = entry.name.replace(".", "_").replace("-", "_")
     output += f"DEFINE_FILE_GET_HANDLER({c_name}, \"{mimetypes.guess_type(entry.name[:-3])[0]}\")\n"
-  
+
   output += "inline void http_server_register_assets(httpd_handle_t http_server) {\n"
 
   entries = os.scandir(f"{output_path}/assets")
@@ -86,7 +89,6 @@ def generate_c_code(output_path: str, asset_uris: dict[str, str]):
   output += "}"
 
   return output
-
 
 if __name__ == "__main__":
   if len(sys.argv) != 3:

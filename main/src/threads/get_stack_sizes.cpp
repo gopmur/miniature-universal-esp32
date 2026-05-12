@@ -2,7 +2,6 @@
 #include "context/services/http.hpp"
 #include "esp_http_server.h"
 #include "helper/json.hpp"
-#include "portmacro.h"
 
 GetStackSizes::GetStackSizes(const char* name, int priority, int stack_size)
     : ThreadWithArg(name, priority, stack_size) {}

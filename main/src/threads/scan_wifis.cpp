@@ -1,6 +1,5 @@
 #include "threads/scan_wifis.hpp"
 #include "esp_http_server.h"
-#include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
