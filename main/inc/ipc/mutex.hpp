@@ -4,10 +4,13 @@
 
 class Mutex {
   private:
-  QueueHandle_t mutex;
+  SemaphoreHandle_t mutex;
+  StaticSemaphore_t mutex_buffer;
+  bool recursive;
 
   public:
   Mutex();
+  Mutex(bool recursive);
 
   void take();
   void give();

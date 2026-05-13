@@ -1,13 +1,28 @@
 #include "ipc/mutex.hpp"
+#include "freertos/idf_additions.h"
 
-Mutex::Mutex() {
-  this->mutex = xSemaphoreCreateMutex();
+Mutex::Mutex() : Mutex(false) {}
+
+Mutex::Mutex(bool recursive) : recursive(recursive) {
+  if (recursive) {
+    mutex = xSemaphoreCreateRecursiveMutexStatic(&mutex_buffer);
+  } else {
+    mutex = xSemaphoreCreateMutexStatic(&mutex_buffer);
+  }
 }
 
 void Mutex::take() {
-  xSemaphoreTake(this->mutex, portMAX_DELAY);
+  if (recursive) {
+    xSemaphoreTakeRecursive(this->mutex, portMAX_DELAY);
+  } else {
+    xSemaphoreTake(this->mutex, portMAX_DELAY);
+  }
 }
 
 void Mutex::give() {
-  xSemaphoreGive(this->mutex);
+  if (recursive) {
+    xSemaphoreGiveRecursive(this->mutex);
+  } else {
+    xSemaphoreGive(this->mutex);
+  }
 }

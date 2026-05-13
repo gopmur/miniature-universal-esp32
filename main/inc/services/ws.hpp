@@ -12,6 +12,8 @@ enum class WsStream {
   STM_TASK_DATA,
   IMU_DATA,
   MOTOR_DATA,
+  OTA_PROGRESS,
+
   COUNT,
 };
 
@@ -21,6 +23,7 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
   int enabled_stream_count = 0;
   std::array<int, config::service::ws::max_connection> connection_fds;
   std::array<int, config::service::ws::max_connection> connection_age;
+  Mutex connection_mutex;
   int connection_count;
   bool should_wait_for_eoc();
   void fill_esp_task_data_json(JsonObject* esp_cpu_usage_json, JsonObject* esp_heap_json);
@@ -34,18 +37,20 @@ class WebSocketService : public Service<config::service::ws::stack_size> {
                       JsonObject* esp_cpu_usage_json,
                       JsonObject* imu_data_json,
                       JsonObject* motor_data_json,
-                      JsonObject* esp_heap);
-  void send_to_connections(const char* data);
+                      JsonObject* esp_heap,
+                      JsonObject* ota_json);
+  void fill_ota_progress_json(JsonObject* ota_json);
   bool stream_is_enabled(WsStream stream);
+  void stop_sending(int fd);
 
   public:
   void main();
   Queue<SspPacket, 32> queue;
   WebSocketService(int priority);
+  void send_to_connections(const char* data);
   bool has_connections();
   bool uart_streams_enabled();
   void start_sending(int fd);
-  void stop_sending(int fd);
 
   void enable_stream(WsStream);
   void disable_stream(WsStream);

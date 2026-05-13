@@ -1,23 +1,19 @@
 #include "services/ws.hpp"
 #include <optional>
 #include "config.hpp"
+#include "context/ota_progress.hpp"
 #include "context/services/http.hpp"
 #include "context/services/monitor.hpp"
 #include "esp_heap_caps.h"
 #include "esp_http_server.h"
-#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "helper/json.hpp"
+#include "ipc/mutex.hpp"
 #include "service.hpp"
 #include "services/stm_uart/ssp.hpp"
 
-#include "context/services/dns.hpp"
-#include "context/services/led.hpp"
-#include "context/services/stm_uart_rx.hpp"
-#include "context/services/ws.hpp"
-
-WebSocketService::WebSocketService(int priority) : Service(priority, "ws") {
+WebSocketService::WebSocketService(int priority) : Service(priority, "ws"), connection_mutex(true) {
   connection_age.fill(-1);
   connection_fds.fill(-1);
   connection_count = 0;
@@ -240,12 +236,18 @@ void WebSocketService::fill_json_with_packet_data(SspPacket packet,
   }
 }
 
+void WebSocketService::fill_ota_progress_json(JsonObject* ota_json) {
+  ota_json->set("total", ota_total);
+  ota_json->set("progress", ota_progress);
+}
+
 void WebSocketService::fill_root_json(JsonObject* json,
                                       JsonObject* stm_cpu_usage_json,
                                       JsonObject* esp_cpu_usage_json,
                                       JsonObject* imu_data_json,
                                       JsonObject* motor_data_json,
-                                      JsonObject* esp_heap) {
+                                      JsonObject* esp_heap,
+                                      JsonObject* ota_progress) {
   if (this->stream_is_enabled(WsStream::STM_TASK_DATA))
     json->set("stmCpuUsage", stm_cpu_usage_json);
   if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
@@ -256,9 +258,12 @@ void WebSocketService::fill_root_json(JsonObject* json,
     json->set("imu", imu_data_json);
   if (this->stream_is_enabled(WsStream::MOTOR_DATA))
     json->set("motor", motor_data_json);
+  if (this->stream_is_enabled(WsStream::OTA_PROGRESS))
+    json->set("ota_progress", ota_progress);
 }
 
 void WebSocketService::send_to_connections(const char* data) {
+  connection_mutex.take();
   httpd_ws_frame_t ws_packet = {
       .final = true,
       .fragmented = false,
@@ -266,14 +271,22 @@ void WebSocketService::send_to_connections(const char* data) {
       .payload = (uint8_t*)data,
       .len = strlen(data),
   };
+  ESP_LOGI("WS", "%d", connection_count);
   for (int i = 0; i < this->connection_count; i++) {
     int fd = this->connection_fds[i];
+    ESP_LOGI("WS", "FD: %d", fd);
     esp_err_t ret = httpd_ws_send_frame_async(http_service.server_instance, fd, &ws_packet);
     if (ret != ESP_OK) {
-      ESP_LOGW("WS", "Client disconnected or send failed");
       this->stop_sending(fd);
+      if (this->connection_count == 0) {
+        this->queue.flush();
+        connection_mutex.give();
+        this->suspend();
+        return;
+      }
     }
   }
+  connection_mutex.give();
 }
 
 void WebSocketService::main() {
@@ -284,6 +297,7 @@ void WebSocketService::main() {
   JsonObject motor_data_json;
   JsonObject esp_heap;
   JsonObject stm_heap;
+  JsonObject ota_progress;
 
   while (true) {
     this->suspend();
@@ -306,7 +320,8 @@ void WebSocketService::main() {
                                &esp_cpu_usage_json,
                                &imu_data_json,
                                &motor_data_json,
-                               &esp_heap);
+                               &esp_heap,
+                               &ota_progress);
           if (!json.is_empty()) {
             json.set("microseconds", microseconds);
             auto json_str = json.stringify();
@@ -330,12 +345,14 @@ void WebSocketService::main() {
       else {
         this->queue.flush();
         this->fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
+        this->fill_ota_progress_json(&ota_progress);
         this->fill_root_json(&json,
                              &stm_cpu_usage_json,
                              &esp_cpu_usage_json,
                              &imu_data_json,
                              &motor_data_json,
-                             &esp_heap);
+                             &esp_heap,
+                             &ota_progress);
         if (!json.is_empty()) {
           json.set("microseconds", microseconds);
           auto json_str = json.stringify();
@@ -352,6 +369,12 @@ void WebSocketService::main() {
 }
 
 void WebSocketService::start_sending(int fd) {
+  connection_mutex.take();
+  for (int i = 0; i < this->connection_count; i++) {
+    if (this->connection_fds[i] == fd) {
+      goto cleanup;
+    }
+  }
   if (connection_count < config::service::ws::max_connection) {
     this->connection_fds[this->connection_count] = fd;
     for (int i = 0; i < this->connection_count; i++) {
@@ -375,14 +398,18 @@ void WebSocketService::start_sending(int fd) {
   if (enabled_stream_count > 0) {
     this->resume();
   }
+
+cleanup:
+  connection_mutex.give();
 }
 
 void WebSocketService::stop_sending(int fd) {
-  if (this->connection_count == 0) {
-    return;
-  }
+  connection_mutex.take();
   int connection_to_remove = -1;
   int connection_to_remove_age = 0;
+  if (this->connection_count == 0) {
+    goto cleanup;
+  }
   for (int i = 0; i < this->connection_count; i++) {
     if (this->connection_fds[i] == fd) {
       connection_to_remove = i;
@@ -391,7 +418,7 @@ void WebSocketService::stop_sending(int fd) {
     }
   }
   if (connection_to_remove == -1) {
-    return;
+    goto cleanup;
   }
   for (int i = 0; i < this->connection_count; i++) {
     if (this->connection_age[i] > connection_to_remove_age) {
@@ -403,10 +430,8 @@ void WebSocketService::stop_sending(int fd) {
     this->connection_fds[i] = this->connection_fds[i + 1];
   }
   this->connection_count--;
-  if (this->connection_count == 0) {
-    this->queue.flush();
-    this->suspend();
-  }
+cleanup:
+  connection_mutex.give();
 }
 
 bool WebSocketService::uart_streams_enabled() {

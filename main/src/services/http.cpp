@@ -20,6 +20,7 @@
 #include "http_assets.hpp"
 #include "http_parser.h"
 
+#include "context/ota_progress.hpp"
 #include "context/services/http.hpp"
 #include "context/services/http_ota_handler.hpp"
 #include "context/services/http_wifi_con_handler.hpp"
@@ -673,7 +674,7 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
 esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
   set_header(req);
   esp_http_client_config_t config{};
-  config.url = "http://10.85.100.185:3000/latest-version";
+  config.url = "http://192.168.4.2:3000/latest-version";
   config.method = HTTP_METHOD_GET;
   config.timeout_ms = 5000;
 
@@ -682,6 +683,7 @@ esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
   uint32_t status_code = 200;
   int resp_len;
   std::string resp_str;
+  char* resp_buffer;
   std::string status_code_str;
   JsonObject error_json;
 
@@ -695,8 +697,11 @@ esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
 
   result = esp_http_client_fetch_headers(client);
   resp_len = esp_http_client_get_content_length(client);
-  resp_str.reserve(resp_len);
-  esp_http_client_read(client, resp_str.data(), resp_str.size());
+  resp_buffer = new char[resp_len + 1];
+  esp_http_client_read(client, resp_buffer, resp_len);
+  resp_buffer[resp_len] = 0;
+  resp_str = std::string(resp_buffer);
+  free(resp_buffer);
   status_code = esp_http_client_get_status_code(client);
 
 send:
@@ -720,9 +725,8 @@ esp_err_t HttpService::get_version_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-extern const char cert_pem_start[] asm("_binary_cert_pem_start");
-
 esp_err_t HttpService::update_handler(httpd_req_t* req) {
+  ota_busy = true;
   set_header(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
@@ -730,9 +734,19 @@ esp_err_t HttpService::update_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::get_ota_status(httpd_req_t* req) {
+  set_header(req);
+  JsonObject resp_json;
+  resp_json.set("busy", ota_busy);
+  auto resp_str = resp_json.stringify();
+  httpd_resp_send(req, resp_str.c_str(), HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
   this->register_http_uri("/api/version", HTTP_GET, HttpService::get_version_handler);
+  this->register_http_uri("/api/update/status", HTTP_GET, HttpService::get_ota_status);
   this->register_http_uri("/api/update/check", HTTP_GET, HttpService::check_for_update_handler);
   this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
   this->register_http_uri("/api/restart/stm", HTTP_GET, HttpService::restart_stm32_handler);

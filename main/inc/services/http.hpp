@@ -98,6 +98,7 @@ class HttpService {
 
   static esp_err_t check_for_update_handler(httpd_req_t* req);
   static esp_err_t update_handler(httpd_req_t* req);
+  static esp_err_t get_ota_status(httpd_req_t* req);
 
   esp_err_t register_dynamic_endpoints();
 

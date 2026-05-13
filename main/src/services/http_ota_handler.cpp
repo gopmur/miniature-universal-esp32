@@ -1,5 +1,7 @@
 #include "services/http_ota_handler.hpp"
 #include <variant>
+#include "context/ota_progress.hpp"
+#include "context/services/ws.hpp"
 #include "esp_http_client.h"
 #include "esp_http_server.h"
 #include "esp_https_ota.h"
@@ -45,7 +47,7 @@ void HttpOtaHandlerService::main() {
       char update_file_url[128];
       snprintf(update_file_url,
                64,
-               "https://10.85.100.185:3001/firmware/core-%s-api-%s.bin",
+               "https://192.168.4.2:3001/firmware/core-%s-api-%s.bin",
                core_version,
                api_version);
 
@@ -66,19 +68,68 @@ void HttpOtaHandlerService::main() {
           .buffer_caps = 0,
       };
 
-      esp_err_t ret = esp_https_ota(&ota_config);
-      if (ret == ESP_OK) {
-        httpd_resp_send(req, nullptr, 0);
-      } else {
-        res_json.set("message", "OTA failed");
+      esp_https_ota_handle_t ota_handle;
+      esp_err_t err;
+      err = esp_https_ota_begin(&ota_config, &ota_handle);
+      if (err != ESP_OK) {
+        res_json.set("message", "ota begin failed");
         auto res_str = res_json.stringify();
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
+        goto cleanup;
       }
+
+      bool first_iteration = true;
+      while (true) {
+        err = esp_https_ota_perform(ota_handle);
+        int downloaded = esp_https_ota_get_image_len_read(ota_handle);
+        int total = esp_https_ota_get_image_size(ota_handle);
+
+        if (total > 0) {
+          ota_total = total;
+          ota_progress = downloaded;
+          if (first_iteration) {
+            ws_service.enable_stream(WsStream::OTA_PROGRESS);
+            first_iteration = false;
+          }
+        }
+
+        if (err != ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
+          break;
+        }
+      }
+      ws_service.disable_stream(WsStream::OTA_PROGRESS);
+
+      JsonObject ws_json;
+      JsonObject ota_ws_result_json;
+
+      if (err != ESP_OK) {
+        ota_ws_result_json.set("ok", false);
+        ws_json.set("ota", &ota_ws_result_json);
+        auto ws_json_str = ws_json.stringify();
+        ws_service.send_to_connections(ws_json_str.c_str());
+
+        esp_https_ota_abort(ota_handle);
+        res_json.set("message", "ota failed");
+        auto res_str = res_json.stringify();
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
+        goto cleanup;
+      }
+
+      ota_ws_result_json.set("ok", true);
+      ws_json.set("ota", &ota_ws_result_json);
+      auto ws_json_str = ws_json.stringify();
+      ws_service.send_to_connections(ws_json_str.c_str());
+      esp_https_ota_finish(ota_handle);
+      httpd_resp_send(req, nullptr, 0);
+      goto cleanup;
+
     } else {
       auto res_str = res_json.stringify();
       httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
     }
 
+  cleanup:
     httpd_req_async_handler_complete(req);
+    ota_busy = false;
   }
 }
