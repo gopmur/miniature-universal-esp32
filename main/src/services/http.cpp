@@ -80,6 +80,18 @@
 //   return ESP_OK;
 // }
 
+esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json) {
+  auto json_string = json.stringify();
+  httpd_resp_send(req, json_string.c_str(), HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
+  auto json_string = json.stringify();
+  httpd_resp_send_err(req, status, json_string.c_str());
+  return ESP_OK;
+}
+
 esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
   set_header(req);
   httpd_resp_send(req, nullptr, 0);
@@ -671,6 +683,7 @@ esp_err_t HttpService::register_ws_uri(const char* uri_address,
   return ESP_OK;
 }
 
+// ! this needs to be async
 esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
   set_header(req);
   esp_http_client_config_t config{};
@@ -743,6 +756,69 @@ esp_err_t HttpService::get_ota_status(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::set_automatic_control_params(httpd_req_t* req) {
+  set_header(req);
+  char* req_body = new char[req->content_len];
+  httpd_req_recv(req, req_body, req->content_len);
+  JsonObject resp_json;
+  auto req_json_result = JsonObject::parse(req_body);
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    resp_json.set("message", "parse error");
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
+  auto left_json_result = req_json.get_object("left", &resp_json);
+  auto right_json_result = req_json.get_object("right", &resp_json);
+
+  if (std::holds_alternative<JsonError>(left_json_result) ||
+      std::holds_alternative<JsonError>(right_json_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto left_json = std::get<JsonObject>(left_json_result);
+  auto right_json = std::get<JsonObject>(right_json_result);
+
+  auto left_timeout_result = left_json.get_number("timeout", &resp_json);
+  auto left_torque_result = left_json.get_number("torque", &resp_json);
+  auto left_velocity_threshold_result = left_json.get_number("velocityThreshold", &resp_json);
+  auto right_timeout_result = right_json.get_number("timeout", &resp_json);
+  auto right_torque_result = right_json.get_number("torque", &resp_json);
+  auto right_velocity_threshold_result = right_json.get_number("velocityThreshold", &resp_json);
+
+  if (std::holds_alternative<JsonError>(left_timeout_result) ||
+      std::holds_alternative<JsonError>(left_torque_result) ||
+      std::holds_alternative<JsonError>(left_velocity_threshold_result) ||
+      std::holds_alternative<JsonError>(right_timeout_result) ||
+      std::holds_alternative<JsonError>(right_torque_result) ||
+      std::holds_alternative<JsonError>(right_velocity_threshold_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+  auto left_timeout = std::get<double>(left_timeout_result);
+  auto left_torque = std::get<double>(left_torque_result);
+  auto left_velocity_threshold = std::get<double>(left_velocity_threshold_result);
+  auto right_timeout = std::get<double>(right_timeout_result);
+  auto right_torque = std::get<double>(right_torque_result);
+  auto right_velocity_threshold = std::get<double>(right_velocity_threshold_result);
+
+  ESP_LOGI("PARAMS LEFT", "%f %f %f", left_timeout, left_torque, left_velocity_threshold);
+  ESP_LOGI("PARAMS RIGHT", "%f %f %f", right_timeout, right_torque, right_velocity_threshold);
+
+  write_address(SspAddress::AUTOMATIC_LEFT_TIMEOUT, static_cast<float>(left_timeout));
+  write_address(SspAddress::AUTOMATIC_LEFT_TORQUE, static_cast<float>(left_torque));
+  write_address(SspAddress::AUTOMATIC_LEFT_VELOCITY_THRESHOLD,
+                static_cast<float>(left_velocity_threshold));
+  write_address(SspAddress::AUTOMATIC_RIGHT_TIMEOUT, static_cast<float>(right_timeout));
+  write_address(SspAddress::AUTOMATIC_RIGHT_TORQUE, static_cast<float>(right_torque));
+  write_address(SspAddress::AUTOMATIC_RIGHT_VELOCITY_THRESHOLD,
+                static_cast<float>(right_velocity_threshold));
+
+  httpd_resp_send(req, nullptr, 0);
+
+  return ESP_OK;
+}
+
 esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
   this->register_http_uri("/api/version", HTTP_GET, HttpService::get_version_handler);
@@ -804,6 +880,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
                                       HTTP_PUT,
                                       HttpService::set_mode_smart_handler);
   this->register_http_uri_with_option("/api/date-time", HTTP_PUT, HttpService::set_rtc);
+  this->register_http_uri_with_option("/api/automatic/params",
+                                      HTTP_PUT,
+                                      set_automatic_control_params);
   this->register_ws_uri("/api/data", HttpService::ws_data_handler);
   return ESP_OK;
 }

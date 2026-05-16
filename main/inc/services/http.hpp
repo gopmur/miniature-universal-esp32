@@ -57,8 +57,11 @@ class HttpService {
   static void set_rtc_time(JsonObject* time_json, JsonObject* time_error_json);
   static void set_rtc_date(JsonObject* date_json, JsonObject* date_error_json);
 
+  static esp_err_t send_json(httpd_req_t* req, JsonObject& json);
+  static esp_err_t send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status);
+
   static esp_err_t null_request_handler(httpd_req_t* req);
-  
+
   static esp_err_t get_version_handler(httpd_req_t* req);
 
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
@@ -74,6 +77,7 @@ class HttpService {
   static esp_err_t get_state_handler(httpd_req_t* req);
   static esp_err_t options_handler(httpd_req_t* req);
   static esp_err_t ws_data_handler(httpd_req_t* req);
+  static esp_err_t set_automatic_control_params(httpd_req_t* req);
 
   static esp_err_t start_stm_cpu_usage_stream_handler(httpd_req_t* req);
   static esp_err_t stop_stm_cpu_usage_stream_handler(httpd_req_t* req);
