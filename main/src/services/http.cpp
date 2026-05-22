@@ -293,10 +293,29 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   set_header(req);
   http_service.state_queue.flush();
 
-  read_addresses({SspAddress::RUNNING,
-                  SspAddress::RIGHT_TORQUE,
-                  SspAddress::LEFT_TORQUE,
-                  SspAddress::CONTROL_MODE});
+  read_addresses({
+      SspAddress::RUNNING,
+      SspAddress::RIGHT_TORQUE,
+      SspAddress::LEFT_TORQUE,
+      SspAddress::CONTROL_MODE,
+      SspAddress::AUTOMATIC_RIGHT_VELOCITY_THRESHOLD,
+      SspAddress::AUTOMATIC_LEFT_VELOCITY_THRESHOLD,
+      SspAddress::AUTOMATIC_RIGHT_TORQUE,
+      SspAddress::AUTOMATIC_LEFT_TORQUE,
+      SspAddress::AUTOMATIC_RIGHT_TIMEOUT,
+      SspAddress::AUTOMATIC_LEFT_TIMEOUT,
+      SspAddress::SEMIAUTOMATIC_WEAK_LEG,
+      SspAddress::SEMIAUTOMATIC_START_ASSIST_ANGLE,
+      SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE,
+      SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE,
+      SspAddress::SEMIAUTOMATIC_LEFT_TORQUE,
+      SspAddress::SEMIAUTOMATIC_RIGHT_DELAY,
+      SspAddress::SEMIAUTOMATIC_LEFT_DELAY,
+      SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT,
+      SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT,
+      SspAddress::SMART_RIGHT_TORQUE,
+      SspAddress::SMART_LEFT_TORQUE,
+  });
 
   GetStates async_handler("get_states", 5, 4096);
   httpd_req_t* async_req;

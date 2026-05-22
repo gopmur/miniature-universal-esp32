@@ -13,6 +13,11 @@ enum class ControlMode : uint8_t {
   SMART,
 };
 
+enum class Leg : uint8_t {
+  LEFT,
+  RIGHT,
+};
+
 enum class HttpQueueMessageHeader {
   RUNNING,
   RIGHT_MANUAL_TORQUE,
@@ -26,6 +31,23 @@ enum class HttpQueueMessageHeader {
   CAN_RECV_SERVICE_STACK_SIZE,
   SD_SERVICE_STACK_SIZE,
   MONITOR_SERVICE_STACK_SIZE,
+  AUTOMATIC_RIGHT_VELOCITY_THRESHOLD,
+  AUTOMATIC_LEFT_VELOCITY_THRESHOLD,
+  AUTOMATIC_RIGHT_TORQUE,
+  AUTOMATIC_LEFT_TORQUE,
+  AUTOMATIC_RIGHT_TIMEOUT,
+  AUTOMATIC_LEFT_TIMEOUT,
+  SEMIAUTOMATIC_WEAK_LEG,
+  SEMIAUTOMATIC_START_ASSIST_ANGLE,
+  SEMIAUTOMATIC_STOP_ASSIST_ANGLE,
+  SEMIAUTOMATIC_RIGHT_TORQUE,
+  SEMIAUTOMATIC_LEFT_TORQUE,
+  SEMIAUTOMATIC_RIGHT_DELAY,
+  SEMIAUTOMATIC_LEFT_DELAY,
+  SEMIAUTOMATIC_LEFT_TIMEOUT,
+  SEMIAUTOMATIC_RIGHT_TIMEOUT,
+  SMART_RIGHT_TORQUE,
+  SMART_LEFT_TORQUE,
 };
 
 union HttpQueueMessagePayload {
@@ -33,6 +55,7 @@ union HttpQueueMessagePayload {
   uint32_t u32;
   bool b;
   ControlMode control_mode;
+  Leg leg;
 };
 
 struct HttpQueueMessage {
@@ -109,7 +132,7 @@ class HttpService {
   public:
   static constexpr const char* LOG_TAG = "HTTP Service";
   httpd_handle_t server_instance;
-  Queue<HttpQueueMessage, 8> state_queue;
+  Queue<HttpQueueMessage, 64> state_queue;
   Queue<HttpQueueMessage, 16> task_stack_size_queue;
   void start();
 };

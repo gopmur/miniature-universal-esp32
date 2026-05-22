@@ -6,8 +6,6 @@
 #include "context/services/ws.hpp"
 #include "driver/uart.h"
 #include "esp_log.h"
-#include "esp_log_level.h"
-#include "freertos/idf_additions.h"
 #include "hal/uart_types.h"
 #include "portmacro.h"
 #include "services/http.hpp"
@@ -43,6 +41,40 @@ std::optional<HttpQueueMessageHeader> StmUartRxService::ssp_address_to_http_queu
       return HttpQueueMessageHeader::SD_SERVICE_STACK_SIZE;
     case SspAddress::MONITOR_SERVICE_STACK_SIZE:
       return HttpQueueMessageHeader::MONITOR_SERVICE_STACK_SIZE;
+    case SspAddress::AUTOMATIC_RIGHT_VELOCITY_THRESHOLD:
+      return HttpQueueMessageHeader::AUTOMATIC_RIGHT_VELOCITY_THRESHOLD;
+    case SspAddress::AUTOMATIC_LEFT_VELOCITY_THRESHOLD:
+      return HttpQueueMessageHeader::AUTOMATIC_LEFT_VELOCITY_THRESHOLD;
+    case SspAddress::AUTOMATIC_RIGHT_TORQUE:
+      return HttpQueueMessageHeader::AUTOMATIC_RIGHT_TORQUE;
+    case SspAddress::AUTOMATIC_LEFT_TORQUE:
+      return HttpQueueMessageHeader::AUTOMATIC_LEFT_TORQUE;
+    case SspAddress::AUTOMATIC_RIGHT_TIMEOUT:
+      return HttpQueueMessageHeader::AUTOMATIC_RIGHT_TIMEOUT;
+    case SspAddress::AUTOMATIC_LEFT_TIMEOUT:
+      return HttpQueueMessageHeader::AUTOMATIC_LEFT_TIMEOUT;
+    case SspAddress::SEMIAUTOMATIC_WEAK_LEG:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_WEAK_LEG;
+    case SspAddress::SEMIAUTOMATIC_START_ASSIST_ANGLE:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_START_ASSIST_ANGLE;
+    case SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_STOP_ASSIST_ANGLE;
+    case SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_RIGHT_TORQUE;
+    case SspAddress::SEMIAUTOMATIC_LEFT_TORQUE:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_LEFT_TORQUE;
+    case SspAddress::SEMIAUTOMATIC_RIGHT_DELAY:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_RIGHT_DELAY;
+    case SspAddress::SEMIAUTOMATIC_LEFT_DELAY:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_LEFT_DELAY;
+    case SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_LEFT_TIMEOUT;
+    case SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT:
+      return HttpQueueMessageHeader::SEMIAUTOMATIC_RIGHT_TIMEOUT;
+    case SspAddress::SMART_RIGHT_TORQUE:
+      return HttpQueueMessageHeader::SMART_RIGHT_TORQUE;
+    case SspAddress::SMART_LEFT_TORQUE:
+      return HttpQueueMessageHeader::SMART_LEFT_TORQUE;
     default:
       return std::nullopt;
   }
@@ -182,17 +214,17 @@ void log_packet(SspPacket packet) {
       ESP_LOGI("UART", "MONITOR_SERVICE_STACK_SIZE received");
       break;
 
-    // case SspAddress::HEAP_USAGE:
-    //   ESP_LOGI("UART", "HEAP_USAGE received");
-    //   break;
+      // case SspAddress::HEAP_USAGE:
+      //   ESP_LOGI("UART", "HEAP_USAGE received");
+      //   break;
 
-    // case SspAddress::MAX_HEAP_USAGE:
-    //   ESP_LOGI("UART", "MAX_HEAP_USAGE received");
-    //   break;
+      // case SspAddress::MAX_HEAP_USAGE:
+      //   ESP_LOGI("UART", "MAX_HEAP_USAGE received");
+      //   break;
 
-    // case SspAddress::HEAP_SIZE:
-    //   ESP_LOGI("UART", "HEAP_SIZE received");
-    //   break;
+      // case SspAddress::HEAP_SIZE:
+      //   ESP_LOGI("UART", "HEAP_SIZE received");
+      //   break;
 
     case SspAddress::RTC_TIME:
       ESP_LOGI("UART", "RTC_TIME received");
@@ -233,26 +265,57 @@ void StmUartRxService::main() {
         continue;
       }
       HttpQueueMessage http_queue_message;
+      auto http_queue_message_header_result =
+          ssp_address_to_http_queue_message_header(packet->address);
       if (packet->header.b.resp == 1 && packet->header.b.type == SspType::READ) {
         switch (static_cast<SspAddress>(packet->address)) {
           case SspAddress::RUNNING:
-            http_queue_message.header = HttpQueueMessageHeader::RUNNING;
+            if (!http_queue_message_header_result.has_value()) {
+              break;
+            }
+            http_queue_message.header = http_queue_message_header_result.value();
             http_queue_message.payload.b = packet->get_uint8();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
-          case SspAddress::RIGHT_TORQUE:
-            http_queue_message.header = HttpQueueMessageHeader::RIGHT_MANUAL_TORQUE;
-            http_queue_message.payload.f = packet->get_float();
-            http_service.state_queue.send(http_queue_message, portMAX_DELAY);
-            break;
-          case SspAddress::LEFT_TORQUE:
-            http_queue_message.header = HttpQueueMessageHeader::LEFT_MANUAL_TORQUE;
-            http_queue_message.payload.f = packet->get_float();
-            http_service.state_queue.send(http_queue_message, portMAX_DELAY);
-            break;
           case SspAddress::CONTROL_MODE:
-            http_queue_message.header = HttpQueueMessageHeader::MODE;
+            if (!http_queue_message_header_result.has_value()) {
+              break;
+            }
+            http_queue_message.header = http_queue_message_header_result.value();
             http_queue_message.payload.control_mode = static_cast<ControlMode>(packet->get_uint8());
+            http_service.state_queue.send(http_queue_message, portMAX_DELAY);
+            break;
+          case SspAddress::SEMIAUTOMATIC_WEAK_LEG:
+            if (!http_queue_message_header_result.has_value()) {
+              break;
+            }
+            http_queue_message.header = http_queue_message_header_result.value();
+            http_queue_message.payload.leg = static_cast<Leg>(packet->get_uint8());
+            http_service.state_queue.send(http_queue_message, portMAX_DELAY);
+            break;
+          case SspAddress::RIGHT_TORQUE:
+          case SspAddress::LEFT_TORQUE:
+          case SspAddress::AUTOMATIC_LEFT_TIMEOUT:
+          case SspAddress::AUTOMATIC_RIGHT_TIMEOUT:
+          case SspAddress::AUTOMATIC_LEFT_TORQUE:
+          case SspAddress::AUTOMATIC_RIGHT_TORQUE:
+          case SspAddress::AUTOMATIC_LEFT_VELOCITY_THRESHOLD:
+          case SspAddress::AUTOMATIC_RIGHT_VELOCITY_THRESHOLD:
+          case SspAddress::SEMIAUTOMATIC_START_ASSIST_ANGLE:
+          case SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE:
+          case SspAddress::SEMIAUTOMATIC_LEFT_DELAY:
+          case SspAddress::SEMIAUTOMATIC_LEFT_TORQUE:
+          case SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT:
+          case SspAddress::SEMIAUTOMATIC_RIGHT_DELAY:
+          case SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE:
+          case SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT:
+          case SspAddress::SMART_LEFT_TORQUE:
+          case SspAddress::SMART_RIGHT_TORQUE:
+            if (!http_queue_message_header_result.has_value()) {
+              break;
+            }
+            http_queue_message.header = http_queue_message_header_result.value();
+            http_queue_message.payload.f = packet->get_float();
             http_service.state_queue.send(http_queue_message, portMAX_DELAY);
             break;
           case SspAddress::LED_SERVICE_STACK_SIZE:
@@ -263,12 +326,10 @@ void StmUartRxService::main() {
           case SspAddress::CAN_RECV_SERVICE_STACK_SIZE:
           case SspAddress::SD_SERVICE_STACK_SIZE:
           case SspAddress::MONITOR_SERVICE_STACK_SIZE: {
-            auto http_queue_message_header =
-                ssp_address_to_http_queue_message_header(packet->address);
-            if (!http_queue_message_header) {
+            if (!http_queue_message_header_result.has_value()) {
               break;
             }
-            http_queue_message.header = http_queue_message_header.value();
+            http_queue_message.header = http_queue_message_header_result.value();
             http_queue_message.payload.u32 = packet->get_uint32();
             http_service.task_stack_size_queue.send(http_queue_message, portMAX_DELAY);
             break;
