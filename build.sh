@@ -19,7 +19,7 @@ function build_web_app() {
 }
 
 function generate_assets() {
-  rm -rf ./build/generated
+  rm -rf ./generated/assets
   python ./main/scripts/generate_http_assets.py ./app/hexa-webapp/dist ./generated
 }
 
