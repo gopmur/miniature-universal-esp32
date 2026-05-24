@@ -154,7 +154,7 @@ void GetStates::main(httpd_req_t** req_p) {
   control_params_json.set("manual", &manual_control_params_json);
   control_params_json.set("automatic", &automatic_control_params_json);
   control_params_json.set("semiautomatic", &semiautomatic_control_params_json);
-  control_params_json.set("smart", &manual_control_params_json);
+  control_params_json.set("smart", &smart_control_params_json);
   res_json.set("controlParams", &control_params_json);
 
   auto json_str = res_json.stringify();
