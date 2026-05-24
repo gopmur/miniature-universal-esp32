@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <format>
 #include <variant>
 
@@ -34,51 +35,6 @@
 #include "threads/get_states.hpp"
 #include "threads/scan_wifis.hpp"
 #include "version.hpp"
-
-// esp_err_t HttpService::get_session_reports_handler(httpd_req_t* req) {
-//   constexpr int record_count = 8;
-//   constexpr int data_count = 2000;
-//   constexpr float sampling_rate = 0.1;
-
-//   httpd_resp_set_type(req, "application/octet-stream");
-//   httpd_resp_set_hdr(req, "Transfer-Encoding", "chunked");
-
-//   ReportRecord buffer[record_count];
-//   ReportRecord record;
-//   int buffer_index = 0;
-
-//   for (int i = 0; i < data_count; i++) {
-//     record.callback_time += 100000;
-//     record.smc_mr_vel = std::sin(record.callback_time);
-//     record.smc_ml_vel = std::sin(record.callback_time);
-//     record.smc_mr_pos += record.smc_mr_vel * sampling_rate;
-//     record.smc_ml_pos += record.smc_ml_vel * sampling_rate;
-
-//     buffer[buffer_index] = record;
-//     buffer_index++;
-
-//     if (buffer_index == record_count) {
-//       buffer_index = 0;
-//       ESP_RETURN_ON_ERROR(httpd_resp_send_chunk(req,
-//                                                 reinterpret_cast<char*>(buffer),
-//                                                 sizeof(buffer)),
-//                           HttpService::LOG_TAG,
-//                           "Chunk transmission failed.");
-//     }
-//   };
-//   if (buffer_index != 0) {
-//     ESP_RETURN_ON_ERROR(
-//         httpd_resp_send_chunk(req,
-//                               reinterpret_cast<char*>(buffer),
-//                               sizeof(ReportRecord) * buffer_index),
-//         HttpService::LOG_TAG,
-//         "Chunk transmission failed");
-//   };
-//   ESP_RETURN_ON_ERROR(httpd_resp_send_chunk(req, nullptr, 0),
-//                       HttpService::LOG_TAG,
-//                       "Termination of chunk transmission failed");
-//   return ESP_OK;
-// }
 
 esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json) {
   auto json_string = json.stringify();
@@ -733,7 +689,7 @@ esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
   esp_http_client_read(client, resp_buffer, resp_len);
   resp_buffer[resp_len] = 0;
   resp_str = std::string(resp_buffer);
-  free(resp_buffer);
+  delete[] resp_buffer;
   status_code = esp_http_client_get_status_code(client);
 
 send:
@@ -781,6 +737,7 @@ esp_err_t HttpService::set_automatic_control_params(httpd_req_t* req) {
   httpd_req_recv(req, req_body, req->content_len);
   JsonObject resp_json;
   auto req_json_result = JsonObject::parse(req_body);
+  delete[] req_body;
 
   if (std::holds_alternative<JsonError>(req_json_result)) {
     resp_json.set("message", "parse error");
@@ -835,6 +792,119 @@ esp_err_t HttpService::set_automatic_control_params(httpd_req_t* req) {
 
   httpd_resp_send(req, nullptr, 0);
 
+  return ESP_OK;
+}
+
+esp_err_t HttpService::set_semiautomatic_control_params(httpd_req_t* req) {
+  set_header(req);
+  char* req_body = new char[req->content_len];
+  httpd_req_recv(req, req_body, req->content_len);
+  JsonObject resp_json;
+  auto req_json_result = JsonObject::parse(req_body);
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    resp_json.set("message", "parse error");
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
+
+  auto weak_leg_result = req_json.get_string("weakLeg", &resp_json);
+  auto start_assist_angle_result = req_json.get_number("startAssistAngle", &resp_json);
+  auto stop_assist_angle_result = req_json.get_number("stopAssistAngle", &resp_json);
+  auto left_json_result = req_json.get_object("left", &resp_json);
+  auto right_json_result = req_json.get_object("right", &resp_json);
+
+  if (std::holds_alternative<JsonError>(weak_leg_result) ||
+      std::holds_alternative<JsonError>(start_assist_angle_result) ||
+      std::holds_alternative<JsonError>(stop_assist_angle_result) ||
+      std::holds_alternative<JsonError>(left_json_result) ||
+      std::holds_alternative<JsonError>(left_json_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto weak_leg =
+      std::strcmp(std::get<char*>(weak_leg_result), "left") == 0 ? Leg::LEFT : Leg::RIGHT;
+  auto start_assist_angle = std::get<double>(start_assist_angle_result);
+  auto stop_assist_angle = std::get<double>(stop_assist_angle_result);
+  auto left_json = std::get<JsonObject>(left_json_result);
+  auto right_json = std::get<JsonObject>(right_json_result);
+  auto left_torque_result = left_json.get_number("torque", &resp_json);
+  auto left_timeout_result = left_json.get_number("timeout", &resp_json);
+  auto left_delay_result = left_json.get_number("delay", &resp_json);
+  auto right_torque_result = right_json.get_number("torque", &resp_json);
+  auto right_timeout_result = right_json.get_number("timeout", &resp_json);
+  auto right_delay_result = right_json.get_number("delay", &resp_json);
+
+  if (std::holds_alternative<JsonError>(left_torque_result) ||
+      std::holds_alternative<JsonError>(left_delay_result) ||
+      std::holds_alternative<JsonError>(left_timeout_result) ||
+      std::holds_alternative<JsonError>(right_torque_result) ||
+      std::holds_alternative<JsonError>(right_delay_result) ||
+      std::holds_alternative<JsonError>(right_timeout_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto left_torque = std::get<double>(left_torque_result);
+  auto left_timeout = std::get<double>(left_timeout_result);
+  auto left_delay = std::get<double>(left_delay_result);
+  auto right_torque = std::get<double>(right_torque_result);
+  auto right_timeout = std::get<double>(right_timeout_result);
+  auto right_delay = std::get<double>(right_delay_result);
+
+  write_address(SspAddress::SEMIAUTOMATIC_WEAK_LEG, static_cast<uint8_t>(weak_leg));
+  write_address(SspAddress::SEMIAUTOMATIC_START_ASSIST_ANGLE,
+                static_cast<float>(start_assist_angle));
+  write_address(SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE, static_cast<float>(stop_assist_angle));
+  write_address(SspAddress::SEMIAUTOMATIC_LEFT_TORQUE, static_cast<float>(left_torque));
+  write_address(SspAddress::SEMIAUTOMATIC_LEFT_DELAY, static_cast<float>(left_delay));
+  write_address(SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT, static_cast<float>(left_timeout));
+  write_address(SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE, static_cast<float>(right_torque));
+  write_address(SspAddress::SEMIAUTOMATIC_RIGHT_DELAY, static_cast<float>(right_delay));
+  write_address(SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT, static_cast<float>(right_timeout));
+
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::set_smart_control_params(httpd_req_t* req) {
+  set_header(req);
+  char* req_body = new char[req->content_len];
+  httpd_req_recv(req, req_body, req->content_len);
+  JsonObject resp_json;
+  auto req_json_result = JsonObject::parse(req_body);
+  delete[] req_body;
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    resp_json.set("message", "parse error");
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
+
+  auto left_json_result = req_json.get_object("left", &resp_json);
+  auto right_json_result = req_json.get_object("right", &resp_json);
+
+  if (std::holds_alternative<JsonError>(left_json_result) ||
+      std::holds_alternative<JsonError>(right_json_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto left_json = std::get<JsonObject>(left_json_result);
+  auto right_json = std::get<JsonObject>(right_json_result);
+
+  auto left_torque_result = left_json.get_number("torque");
+  auto right_torque_result = right_json.get_number("torque");
+
+  if (std::holds_alternative<JsonError>(left_torque_result) ||
+      std::holds_alternative<JsonError>(right_torque_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+  auto left_torque = std::get<double>(left_torque_result);
+  auto right_torque = std::get<double>(right_torque_result);
+  write_address(SspAddress::SMART_LEFT_TORQUE, static_cast<float>(left_torque));
+  write_address(SspAddress::SMART_RIGHT_TORQUE, static_cast<float>(right_torque));
+  httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
 
@@ -902,6 +972,10 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri_with_option("/api/automatic/params",
                                       HTTP_PUT,
                                       set_automatic_control_params);
+  this->register_http_uri_with_option("/api/semiautomatic/params",
+                                      HTTP_PUT,
+                                      set_semiautomatic_control_params);
+  this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
   this->register_ws_uri("/api/data", HttpService::ws_data_handler);
   return ESP_OK;
 }

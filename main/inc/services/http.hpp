@@ -101,6 +101,8 @@ class HttpService {
   static esp_err_t options_handler(httpd_req_t* req);
   static esp_err_t ws_data_handler(httpd_req_t* req);
   static esp_err_t set_automatic_control_params(httpd_req_t* req);
+  static esp_err_t set_semiautomatic_control_params(httpd_req_t* req);
+  static esp_err_t set_smart_control_params(httpd_req_t* req);
 
   static esp_err_t start_stm_cpu_usage_stream_handler(httpd_req_t* req);
   static esp_err_t stop_stm_cpu_usage_stream_handler(httpd_req_t* req);
