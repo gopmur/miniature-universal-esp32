@@ -225,10 +225,10 @@ void WebSocketService::fill_json_with_packet_data(SspPacket packet,
   if (this->stream_is_enabled(WsStream::MOTOR_DATA)) {
     switch (packet.address) {
       case SspAddress::MOTOR_POS_LEFT:
-        motor_data_json->set("leftPosition", packet.get_uint16());
+        motor_data_json->set("leftPosition", packet.get_float());
         break;
       case SspAddress::MOTOR_POS_RIGHT:
-        motor_data_json->set("rightPosition", packet.get_uint16());
+        motor_data_json->set("rightPosition", packet.get_float());
         break;
       default:
         break;
@@ -271,10 +271,8 @@ void WebSocketService::send_to_connections(const char* data) {
       .payload = (uint8_t*)data,
       .len = strlen(data),
   };
-  ESP_LOGI("WS", "%d", connection_count);
   for (int i = 0; i < this->connection_count; i++) {
     int fd = this->connection_fds[i];
-    ESP_LOGI("WS", "FD: %d", fd);
     esp_err_t ret = httpd_ws_send_frame_async(http_service.server_instance, fd, &ws_packet);
     if (ret != ESP_OK) {
       this->stop_sending(fd);
