@@ -1,27 +1,27 @@
-#pragma once
+// #pragma once
 
-#include <cstdint>
+// #include <cstdint>
 
-constexpr int NAME_MAX_LEN = 255;
+// constexpr int NAME_MAX_LEN = 255;
 
-class DNSQuestion {
- private:
-  char name[NAME_MAX_LEN];
-  uint16_t type;
-  uint16_t clss;
+// class DNSQuestion {
+//  private:
+//   char name[NAME_MAX_LEN];
+//   uint16_t type;
+//   uint16_t clss;
 
-  void hton();
-  void ntoh();
+//   void hton();
+//   void ntoh();
 
- public:
-  static constexpr int STATIC_SIZE = 2 * sizeof(uint16_t);
+//  public:
+//   static constexpr int STATIC_SIZE = 2 * sizeof(uint16_t);
 
-  DNSQuestion();
+//   DNSQuestion();
 
-  char* get_name();
-  uint16_t get_type();
-  uint16_t get_class();
+//   char* get_name();
+//   uint16_t get_type();
+//   uint16_t get_class();
 
-  int copy(char* dest, int size, int* bytes_written);
-  int parse(char* src, int size, int* bytes_read);
-};
+//   int copy(char* dest, int size, int* bytes_written);
+//   int parse(char* src, int size, int* bytes_read);
+// };

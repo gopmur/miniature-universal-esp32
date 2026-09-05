@@ -25,5 +25,3 @@ idf_component_register(
   "inc"
   "${CMAKE_SOURCE_DIR}/generated/inc"
 )
-
-set(COMPONENT_REQUIRES "json")

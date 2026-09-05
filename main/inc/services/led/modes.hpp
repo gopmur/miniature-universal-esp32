@@ -1,5 +1,5 @@
-#pragma once
+// #pragma once
 
-enum class LedStatus {
-  NORMAL,
-};
+// enum class LedStatus {
+//   NORMAL,
+// };

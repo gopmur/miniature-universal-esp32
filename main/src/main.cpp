@@ -3,29 +3,26 @@
 
 #include <freertos/FreeRTOS.h>
 
-#include "callbacks/wifi_event_handler.hpp"
-#include "driver/uart.h"
+// #include "callbacks/wifi_event_handler.hpp"
+#include "driver/i2c_master.h"
 #include "esp_err.h"
 #include "esp_event.h"
+#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_types_generic.h"
+#include "hal/gpio_types.h"
+#include "hal/i2c_types.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
 #include "config.hpp"
+#include "icm20948.h"
+#include "icm20948_i2c.h"
+#include "services/imu.hpp"
 
-#include "context/services/dns.hpp"
-#include "context/services/http.hpp"
-#include "context/services/http_wifi_con_handler.hpp"
-#include "context/services/led.hpp"
-#include "context/services/monitor.hpp"
-#include "context/services/stm_uart_rx.hpp"
-#include "context/services/telnet.hpp"
-#include "context/services/ws.hpp"
-#include "services/http_wifi_con_handler.hpp"
-#include "context/services/http_ota_handler.hpp"
+ImuThread imu_thread;
 
 class App {
   private:
@@ -68,66 +65,53 @@ class App {
       wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        ESP_EVENT_ANY_ID,
-                                                        &wifi_event_handler,
-                                                        NULL,
-                                                        NULL));
+    // ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+    //                                                     ESP_EVENT_ANY_ID,
+    //                                                     nullptr,
+    //                                                     NULL,
+    //                                                     NULL));
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-                                                        IP_EVENT_STA_GOT_IP,
-                                                        &wifi_event_handler,
-                                                        NULL,
-                                                        NULL));
+    // ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+    //                                                     IP_EVENT_STA_GOT_IP,
+    //                                                     nullptr,
+    //                                                     NULL,
+    //                                                     NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
     ESP_ERROR_CHECK(esp_wifi_start());
   }
 
-  void setup_uart() {
-    ESP_ERROR_CHECK(uart_set_pin(config::stm_uart::port,
-                                 config::stm_uart::tx_pin,
-                                 config::stm_uart::rx_pin,
-                                 UART_PIN_NO_CHANGE,
-                                 UART_PIN_NO_CHANGE));
+  
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers"
-    uart_config_t uart_config = {
-        .baud_rate = config::stm_uart::baud_rate,
-        .data_bits = config::stm_uart::data_bits,
-        .parity = config::stm_uart::parity,
-        .stop_bits = config::stm_uart::stop_bits,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .rx_flow_ctrl_thresh = 0,
+  void setup_i2c() {
+    i2c_config_t i2c_config = {
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = (gpio_num_t)21,
+        .scl_io_num = (gpio_num_t)22,
+        .sda_pullup_en = GPIO_PULLUP_DISABLE,
+        .scl_pullup_en = GPIO_PULLUP_DISABLE,
+        .master =
+            {
+                .clk_speed = 400000,
+            },
+        .clk_flags = I2C_SCLK_SRC_FLAG_FOR_NOMAL,
     };
-#pragma clang diagnostic pop
-    ESP_ERROR_CHECK(uart_param_config(config::stm_uart::port, &uart_config));
-    ESP_ERROR_CHECK(uart_driver_install(config::stm_uart::port,
-                                        config::stm_uart::rx_buffer_size,
-                                        config::stm_uart::rx_buffer_size,
-                                        0,
-                                        nullptr,
-                                        0));
+
+    ESP_ERROR_CHECK(i2c_param_config(I2C_NUM_0, &i2c_config));
+    ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, i2c_config.mode, 0, 0, 0));
   }
 
   void setup() {
     setup_flash();
     setup_netif();
     setup_wifi();
-    setup_uart();
+    setup_i2c();
 
-    http_service.start();
-    dns_service.start();
-    led_service.start();
-    stm_uart_rx_service.start();
-    ws_service.start();
-    monitor_service.start();
-    telnet_service.start();
-    http_wifi_con_handler_service.start();
-    http_ota_handler_service.start();
+    start_tasks();
   }
+
+  void start_tasks() { imu_thread.start("imu", 2, 4096); }
 
   public:
   void run() { setup(); }

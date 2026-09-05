@@ -1,21 +1,21 @@
-#pragma once
+// #pragma once
 
-#include "report.hpp"
-template <typename T, typename U>
-struct QueueMessage {
-  T type;
-  U value;
-};
+// #include "report.hpp"
+// template <typename T, typename U>
+// struct QueueMessage {
+//   T type;
+//   U value;
+// };
 
 
-enum HttpToStmUartSignal {
-  REQUEST_REPORT,
-};
+// enum HttpToStmUartSignal {
+//   REQUEST_REPORT,
+// };
 
-enum StmUartToHttpMessageType {
-  SENDING,
-  END,
-};
+// enum StmUartToHttpMessageType {
+//   SENDING,
+//   END,
+// };
 
-typedef QueueMessage<StmUartToHttpMessageType, ReportRecord>
-    StmUartToHttpMessage;
+// typedef QueueMessage<StmUartToHttpMessageType, ReportRecord>
+//     StmUartToHttpMessage;

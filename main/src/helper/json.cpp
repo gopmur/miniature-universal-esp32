@@ -116,7 +116,7 @@ void JsonObject::set(const char* name, bool boolean) {
 }
 
 void JsonObject::set(const char* name, JsonError error) {
-  const char* error_message;
+  const char* error_message = "";
   switch (error) {
     case JsonError::NOT_PROVIDED:
       error_message = "not provided";

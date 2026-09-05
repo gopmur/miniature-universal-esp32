@@ -1,8 +1,11 @@
 {
   "cSpell.words": [
+    "agmt",
     "APSTA",
     "bssid",
     "disconn",
+    "dlpcfg",
+    "dlpf",
     "EINVAL",
     "FLOWCTRL",
     "Gopmur",
@@ -12,6 +15,7 @@
     "netif",
     "otadata",
     "rssi",
+    "SCLK",
     "SRCS",
     "Ssp",
     "TXTFILES",
@@ -22,5 +26,18 @@
   "java.project.sourcePaths": [
     "main/src/services"
   ],
-  "idf.currentSetup": "/home/ali/.espressif/v6.0.2/esp-idf"
+  "idf.currentSetup": "/home/ali/.espressif/v6.0.2/esp-idf",
+  "idf.openOcdConfigs": [
+    "interface/ftdi/esp32_devkitj_v1.cfg",
+    "target/esp32.cfg"
+  ],
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32"
+  },
+  "clangd.path": "/home/ali/.espressif/tools/esp-clang/esp-20.1.1_20250829/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**",
+    "--compile-commands-dir=/home/ali/Documents/fum/care/miniature-universal-esp32/build"
+  ]
 }

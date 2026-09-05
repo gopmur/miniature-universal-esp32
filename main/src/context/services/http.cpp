@@ -1,2 +1,2 @@
-#include "services/http.hpp"
-HttpService http_service;
+// #include "services/http.hpp"
+// HttpService http_service;

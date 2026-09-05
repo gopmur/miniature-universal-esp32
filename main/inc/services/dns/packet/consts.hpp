@@ -1,44 +1,44 @@
-#pragma once
+// #pragma once
 
-#include <cstdint>
+// #include <cstdint>
 
-enum RRType : uint16_t {
-  RRTYPE_A = 1,
-  RRTYPE_NS,
-  RRTYPE_MD,
-  RRTYPE_MF,
-  RRTYPE_CNAME,
-  RRTYPE_SOA,
-  RRTYPE_MB,
-  RRTYPE_MG,
-  RRTYPE_MR,
-  RRTYPE_NULL,
-  RRTYPE_WKS,
-  RRTYPE_PTR,
-  RRTYPE_HINFO,
-  RRTYPE_MINFO,
-  RRTYPE_MX,
-  RRTYPE_TXT,
-};
+// enum RRType : uint16_t {
+//   RRTYPE_A = 1,
+//   RRTYPE_NS,
+//   RRTYPE_MD,
+//   RRTYPE_MF,
+//   RRTYPE_CNAME,
+//   RRTYPE_SOA,
+//   RRTYPE_MB,
+//   RRTYPE_MG,
+//   RRTYPE_MR,
+//   RRTYPE_NULL,
+//   RRTYPE_WKS,
+//   RRTYPE_PTR,
+//   RRTYPE_HINFO,
+//   RRTYPE_MINFO,
+//   RRTYPE_MX,
+//   RRTYPE_TXT,
+// };
 
-enum RRClass : uint16_t {
-  RRCLASS_IN = 1,
-  RRCLASS_CS,
-  RRCLASS_CH,
-  RRCLASS_HS,
-};
+// enum RRClass : uint16_t {
+//   RRCLASS_IN = 1,
+//   RRCLASS_CS,
+//   RRCLASS_CH,
+//   RRCLASS_HS,
+// };
 
-enum Opcode : uint8_t {
-  OPCODE_QUERY,
-  OPCODE_IQUERY,
-  OPCODE_STATUS,
-};
+// enum Opcode : uint8_t {
+//   OPCODE_QUERY,
+//   OPCODE_IQUERY,
+//   OPCODE_STATUS,
+// };
 
-enum Rcode : uint8_t {
-  RCODE_NO_ERR,
-  RCODE_FORMAT_ERR,
-  RCODE_SERVER_FAILURE,
-  RCODE_NAME_ERR,
-  RCODE_NOT_IMPLEMENTED,
-  RCODE_REFUSED,
-};
+// enum Rcode : uint8_t {
+//   RCODE_NO_ERR,
+//   RCODE_FORMAT_ERR,
+//   RCODE_SERVER_FAILURE,
+//   RCODE_NAME_ERR,
+//   RCODE_NOT_IMPLEMENTED,
+//   RCODE_REFUSED,
+// };
