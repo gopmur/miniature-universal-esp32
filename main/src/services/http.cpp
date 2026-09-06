@@ -1,58 +1,54 @@
-// #include <cmath>
-// #include <cstdio>
-// #include <cstdlib>
-// #include <cstring>
-// #include <format>
-// #include <variant>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <format>
+#include <variant>
 
-// #include "services/http.hpp"
+#include "services/http.hpp"
 
-// #include "config.hpp"
-// #include "driver/uart.h"
-// #include "esp_check.h"
-// #include "esp_err.h"
-// #include "esp_http_client.h"
-// #include "esp_http_server.h"
-// #include "esp_system.h"
-// #include "esp_wifi.h"
-// #include "freertos/idf_additions.h"
-// #include "helper.hpp"
-// #include "helper/json.hpp"
-// #include "http_assets.hpp"
-// #include "http_parser.h"
+#include "config.hpp"
+#include "driver/uart.h"
+#include "esp_check.h"
+#include "esp_err.h"
+#include "esp_http_client.h"
+#include "esp_http_server.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "freertos/idf_additions.h"
+#include "helper.hpp"
+#include "helper/json.hpp"
+#include "http_assets.hpp"
+#include "http_parser.h"
 
-// #include "context/ota_progress.hpp"
-// #include "context/services/http.hpp"
-// #include "context/services/http_ota_handler.hpp"
-// #include "context/services/http_wifi_con_handler.hpp"
-// #include "context/services/ws.hpp"
-// #include "helper/uart.hpp"
-// #include "services/http/helper.hpp"
-// #include "services/http_wifi_con_handler.hpp"
-// #include "services/stm_uart/ssp.hpp"
-// #include "services/ws.hpp"
-// #include "threads/get_stack_sizes.hpp"
-// #include "threads/get_states.hpp"
-// #include "threads/scan_wifis.hpp"
-// #include "version.hpp"
+#include "context/control_state.hpp"
+#include "context/ota_progress.hpp"
+#include "context/services/http.hpp"
+#include "services/http/helper.hpp"
+#include "services/http_wifi_con_handler.hpp"
+#include "services/ws.hpp"
+#include "threads/get_stack_sizes.hpp"
+#include "threads/get_states.hpp"
+#include "threads/scan_wifis.hpp"
+#include "version.hpp"
 
-// esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json) {
-//   auto json_string = json.stringify();
-//   httpd_resp_send(req, json_string.c_str(), HTTPD_RESP_USE_STRLEN);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json) {
+  auto json_string = json.stringify();
+  httpd_resp_send(req, json_string.c_str(), HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
 
-// esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
-//   auto json_string = json.stringify();
-//   httpd_resp_send_err(req, status, json_string.c_str());
-//   return ESP_OK;
-// }
+esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
+  auto json_string = json.stringify();
+  httpd_resp_send_err(req, status, json_string.c_str());
+  return ESP_OK;
+}
 
-// esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
-//   set_header(req);
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
+  set_header(req);
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
 
 // esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
 //   ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
@@ -189,23 +185,23 @@
 //   return ESP_OK;
 // }
 
-// void HttpService::allow_cors(httpd_req_t* req) {
-//   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
-//   httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, PUT, POST, OPTIONS");
-//   httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
-// }
+void HttpService::allow_cors(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, PUT, POST, OPTIONS");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+}
 
-// void HttpService::set_close_connection(httpd_req_t* req) {
-//   httpd_resp_set_hdr(req, "Connection", "close");
-// }
-// void HttpService::set_type_json(httpd_req_t* req) {
-//   httpd_resp_set_type(req, "application/json");
-// }
-// void HttpService::set_header(httpd_req_t* req) {
-//   HttpService::allow_cors(req);
-//   HttpService::set_close_connection(req);
-//   HttpService::set_type_json(req);
-// }
+void HttpService::set_close_connection(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Connection", "close");
+}
+void HttpService::set_type_json(httpd_req_t* req) {
+  httpd_resp_set_type(req, "application/json");
+}
+void HttpService::set_header(httpd_req_t* req) {
+  HttpService::allow_cors(req);
+  HttpService::set_close_connection(req);
+  HttpService::set_type_json(req);
+}
 
 // esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
 //   set_header(req);
@@ -244,42 +240,115 @@
 //   async_handler.start(&async_req);
 //   return ESP_OK;
 // }
+const char* get_control_mode_str(ControlMode control_mode) {
+  switch (control_mode) {
+    case ControlMode::MANUAL:
+      return "manual";
+    case ControlMode::AUTO:
+      return "automatic";
+    case ControlMode::SEMI_AUTO:
+      return "semi-automatic";
+    case ControlMode::SMART:
+      return "smart";
+  }
+  return "undefined";
+}
 
-// esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
-//   set_header(req);
-//   http_service.state_queue.flush();
+const char* get_leg_str(Leg leg) {
+  switch (leg) {
+    case Leg::LEFT:
+      return "left";
+    case Leg::RIGHT:
+      return "right";
+  }
+  return "undefined";
+}
 
-//   read_addresses({
-//       SspAddress::RUNNING,
-//       SspAddress::RIGHT_TORQUE,
-//       SspAddress::LEFT_TORQUE,
-//       SspAddress::CONTROL_MODE,
-//       SspAddress::AUTOMATIC_RIGHT_VELOCITY_THRESHOLD,
-//       SspAddress::AUTOMATIC_LEFT_VELOCITY_THRESHOLD,
-//       SspAddress::AUTOMATIC_RIGHT_TORQUE,
-//       SspAddress::AUTOMATIC_LEFT_TORQUE,
-//       SspAddress::AUTOMATIC_RIGHT_TIMEOUT,
-//       SspAddress::AUTOMATIC_LEFT_TIMEOUT,
-//       SspAddress::SEMIAUTOMATIC_WEAK_LEG,
-//       SspAddress::SEMIAUTOMATIC_START_ASSIST_ANGLE,
-//       SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE,
-//       SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE,
-//       SspAddress::SEMIAUTOMATIC_LEFT_TORQUE,
-//       SspAddress::SEMIAUTOMATIC_RIGHT_DELAY,
-//       SspAddress::SEMIAUTOMATIC_LEFT_DELAY,
-//       SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT,
-//       SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT,
-//       SspAddress::SMART_RIGHT_TORQUE,
-//       SspAddress::SMART_LEFT_TORQUE,
-//   });
+esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
+  set_header(req);
+  JsonObject res_json;
+  JsonObject control_params_json;
+  JsonObject manual_control_params_json;
+  JsonObject automatic_control_params_json;
+  JsonObject semiautomatic_control_params_json;
+  JsonObject smart_control_params_json;
+  JsonObject manual_control_params_left_json;
+  JsonObject automatic_control_params_left_json;
+  JsonObject semiautomatic_control_params_left_json;
+  JsonObject smart_control_params_left_json;
+  JsonObject manual_control_params_right_json;
+  JsonObject automatic_control_params_right_json;
+  JsonObject semiautomatic_control_params_right_json;
+  JsonObject smart_control_params_right_json;
 
-//   GetStates async_handler("get_states", 5, 4096);
-//   httpd_req_t* async_req;
-//   httpd_req_async_handler_begin(req, &async_req);
-//   async_handler.start(&async_req);
+  res_json.set("running", control_state.running);
+  res_json.set("mode", get_control_mode_str(control_state.control_mode));
+  manual_control_params_left_json.set("torque", control_state.control_params.manual.left.torque);
+  manual_control_params_right_json.set("torque", control_state.control_params.manual.right.torque);
+  automatic_control_params_left_json.set("torque",
+                                         control_state.control_params.automatic.left.torque);
+  automatic_control_params_left_json.set("timeout",
+                                         control_state.control_params.automatic.left.timeout);
+  automatic_control_params_left_json.set(
+      "velocityThreshold",
+      control_state.control_params.automatic.left.velocity_threshold);
+  automatic_control_params_right_json.set("torque",
+                                          control_state.control_params.automatic.right.torque);
+  automatic_control_params_right_json.set("timeout",
+                                          control_state.control_params.automatic.right.timeout);
+  automatic_control_params_right_json.set(
+      "velocityThreshold",
+      control_state.control_params.automatic.right.velocity_threshold);
+  semiautomatic_control_params_json.set(
+      "weakLeg",
+      get_leg_str(control_state.control_params.semiautomatic.weak_leg));
+  semiautomatic_control_params_left_json.set(
+      "torque",
+      control_state.control_params.semiautomatic.left.torque);
+  semiautomatic_control_params_left_json.set(
+      "timeout",
+      control_state.control_params.semiautomatic.left.timeout);
+  semiautomatic_control_params_left_json.set("delay",
+                                             control_state.control_params.semiautomatic.left.delay);
+  semiautomatic_control_params_right_json.set(
+      "torque",
+      control_state.control_params.semiautomatic.right.torque);
+  semiautomatic_control_params_right_json.set(
+      "timeout",
+      control_state.control_params.semiautomatic.right.timeout);
+  semiautomatic_control_params_right_json.set(
+      "delay",
+      control_state.control_params.semiautomatic.right.delay);
+  semiautomatic_control_params_json.set(
+      "startAssistAngle",
+      control_state.control_params.semiautomatic.start_assist_angle);
+  semiautomatic_control_params_json.set(
+      "stopAssistAngle",
+      control_state.control_params.semiautomatic.stop_assist_angle);
+  smart_control_params_left_json.set("torque", control_state.control_params.smart.left.torque);
+  smart_control_params_right_json.set("torque", control_state.control_params.smart.right.torque);
 
-//   return ESP_OK;
-// }
+  manual_control_params_json.set("right", &manual_control_params_right_json);
+  manual_control_params_json.set("left", &manual_control_params_left_json);
+  automatic_control_params_json.set("right", &automatic_control_params_right_json);
+  automatic_control_params_json.set("left", &automatic_control_params_left_json);
+  semiautomatic_control_params_json.set("right", &semiautomatic_control_params_right_json);
+  semiautomatic_control_params_json.set("left", &semiautomatic_control_params_left_json);
+  smart_control_params_json.set("right", &smart_control_params_right_json);
+  smart_control_params_json.set("left", &smart_control_params_left_json);
+  control_params_json.set("manual", &manual_control_params_json);
+  control_params_json.set("automatic", &automatic_control_params_json);
+  control_params_json.set("semiautomatic", &semiautomatic_control_params_json);
+  control_params_json.set("smart", &smart_control_params_json);
+  res_json.set("controlParams", &control_params_json);
+
+  auto json_str = res_json.stringify();
+  auto ret = httpd_resp_send(req, json_str.c_str(), HTTPD_RESP_USE_STRLEN);
+  if (ret != ESP_OK) {
+    ESP_LOGE(HttpService::LOG_TAG, "Get running response transmission failed");
+  }
+  return ESP_OK;
+}
 
 // esp_err_t HttpService::start_handler(httpd_req_t* req) {
 //   set_header(req);
@@ -585,59 +654,59 @@
 //   return ESP_OK;
 // }
 
-// esp_err_t HttpService::register_http_uri(const char* uri_address,
-//                                          httpd_method_t method,
-//                                          esp_err_t (*handler)(httpd_req_t* req)) {
-//   httpd_uri uri = {
-//       .uri = uri_address,
-//       .method = method,
-//       .handler = handler,
-//       .user_ctx = nullptr,
-//       .is_websocket = false,
-//       .handle_ws_control_frames = false,
-//       .supported_subprotocol = nullptr,
-//   };
-//   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
-//                       HttpService::LOG_TAG,
-//                       "Failed to register %s end point",
-//                       uri_address);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::register_http_uri(const char* uri_address,
+                                         httpd_method_t method,
+                                         esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri uri = {
+      .uri = uri_address,
+      .method = method,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+  };
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register %s end point",
+                      uri_address);
+  return ESP_OK;
+}
 
-// esp_err_t HttpService::register_http_uri_with_option(const char* uri_address,
-//                                                      httpd_method_t method,
-//                                                      esp_err_t (*handler)(httpd_req_t* req)) {
-//   httpd_uri uri = {
-//       .uri = uri_address,
-//       .method = method,
-//       .handler = handler,
-//       .user_ctx = nullptr,
-//       .is_websocket = false,
-//       .handle_ws_control_frames = false,
-//       .supported_subprotocol = nullptr,
-//   };
+esp_err_t HttpService::register_http_uri_with_option(const char* uri_address,
+                                                     httpd_method_t method,
+                                                     esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri uri = {
+      .uri = uri_address,
+      .method = method,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+  };
 
-//   httpd_uri option_uri = {
-//       .uri = uri_address,
-//       .method = HTTP_OPTIONS,
-//       .handler = HttpService::options_handler,
-//       .user_ctx = nullptr,
-//       .is_websocket = false,
-//       .handle_ws_control_frames = false,
-//       .supported_subprotocol = nullptr,
-//   };
+  httpd_uri option_uri = {
+      .uri = uri_address,
+      .method = HTTP_OPTIONS,
+      .handler = HttpService::options_handler,
+      .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+  };
 
-//   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
-//                       HttpService::LOG_TAG,
-//                       "Failed to register %s end point",
-//                       uri_address);
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register %s end point",
+                      uri_address);
 
-//   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &option_uri),
-//                       HttpService::LOG_TAG,
-//                       "Failed to register option method for %s end point",
-//                       uri_address);
-//   return ESP_OK;
-// }
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &option_uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register option method for %s end point",
+                      uri_address);
+  return ESP_OK;
+}
 
 // esp_err_t HttpService::register_ws_uri(const char* uri_address,
 //                                        esp_err_t (*handler)(httpd_req_t* req)) {
@@ -855,13 +924,14 @@
 //   write_address(SspAddress::SEMIAUTOMATIC_WEAK_LEG, static_cast<uint8_t>(weak_leg));
 //   write_address(SspAddress::SEMIAUTOMATIC_START_ASSIST_ANGLE,
 //                 static_cast<float>(start_assist_angle));
-//   write_address(SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE, static_cast<float>(stop_assist_angle));
-//   write_address(SspAddress::SEMIAUTOMATIC_LEFT_TORQUE, static_cast<float>(left_torque));
-//   write_address(SspAddress::SEMIAUTOMATIC_LEFT_DELAY, static_cast<float>(left_delay));
-//   write_address(SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT, static_cast<float>(left_timeout));
-//   write_address(SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE, static_cast<float>(right_torque));
-//   write_address(SspAddress::SEMIAUTOMATIC_RIGHT_DELAY, static_cast<float>(right_delay));
-//   write_address(SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT, static_cast<float>(right_timeout));
+//   write_address(SspAddress::SEMIAUTOMATIC_STOP_ASSIST_ANGLE,
+//   static_cast<float>(stop_assist_angle)); write_address(SspAddress::SEMIAUTOMATIC_LEFT_TORQUE,
+//   static_cast<float>(left_torque)); write_address(SspAddress::SEMIAUTOMATIC_LEFT_DELAY,
+//   static_cast<float>(left_delay)); write_address(SspAddress::SEMIAUTOMATIC_LEFT_TIMEOUT,
+//   static_cast<float>(left_timeout)); write_address(SspAddress::SEMIAUTOMATIC_RIGHT_TORQUE,
+//   static_cast<float>(right_torque)); write_address(SspAddress::SEMIAUTOMATIC_RIGHT_DELAY,
+//   static_cast<float>(right_delay)); write_address(SspAddress::SEMIAUTOMATIC_RIGHT_TIMEOUT,
+//   static_cast<float>(right_timeout));
 
 //   httpd_resp_send(req, nullptr, 0);
 //   return ESP_OK;
@@ -908,82 +978,82 @@
 //   return ESP_OK;
 // }
 
-// esp_err_t HttpService::register_dynamic_endpoints() {
-//   this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
-//   this->register_http_uri("/api/version", HTTP_GET, HttpService::get_version_handler);
-//   this->register_http_uri("/api/update/status", HTTP_GET, HttpService::get_ota_status);
-//   this->register_http_uri("/api/update/check", HTTP_GET, HttpService::check_for_update_handler);
-//   this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
-//   this->register_http_uri("/api/restart/stm", HTTP_GET, HttpService::restart_stm32_handler);
-//   this->register_http_uri("/api/restart/esp", HTTP_GET, HttpService::restart_esp32_handler);
-//   this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
-//   this->register_http_uri("/api/stm_stack_size", HTTP_GET, HttpService::get_stm_task_stack_size);
-//   this->register_http_uri("/api/esp_stack_size", HTTP_GET, HttpService::get_esp_task_stack_size);
-//   this->register_http_uri("/api/streams/start/imu",
-//                           HTTP_GET,
-//                           HttpService::start_imu_data_stream_handler);
-//   this->register_http_uri("/api/streams/stop/imu",
-//                           HTTP_GET,
-//                           HttpService::stop_imu_data_stream_handler);
-//   this->register_http_uri("/api/streams/start/stm_cpu_usage",
-//                           HTTP_GET,
-//                           HttpService::start_stm_cpu_usage_stream_handler);
-//   this->register_http_uri("/api/streams/stop/stm_cpu_usage",
-//                           HTTP_GET,
-//                           HttpService::stop_stm_cpu_usage_stream_handler);
-//   this->register_http_uri("/api/streams/start/motor",
-//                           HTTP_GET,
-//                           HttpService::start_motor_data_stream_handler);
-//   this->register_http_uri("/api/streams/stop/motor",
-//                           HTTP_GET,
-//                           HttpService::stop_motor_data_stream_handler);
-//   this->register_http_uri("/api/streams/start/esp_cpu_usage",
-//                           HTTP_GET,
-//                           HttpService::start_esp_cpu_usage_stream_handler);
-//   this->register_http_uri("/api/streams/stop/esp_cpu_usage",
-//                           HTTP_GET,
-//                           HttpService::stop_esp_cpu_usage_stream_handler);
-//   this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
-//   this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
-//   this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
-//   this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
-//   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
-//   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
-//   this->register_http_uri_with_option("/api/right_torque",
-//                                       HTTP_PUT,
-//                                       HttpService::set_right_torque_handler);
-//   this->register_http_uri_with_option("/api/left_torque",
-//                                       HTTP_PUT,
-//                                       HttpService::set_left_torque_handler);
-//   this->register_http_uri_with_option("/api/update", HTTP_PUT, HttpService::update_handler);
-//   this->register_http_uri_with_option("/api/set-mode/manual",
-//                                       HTTP_PUT,
-//                                       HttpService::set_mode_manual_handler);
-//   this->register_http_uri_with_option("/api/set-mode/automatic",
-//                                       HTTP_PUT,
-//                                       HttpService::set_mode_automatic_handler);
-//   this->register_http_uri_with_option("/api/set-mode/semi-automatic",
-//                                       HTTP_PUT,
-//                                       HttpService::set_mode_semi_automatic_handler);
-//   this->register_http_uri_with_option("/api/set-mode/smart",
-//                                       HTTP_PUT,
-//                                       HttpService::set_mode_smart_handler);
-//   this->register_http_uri_with_option("/api/date-time", HTTP_PUT, HttpService::set_rtc);
-//   this->register_http_uri_with_option("/api/automatic/params",
-//                                       HTTP_PUT,
-//                                       set_automatic_control_params);
-//   this->register_http_uri_with_option("/api/semiautomatic/params",
-//                                       HTTP_PUT,
-//                                       set_semiautomatic_control_params);
-//   this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
-//   this->register_ws_uri("/api/data", HttpService::ws_data_handler);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::register_dynamic_endpoints() {
+  // this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
+  // this->register_http_uri("/api/version", HTTP_GET, HttpService::get_version_handler);
+  // this->register_http_uri("/api/update/status", HTTP_GET, HttpService::get_ota_status);
+  // this->register_http_uri("/api/update/check", HTTP_GET, HttpService::check_for_update_handler);
+  // this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
+  // this->register_http_uri("/api/restart/stm", HTTP_GET, HttpService::restart_stm32_handler);
+  // this->register_http_uri("/api/restart/esp", HTTP_GET, HttpService::restart_esp32_handler);
+  this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
+  // this->register_http_uri("/api/stm_stack_size", HTTP_GET, HttpService::get_stm_task_stack_size);
+  // this->register_http_uri("/api/esp_stack_size", HTTP_GET, HttpService::get_esp_task_stack_size);
+  // this->register_http_uri("/api/streams/start/imu",
+  //                         HTTP_GET,
+  //                         HttpService::start_imu_data_stream_handler);
+  // this->register_http_uri("/api/streams/stop/imu",
+  //                         HTTP_GET,
+  //                         HttpService::stop_imu_data_stream_handler);
+  // this->register_http_uri("/api/streams/start/stm_cpu_usage",
+  //                         HTTP_GET,
+  //                         HttpService::start_stm_cpu_usage_stream_handler);
+  // this->register_http_uri("/api/streams/stop/stm_cpu_usage",
+  //                         HTTP_GET,
+  //                         HttpService::stop_stm_cpu_usage_stream_handler);
+  // this->register_http_uri("/api/streams/start/motor",
+  //                         HTTP_GET,
+  //                         HttpService::start_motor_data_stream_handler);
+  // this->register_http_uri("/api/streams/stop/motor",
+  //                         HTTP_GET,
+  //                         HttpService::stop_motor_data_stream_handler);
+  // this->register_http_uri("/api/streams/start/esp_cpu_usage",
+  //                         HTTP_GET,
+  //                         HttpService::start_esp_cpu_usage_stream_handler);
+  // this->register_http_uri("/api/streams/stop/esp_cpu_usage",
+  //                         HTTP_GET,
+  //                         HttpService::stop_esp_cpu_usage_stream_handler);
+  // this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
+  // this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
+  // this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
+  // this->register_http_uri("/api/wifi/disconnect", HTTP_GET,
+  // HttpService::disconnect_wifi_handler); this->register_http_uri_with_option("/api/start",
+  // HTTP_PUT, HttpService::start_handler); this->register_http_uri_with_option("/api/stop",
+  // HTTP_PUT, HttpService::stop_handler); this->register_http_uri_with_option("/api/right_torque",
+  //                                     HTTP_PUT,
+  //                                     HttpService::set_right_torque_handler);
+  // this->register_http_uri_with_option("/api/left_torque",
+  //                                     HTTP_PUT,
+  //                                     HttpService::set_left_torque_handler);
+  // this->register_http_uri_with_option("/api/update", HTTP_PUT, HttpService::update_handler);
+  // this->register_http_uri_with_option("/api/set-mode/manual",
+  //                                     HTTP_PUT,
+  //                                     HttpService::set_mode_manual_handler);
+  // this->register_http_uri_with_option("/api/set-mode/automatic",
+  //                                     HTTP_PUT,
+  //                                     HttpService::set_mode_automatic_handler);
+  // this->register_http_uri_with_option("/api/set-mode/semi-automatic",
+  //                                     HTTP_PUT,
+  //                                     HttpService::set_mode_semi_automatic_handler);
+  // this->register_http_uri_with_option("/api/set-mode/smart",
+  //                                     HTTP_PUT,
+  //                                     HttpService::set_mode_smart_handler);
+  // this->register_http_uri_with_option("/api/date-time", HTTP_PUT, HttpService::set_rtc);
+  // this->register_http_uri_with_option("/api/automatic/params",
+  //                                     HTTP_PUT,
+  //                                     set_automatic_control_params);
+  // this->register_http_uri_with_option("/api/semiautomatic/params",
+  //                                     HTTP_PUT,
+  //                                     set_semiautomatic_control_params);
+  // this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
+  // this->register_ws_uri("/api/data", HttpService::ws_data_handler);
+  return ESP_OK;
+}
 
-// void HttpService::start() {
-//   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
-//   http_config.max_uri_handlers = 128;
-//   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
-//   http_server_register_assets(server_instance);
-//   ESP_ERROR_CHECK(register_dynamic_endpoints());
-// }
+void HttpService::start() {
+  httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
+  http_config.max_uri_handlers = 128;
+  ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
+  http_server_register_assets(server_instance);
+  ESP_ERROR_CHECK(register_dynamic_endpoints());
+}

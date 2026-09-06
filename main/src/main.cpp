@@ -4,10 +4,9 @@
 #include <freertos/FreeRTOS.h>
 
 // #include "callbacks/wifi_event_handler.hpp"
-#include "driver/i2c_master.h"
+#include "context/control_state.hpp"
 #include "esp_err.h"
 #include "esp_event.h"
-#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
@@ -20,9 +19,14 @@
 #include "config.hpp"
 #include "icm20948.h"
 #include "icm20948_i2c.h"
+#include "services/dns.hpp"
+#include "services/http.hpp"
 #include "services/imu.hpp"
 
 ImuThread imu_thread;
+HttpService http_thread;
+ControlState control_state;
+DnsService dns_thread("192.168.4.1", "hexa.lan");
 
 class App {
   private:
@@ -82,8 +86,6 @@ class App {
     ESP_ERROR_CHECK(esp_wifi_start());
   }
 
-  
-
   void setup_i2c() {
     i2c_config_t i2c_config = {
         .mode = I2C_MODE_MASTER,
@@ -111,7 +113,11 @@ class App {
     start_tasks();
   }
 
-  void start_tasks() { imu_thread.start("imu", 2, 4096); }
+  void start_tasks() {
+    dns_thread.start("dns", 2, 4096);
+    imu_thread.start("imu", 2, 4096);
+    http_thread.start();
+  }
 
   public:
   void run() { setup(); }
