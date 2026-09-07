@@ -95,17 +95,14 @@ class HttpService {
   static esp_err_t set_semiautomatic_control_params(httpd_req_t* req);
   static esp_err_t set_smart_control_params(httpd_req_t* req);
 
-  static esp_err_t start_stm_cpu_usage_stream_handler(httpd_req_t* req);
-  static esp_err_t stop_stm_cpu_usage_stream_handler(httpd_req_t* req);
-  static esp_err_t start_esp_cpu_usage_stream_handler(httpd_req_t* req);
-  static esp_err_t stop_esp_cpu_usage_stream_handler(httpd_req_t* req);
+  static esp_err_t start_cpu_usage_stream_handler(httpd_req_t* req);
+  static esp_err_t stop_cpu_usage_stream_handler(httpd_req_t* req);
   static esp_err_t start_imu_data_stream_handler(httpd_req_t* req);
   static esp_err_t stop_imu_data_stream_handler(httpd_req_t* req);
   static esp_err_t start_motor_data_stream_handler(httpd_req_t* req);
   static esp_err_t stop_motor_data_stream_handler(httpd_req_t* req);
 
-  static esp_err_t get_stm_task_stack_size(httpd_req_t* req);
-  static esp_err_t get_esp_task_stack_size(httpd_req_t* req);
+  static esp_err_t get_task_stack_size(httpd_req_t* req);
 
   static esp_err_t scan_wifi_handler(httpd_req_t* req);
   static esp_err_t connect_to_wifi_handler(httpd_req_t* req);
@@ -113,8 +110,6 @@ class HttpService {
   static esp_err_t get_connected_wifi(httpd_req_t* req);
 
   static esp_err_t restart_handler(httpd_req_t* req);
-  static esp_err_t restart_stm32_handler(httpd_req_t* req);
-  static esp_err_t restart_esp32_handler(httpd_req_t* req);
 
   static esp_err_t check_for_update_handler(httpd_req_t* req);
   static esp_err_t update_handler(httpd_req_t* req);
