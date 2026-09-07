@@ -1,0 +1,92 @@
+menu "HEXA"
+
+menu "OTA"
+
+config HEXA_OTA_SERVER_ADDRESS
+  string "Server Address"
+  default "192.168.4.2:3000"
+
+endmenu
+
+menu "WiFi"
+
+config HEXA_WIFI_SSID
+  string "SSID"
+  default "Mini Universal"
+
+config HEXA_WIFI_PASSWORD
+  string "Password"
+  default "12345678"
+
+config HEXA_WIFI_CHANNELS
+  int "Channels"
+  default 6
+
+config HEXA_WIFI_MAX_CONNECTIONS
+  int "Max Connections"
+  default 3
+
+endmenu
+
+menu "Tasks"
+
+menu "DNS"
+
+config HEXA_TASKS_DNS_PRIORITY
+  int "Priority"
+  default 2
+
+config HEXA_TASKS_DNS_STACK_SIZE
+  int "Stack Size"
+  default 4096
+
+config HEXA_TASKS_DNS_NAME_SIZE
+  string "Domain Name"
+  default "hexa.lan"
+
+endmenu
+
+menu "WebSocket"
+
+config HEXA_TASKS_WS_PRIORITY
+  int "Priority"
+  default 2
+
+config HEXA_TASKS_WS_STACK_SIZE
+  int "Stack Size"
+  default 4096
+
+config HEXA_WS_MAX_CONNECTIONS
+  int "Max Connections"
+  default 3
+
+
+endmenu
+
+menu "Wifi Connection Handler"
+
+config HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY
+  int "Priority"
+  default 2
+
+config HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE
+  int "Stack Size"
+  default 4096
+
+endmenu
+
+menu "IMU"
+
+config HEXA_TASKS_IMU_PRIORITY
+  int "Priority"
+  default 2
+
+config HEXA_TASKS_IMU_STACK_SIZE
+  int "Stack Size"
+  default 4096
+
+endmenu
+
+endmenu
+
+endmenu

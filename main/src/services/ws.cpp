@@ -11,6 +11,7 @@
 #include "helper/json.hpp"
 #include "ipc/mutex.hpp"
 #include "jaythread/sync.hpp"
+#include "sdkconfig.h"
 #include "services/http.hpp"
 #include "services/imu.hpp"
 
@@ -327,7 +328,7 @@ void WebSocketService::start_sending(int fd) {
       goto cleanup;
     }
   }
-  if (connection_count < config::service::ws::max_connection) {
+  if (connection_count < CONFIG_HEXA_WS_MAX_CONNECTIONS) {
     this->connection_fds[this->connection_count] = fd;
     for (int i = 0; i < this->connection_count; i++) {
       this->connection_age[i]++;

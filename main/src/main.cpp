@@ -20,6 +20,7 @@
 #include "config.hpp"
 #include "icm20948.h"
 #include "icm20948_i2c.h"
+#include "sdkconfig.h"
 #include "services/dns.hpp"
 #include "services/http.hpp"
 #include "services/http_wifi_con_handler.hpp"
@@ -58,19 +59,17 @@ class App {
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_config));
 
     wifi_config_t wifi_ap_config = {};
-    std::copy(config::wifi::ssid,
-              config::wifi::ssid + strlen(config::wifi::ssid),
-              wifi_ap_config.ap.ssid);
-    std::copy(config::wifi::password,
-              config::wifi::password + strlen(config::wifi::password),
-              wifi_ap_config.ap.password);
-    wifi_ap_config.ap.ssid_len = strlen(config::wifi::ssid);
-    wifi_ap_config.ap.channel = config::wifi::channel;
-    wifi_ap_config.ap.max_connection = config::wifi::max_connection;
+
+    strcpy(reinterpret_cast<char*>(&wifi_ap_config.ap.ssid), CONFIG_HEXA_WIFI_SSID);
+    strcpy(reinterpret_cast<char*>(&wifi_ap_config.ap.password), CONFIG_HEXA_WIFI_PASSWORD);
+
+    wifi_ap_config.ap.ssid_len = strlen(CONFIG_HEXA_WIFI_SSID);
+    wifi_ap_config.ap.channel = CONFIG_HEXA_WIFI_CHANNELS;
+    wifi_ap_config.ap.max_connection = CONFIG_HEXA_WIFI_MAX_CONNECTIONS;
     wifi_ap_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_ap_config.ap.pmf_cfg.required = false;
 
-    if (strlen(config::wifi::password) == 0) {
+    if (strlen(CONFIG_HEXA_WIFI_PASSWORD) == 0) {
       wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 
@@ -119,10 +118,12 @@ class App {
   }
 
   void start_tasks() {
-    http_wifi_con_handler_service.start("http_con", 2, 4096);
-    dns_thread.start("dns", 2, 4096);
-    ws_service.start("ws", 2, 4096);
-    // imu_thread.start("imu", 2, 4096);
+    http_wifi_con_handler_service.start("http_con",
+                                        CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
+                                        CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
+    dns_thread.start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
+    ws_service.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    // imu_thread.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
     http_thread.start();
   }
 

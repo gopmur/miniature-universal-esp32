@@ -7,6 +7,7 @@
 #include "ipc/mutex.hpp"
 #include "ipc/queue.hpp"
 #include "jaythread/thread.hpp"
+#include "sdkconfig.h"
 
 enum class WsStream {
   ESP_TASK_DATA,
@@ -22,8 +23,8 @@ class WebSocketService : public Thread {
   private:
   std::array<bool, static_cast<size_t>(WsStream::COUNT)> stream_enabled;
   int enabled_stream_count = 0;
-  std::array<int, config::service::ws::max_connection> connection_fds;
-  std::array<int, config::service::ws::max_connection> connection_age;
+  std::array<int, CONFIG_HEXA_WS_MAX_CONNECTIONS> connection_fds;
+  std::array<int, CONFIG_HEXA_WS_MAX_CONNECTIONS> connection_age;
   Mutex connection_mutex;
   int connection_count;
   bool should_wait_for_eoc();
