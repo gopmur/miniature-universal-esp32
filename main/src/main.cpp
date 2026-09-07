@@ -22,10 +22,12 @@
 #include "services/dns.hpp"
 #include "services/http.hpp"
 #include "services/imu.hpp"
+#include "services/ws.hpp"
 
 ImuThread imu_thread;
 HttpService http_thread;
 ControlState control_state;
+WebSocketService ws_service;
 DnsService dns_thread("192.168.4.1", "hexa.lan");
 
 class App {
@@ -108,14 +110,15 @@ class App {
     setup_flash();
     setup_netif();
     setup_wifi();
-    setup_i2c();
+    // setup_i2c();
 
     start_tasks();
   }
 
   void start_tasks() {
     dns_thread.start("dns", 2, 4096);
-    imu_thread.start("imu", 2, 4096);
+    ws_service.start("ws", 2, 4096);
+    // imu_thread.start("imu", 2, 4096);
     http_thread.start();
   }
 

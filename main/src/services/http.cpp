@@ -50,6 +50,8 @@ esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+extern WebSocketService ws_service;
+
 // esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
 //   ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
 //   set_header(req);
@@ -546,15 +548,14 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 //   return ESP_OK;
 // }
 
-// esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
-//   set_header(req);
-//   ws_service.enable_stream(WsStream::IMU_DATA);
-//   start_streams({SspAddress::IMU_GX, SspAddress::IMU_GY, SspAddress::IMU_GZ});
-//   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-//                       HttpService::LOG_TAG,
-//                       "Start imu data stream failed");
-//   return ESP_OK;
-// }
+esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
+  set_header(req);
+  ws_service.enable_stream(WsStream::IMU_DATA);
+  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
+                      HttpService::LOG_TAG,
+                      "Start imu data stream failed");
+  return ESP_OK;
+}
 // esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
 //   set_header(req);
 //   ws_service.disable_stream(WsStream::IMU_DATA);
@@ -616,43 +617,44 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 //   return ESP_OK;
 // }
 
-// esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
-//   if (req->method == HTTP_GET) {
-//     auto client_fd = httpd_req_to_sockfd(req);
-//     ws_service.start_sending(client_fd);
-//     return ESP_OK;
-//   }
-//   httpd_ws_frame_t ws_frame;
-//   memset(&ws_frame, 0, sizeof(ws_frame));
-//   ws_frame.type = HTTPD_WS_TYPE_TEXT;
-//   httpd_ws_recv_frame(req, &ws_frame, 0);
-//   if (!ws_frame.len) {
-//     return ESP_OK;
-//   }
-//   ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
-//   httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
-//   ws_frame.payload[ws_frame.len] = 0;
-//   auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
+esp_err_t HttpService::ws_data_post_handshake_handler(httpd_req_t* req) {
+  auto client_fd = httpd_req_to_sockfd(req);
+  ws_service.start_sending(client_fd);
+  return ESP_OK;
+}
 
-//   if (std::holds_alternative<JsonError>(data_result)) {
-//     free(ws_frame.payload);
-//     return ESP_OK;
-//   }
+esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
+  httpd_ws_frame_t ws_frame;
+  memset(&ws_frame, 0, sizeof(ws_frame));
+  ws_frame.type = HTTPD_WS_TYPE_TEXT;
+  httpd_ws_recv_frame(req, &ws_frame, 0);
+  if (!ws_frame.len) {
+    return ESP_OK;
+  }
+  ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
+  httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
+  ws_frame.payload[ws_frame.len] = 0;
+  auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
 
-//   auto data = std::get<JsonObject>(data_result);
+  if (std::holds_alternative<JsonError>(data_result)) {
+    free(ws_frame.payload);
+    return ESP_OK;
+  }
 
-//   auto left_torque = data.get_number("leftTorque");
-//   auto right_torque = data.get_number("rightTorque");
-//   if (std::holds_alternative<double>(left_torque)) {
-//     write_address(SspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(left_torque)));
-//   }
-//   if (std::holds_alternative<double>(right_torque)) {
-//     write_address(SspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(right_torque)));
-//   }
+  auto data = std::get<JsonObject>(data_result);
 
-//   free(ws_frame.payload);
-//   return ESP_OK;
-// }
+  auto left_torque = data.get_number("leftTorque");
+  auto right_torque = data.get_number("rightTorque");
+  if (std::holds_alternative<double>(left_torque)) {
+    // write_address(SspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(left_torque)));
+  }
+  if (std::holds_alternative<double>(right_torque)) {
+    // write_address(SspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(right_torque)));
+  }
+
+  free(ws_frame.payload);
+  return ESP_OK;
+}
 
 esp_err_t HttpService::register_http_uri(const char* uri_address,
                                          httpd_method_t method,
@@ -665,6 +667,7 @@ esp_err_t HttpService::register_http_uri(const char* uri_address,
       .is_websocket = false,
       .handle_ws_control_frames = false,
       .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = nullptr,
   };
   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
                       HttpService::LOG_TAG,
@@ -684,6 +687,7 @@ esp_err_t HttpService::register_http_uri_with_option(const char* uri_address,
       .is_websocket = false,
       .handle_ws_control_frames = false,
       .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = nullptr,
   };
 
   httpd_uri option_uri = {
@@ -694,6 +698,7 @@ esp_err_t HttpService::register_http_uri_with_option(const char* uri_address,
       .is_websocket = false,
       .handle_ws_control_frames = false,
       .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = nullptr,
   };
 
   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
@@ -708,24 +713,26 @@ esp_err_t HttpService::register_http_uri_with_option(const char* uri_address,
   return ESP_OK;
 }
 
-// esp_err_t HttpService::register_ws_uri(const char* uri_address,
-//                                        esp_err_t (*handler)(httpd_req_t* req)) {
-//   httpd_uri_t uri = {
-//       .uri = uri_address,
-//       .method = HTTP_GET,
-//       .handler = handler,
-//       .user_ctx = nullptr,
-//       .is_websocket = true,
-//       .handle_ws_control_frames = false,
-//       .supported_subprotocol = nullptr,
+esp_err_t HttpService::register_ws_uri(const char* uri_address,
+                                       esp_err_t (*handler)(httpd_req_t* req),
+                                       esp_err_t (*post_handshake_handler)(httpd_req_t* req)) {
+  httpd_uri_t uri = {
+      .uri = uri_address,
+      .method = HTTP_GET,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = true,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = post_handshake_handler,
 
-//   };
-//   ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
-//                       HttpService::LOG_TAG,
-//                       "Failed to register %s end point",
-//                       uri_address);
-//   return ESP_OK;
-// }
+  };
+  ESP_RETURN_ON_ERROR(httpd_register_uri_handler(this->server_instance, &uri),
+                      HttpService::LOG_TAG,
+                      "Failed to register %s end point",
+                      uri_address);
+  return ESP_OK;
+}
 
 // // ! this needs to be async
 // esp_err_t HttpService::check_for_update_handler(httpd_req_t* req) {
@@ -989,9 +996,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
   // this->register_http_uri("/api/stm_stack_size", HTTP_GET, HttpService::get_stm_task_stack_size);
   // this->register_http_uri("/api/esp_stack_size", HTTP_GET, HttpService::get_esp_task_stack_size);
-  // this->register_http_uri("/api/streams/start/imu",
-  //                         HTTP_GET,
-  //                         HttpService::start_imu_data_stream_handler);
+  this->register_http_uri("/api/streams/start/imu",
+                          HTTP_GET,
+                          HttpService::start_imu_data_stream_handler);
   // this->register_http_uri("/api/streams/stop/imu",
   //                         HTTP_GET,
   //                         HttpService::stop_imu_data_stream_handler);
@@ -1046,7 +1053,7 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   //                                     HTTP_PUT,
   //                                     set_semiautomatic_control_params);
   // this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
-  // this->register_ws_uri("/api/data", HttpService::ws_data_handler);
+  this->register_ws_uri("/api/data", HttpService::ws_data_handler, ws_data_post_handshake_handler);
   return ESP_OK;
 }
 

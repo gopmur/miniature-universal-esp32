@@ -59,7 +59,9 @@ class HttpService {
   esp_err_t register_http_uri_with_option(const char* uri_address,
                                           httpd_method_t method,
                                           esp_err_t (*handler)(httpd_req_t* req));
-  esp_err_t register_ws_uri(const char* uri_address, esp_err_t (*handler)(httpd_req_t* req));
+  esp_err_t register_ws_uri(const char* uri_address,
+                            esp_err_t (*handler)(httpd_req_t* req),
+                            esp_err_t (*post_handshake_handler)(httpd_req_t* req));
   static void allow_cors(httpd_req_t* req);
   static void set_close_connection(httpd_req_t* req);
   static void set_type_json(httpd_req_t* req);
@@ -88,6 +90,7 @@ class HttpService {
   static esp_err_t get_state_handler(httpd_req_t* req);
   static esp_err_t options_handler(httpd_req_t* req);
   static esp_err_t ws_data_handler(httpd_req_t* req);
+  static esp_err_t ws_data_post_handshake_handler(httpd_req_t* req);
   static esp_err_t set_automatic_control_params(httpd_req_t* req);
   static esp_err_t set_semiautomatic_control_params(httpd_req_t* req);
   static esp_err_t set_smart_control_params(httpd_req_t* req);
