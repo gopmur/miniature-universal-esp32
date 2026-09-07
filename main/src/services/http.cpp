@@ -372,79 +372,6 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
                       "Stop response transmission failed");
   return ESP_OK;
 }
-// esp_err_t HttpService::set_right_torque_handler(httpd_req_t* req) {
-//   set_header(req);
-//   int len = req->content_len;
-//   char* body = static_cast<char*>(malloc(len + 1));
-
-//   int received = httpd_req_recv(req, body, len);
-//   body[received] = 0;
-
-//   JsonObject res_json;
-//   auto req_json_result = JsonObject::parse(body);
-//   free(body);
-
-//   if (std::holds_alternative<JsonError>(req_json_result)) {
-//     res_json.set("message", "parse error");
-//     auto res_str = res_json.stringify();
-//     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
-//     return ESP_OK;
-//   }
-
-//   auto req_json = std::get<JsonObject>(req_json_result);
-
-//   auto torque = req_json.get_number("torque", &res_json);
-
-//   if (std::holds_alternative<JsonError>(torque)) {
-//     auto res_str = res_json.stringify();
-//     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
-//     return ESP_OK;
-//   }
-
-//   write_address(SspAddress::RIGHT_TORQUE, static_cast<float>(std::get<double>(torque)));
-
-//   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-//                       HttpService::LOG_TAG,
-//                       "Stop response transmission failed");
-//   return ESP_OK;
-// }
-
-// esp_err_t HttpService::set_left_torque_handler(httpd_req_t* req) {
-//   set_header(req);
-//   int len = req->content_len;
-//   char* body = static_cast<char*>(malloc(len + 1));
-
-//   int received = httpd_req_recv(req, body, len);
-//   body[received] = 0;
-
-//   JsonObject res_json;
-//   auto req_json_result = JsonObject::parse(body);
-//   free(body);
-
-//   if (std::holds_alternative<JsonError>(req_json_result)) {
-//     res_json.set("message", "parse error");
-//     auto res_str = res_json.stringify();
-//     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
-//     return ESP_OK;
-//   }
-
-//   auto req_json = std::get<JsonObject>(req_json_result);
-
-//   auto torque = req_json.get_number("torque", &res_json);
-
-//   if (std::holds_alternative<JsonError>(torque)) {
-//     auto res_str = res_json.stringify();
-//     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, res_str.c_str());
-//     return ESP_OK;
-//   }
-
-//   write_address(SspAddress::LEFT_TORQUE, static_cast<float>(std::get<double>(torque)));
-
-//   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-//                       HttpService::LOG_TAG,
-//                       "Stop response transmission failed");
-//   return ESP_OK;
-// }
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   set_header(req);
@@ -955,13 +882,6 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
-  // this->register_http_uri_with_option("/api/right_torque",
-  //                                     HTTP_PUT,
-  //                                     HttpService::set_right_torque_handler);
-  // this->register_http_uri_with_option("/api/left_torque",
-  //                                     HTTP_PUT,
-  //                                     HttpService::set_left_torque_handler);
-  // this->register_http_uri_with_option("/api/update", HTTP_PUT, HttpService::update_handler);
   this->register_http_uri_with_option("/api/set-mode/manual",
                                       HTTP_PUT,
                                       HttpService::set_mode_manual_handler);

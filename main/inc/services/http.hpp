@@ -6,50 +6,6 @@
 #include "helper/json.hpp"
 #include "ipc/queue.hpp"
 
-enum class HttpQueueMessageHeader {
-  RUNNING,
-  RIGHT_MANUAL_TORQUE,
-  LEFT_MANUAL_TORQUE,
-  MODE,
-  LED_SERVICE_STACK_SIZE,
-  IMU_SERVICE_STACK_SIZE,
-  ESP_UART_TX_SERVICE_STACK_SIZE,
-  ESP_UART_RX_SERVICE_STACK_SIZE,
-  MOTOR_SERVICE_STACK_SIZE,
-  CAN_RECV_SERVICE_STACK_SIZE,
-  SD_SERVICE_STACK_SIZE,
-  MONITOR_SERVICE_STACK_SIZE,
-  AUTOMATIC_RIGHT_VELOCITY_THRESHOLD,
-  AUTOMATIC_LEFT_VELOCITY_THRESHOLD,
-  AUTOMATIC_RIGHT_TORQUE,
-  AUTOMATIC_LEFT_TORQUE,
-  AUTOMATIC_RIGHT_TIMEOUT,
-  AUTOMATIC_LEFT_TIMEOUT,
-  SEMIAUTOMATIC_WEAK_LEG,
-  SEMIAUTOMATIC_START_ASSIST_ANGLE,
-  SEMIAUTOMATIC_STOP_ASSIST_ANGLE,
-  SEMIAUTOMATIC_RIGHT_TORQUE,
-  SEMIAUTOMATIC_LEFT_TORQUE,
-  SEMIAUTOMATIC_RIGHT_DELAY,
-  SEMIAUTOMATIC_LEFT_DELAY,
-  SEMIAUTOMATIC_LEFT_TIMEOUT,
-  SEMIAUTOMATIC_RIGHT_TIMEOUT,
-  SMART_RIGHT_TORQUE,
-  SMART_LEFT_TORQUE,
-};
-
-union HttpQueueMessagePayload {
-  float f;
-  uint32_t u32;
-  bool b;
-  ControlMode control_mode;
-  Leg leg;
-};
-
-struct HttpQueueMessage {
-  HttpQueueMessageHeader header;
-  HttpQueueMessagePayload payload;
-};
 
 class HttpService {
   private:
@@ -80,8 +36,6 @@ class HttpService {
   static esp_err_t get_session_reports_handler(httpd_req_t* req);
   static esp_err_t start_handler(httpd_req_t* req);
   static esp_err_t stop_handler(httpd_req_t* req);
-  static esp_err_t set_right_torque_handler(httpd_req_t* req);
-  static esp_err_t set_left_torque_handler(httpd_req_t* req);
   static esp_err_t set_mode_manual_handler(httpd_req_t* req);
   static esp_err_t set_mode_automatic_handler(httpd_req_t* req);
   static esp_err_t set_mode_semi_automatic_handler(httpd_req_t* req);
@@ -120,7 +74,5 @@ class HttpService {
   public:
   static constexpr const char* LOG_TAG = "HTTP Service";
   httpd_handle_t server_instance;
-  Queue<HttpQueueMessage, 64> state_queue;
-  Queue<HttpQueueMessage, 16> task_stack_size_queue;
   void start();
 };
