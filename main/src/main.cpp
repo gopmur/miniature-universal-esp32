@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 
 // #include "callbacks/wifi_event_handler.hpp"
+#include "callbacks/wifi_event_handler.hpp"
 #include "context/control_state.hpp"
 #include "esp_err.h"
 #include "esp_event.h"
@@ -21,6 +22,7 @@
 #include "icm20948_i2c.h"
 #include "services/dns.hpp"
 #include "services/http.hpp"
+#include "services/http_wifi_con_handler.hpp"
 #include "services/imu.hpp"
 #include "services/ws.hpp"
 
@@ -28,6 +30,7 @@ ImuThread imu_thread;
 HttpService http_thread;
 ControlState control_state;
 WebSocketService ws_service;
+HttpWifiConHandlerService http_wifi_con_handler_service;
 DnsService dns_thread("192.168.4.1", "hexa.lan");
 
 class App {
@@ -71,17 +74,17 @@ class App {
       wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
 
-    // ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-    //                                                     ESP_EVENT_ANY_ID,
-    //                                                     nullptr,
-    //                                                     NULL,
-    //                                                     NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        ESP_EVENT_ANY_ID,
+                                                        wifi_event_handler,
+                                                        NULL,
+                                                        NULL));
 
-    // ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-    //                                                     IP_EVENT_STA_GOT_IP,
-    //                                                     nullptr,
-    //                                                     NULL,
-    //                                                     NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
+                                                        IP_EVENT_STA_GOT_IP,
+                                                        wifi_event_handler,
+                                                        NULL,
+                                                        NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
@@ -116,6 +119,7 @@ class App {
   }
 
   void start_tasks() {
+    http_wifi_con_handler_service.start("http_con", 2, 4096);
     dns_thread.start("dns", 2, 4096);
     ws_service.start("ws", 2, 4096);
     // imu_thread.start("imu", 2, 4096);

@@ -1,1 +1,1 @@
-#define LOG_TAG "jaythread"
+#define JAY_LOG_TAG "jaythread"

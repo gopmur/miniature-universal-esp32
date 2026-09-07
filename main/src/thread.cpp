@@ -11,7 +11,7 @@ void Thread::_main(Thread* self) {
 void Thread::start(std::string name, int priority, int stack_size) {
   // ! this is probably unsafe need to check compiler output
   if (started.exchange(true)) {
-    ESP_LOGE(LOG_TAG, "duplicate start called on thread %s", name.c_str());
+    ESP_LOGE(JAY_LOG_TAG, "duplicate start called on thread %s", name.c_str());
     return;
   }
   xTaskCreate(reinterpret_cast<void (*)(void*)>(_main), name.c_str(),

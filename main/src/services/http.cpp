@@ -52,59 +52,61 @@ esp_err_t HttpService::null_request_handler(httpd_req_t* req) {
 }
 
 extern WebSocketService ws_service;
+ScanWifisThread scan_wifis_thread;
 
-// esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
-//   ScanWifisThread scan_wifis_thread("wifi_connection", 5, 4096);
-//   set_header(req);
-//   httpd_req_t* async_req;
-//   httpd_req_async_handler_begin(req, &async_req);
-//   scan_wifis_thread.start(&async_req);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::scan_wifi_handler(httpd_req_t* req) {
+  set_header(req);
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  scan_wifis_thread.start("ws_service", 2, 4096, async_req);
+  return ESP_OK;
+}
 
-// esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
-//   set_header(req);
-//   wifi_ap_record_t ap_info;
-//   auto result = esp_wifi_sta_get_ap_info(&ap_info);
-//   JsonObject res_json;
-//   if (result == ESP_ERR_WIFI_NOT_CONNECT) {
-//     res_json.set("connected", false);
-//     res_json.set("errorMessage", "not connected");
-//   } else if (result == ESP_ERR_WIFI_CONN) {
-//     res_json.set("connected", false);
-//     res_json.set("errorMessage", "wifi not initialized");
-//   } else {
-//     res_json.set("connected", true);
-//     res_json.set("ssid", reinterpret_cast<char*>(ap_info.ssid));
-//     res_json.set("rssi", ap_info.rssi);
-//     auto bssid_str = get_bssid_string(ap_info.bssid);
-//     res_json.set("bssid", bssid_str.get_data());
-//   };
-//   auto res_str = res_json.stringify();
-//   httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::get_connected_wifi(httpd_req_t* req) {
+  set_header(req);
+  wifi_ap_record_t ap_info;
+  auto result = esp_wifi_sta_get_ap_info(&ap_info);
+  JsonObject res_json;
+  if (result == ESP_ERR_WIFI_NOT_CONNECT) {
+    res_json.set("connected", false);
+    res_json.set("errorMessage", "not connected");
+  } else if (result == ESP_ERR_WIFI_CONN) {
+    res_json.set("connected", false);
+    res_json.set("errorMessage", "wifi not initialized");
+  } else {
+    res_json.set("connected", true);
+    res_json.set("ssid", reinterpret_cast<char*>(ap_info.ssid));
+    res_json.set("rssi", ap_info.rssi);
+    auto bssid_str = get_bssid_string(ap_info.bssid);
+    res_json.set("bssid", bssid_str.get_data());
+  };
+  auto res_str = res_json.stringify();
+  httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
 
-// esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
-//   set_header(req);
-//   httpd_req_t* async_req;
-//   httpd_req_async_handler_begin(req, &async_req);
-//   auto service_not_busy = http_wifi_con_handler_service.req_queue.send(async_req, 0);
-//   if (!service_not_busy) {
-//     JsonObject res_json;
-//     res_json.set("message", "another connection request is pending");
-//     auto res_str = res_json.stringify();
-//     httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
-//   }
-//   return ESP_OK;
-// }
+extern HttpWifiConHandlerService http_wifi_con_handler_service;
 
-// esp_err_t HttpService::disconnect_wifi_handler(httpd_req_t* req) {
-//   set_header(req);
-//   esp_wifi_disconnect();
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
+  set_header(req);
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  auto service_not_busy = http_wifi_con_handler_service.req_queue.send(async_req, 0);
+  if (!service_not_busy) {
+    JsonObject res_json;
+    res_json.set("message", "another connection request is pending");
+    auto res_str = res_json.stringify();
+    httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
+  }
+  return ESP_OK;
+}
+
+esp_err_t HttpService::disconnect_wifi_handler(httpd_req_t* req) {
+  set_header(req);
+  esp_wifi_disconnect();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
 
 // void HttpService::set_rtc_time(JsonObject* time_json, JsonObject* time_error_json) {
 //   auto hours_item = time_json->get_number("hours", time_error_json);
@@ -947,10 +949,10 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   // this->register_http_uri("/api/streams/stop/esp_cpu_usage",
   //                         HTTP_GET,
   //                         HttpService::stop_esp_cpu_usage_stream_handler);
-  // this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
-  // this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
-  // this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
-  // this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
+  this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
+  this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
+  this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
+  this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
   // this->register_http_uri_with_option("/api/right_torque",

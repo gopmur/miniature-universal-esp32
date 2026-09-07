@@ -1,5 +1,5 @@
-// #pragma once
+#pragma once
 
-// #include "helper/ds/static_string.hpp"
+#include "helper/ds/static_string.hpp"
 
-// StaticString<17> get_bssid_string(uint8_t bssid[6]);
+StaticString<17> get_bssid_string(uint8_t bssid[6]);

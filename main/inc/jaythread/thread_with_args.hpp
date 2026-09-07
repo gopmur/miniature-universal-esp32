@@ -43,7 +43,7 @@ void ThreadWithArg<T>::start(std::string name,
                              int stack_size,
                              T arg) {
   if (started.exchange(true)) {
-    ESP_LOGE(LOG_TAG, "duplicate start called on thread %s", name.c_str());
+    ESP_LOGE(JAY_LOG_TAG, "duplicate start called on thread %s", name.c_str());
     return;
   }
   auto thread_arg = new ThreadArg<T>;
