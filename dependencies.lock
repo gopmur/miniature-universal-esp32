@@ -9,13 +9,15 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 1.7.19~2
-  icm20948:
+  gopmur/icm20948:
+    component_hash: 606631cb4765822f06e2959c8143f16289e56d3df307a562f87ddbf8b0b01351
     dependencies:
     - name: idf
+      require: private
       version: '>=6.0'
     source:
-      path: ../icm20948
-      type: local
+      registry_url: https://components.espressif.com/
+      type: service
     version: 1.0.1
   idf:
     source:
@@ -23,7 +25,7 @@ dependencies:
     version: 6.0.2
 direct_dependencies:
 - espressif/cjson
-- icm20948
-manifest_hash: b7c69f0581697372b7146c8fe3d0eefe8b0d44f2fb498d5cdc4a5f739bd429ce
+- gopmur/icm20948
+manifest_hash: bbe3e0de637a04157792cd6d96a6d3b322ccfe68d932190ac6a6e165548cffd9
 target: esp32c5
 version: 3.0.0
