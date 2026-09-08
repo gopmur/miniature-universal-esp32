@@ -3,7 +3,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
-#include "services/http/helper.hpp"
+#include "tasks/http/helper.hpp"
 
 void ScanWifisThread::main(httpd_req_t** req_p) {
   auto req = *req_p;

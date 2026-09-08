@@ -5,7 +5,6 @@
 
 // #include "callbacks/wifi_event_handler.hpp"
 #include "callbacks/wifi_event_handler.hpp"
-#include "context/control_state.hpp"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -21,18 +20,17 @@
 #include "icm20948.h"
 #include "icm20948_i2c.h"
 #include "sdkconfig.h"
-#include "services/dns.hpp"
-#include "services/http.hpp"
-#include "services/http_wifi_con_handler.hpp"
-#include "services/imu.hpp"
-#include "services/ws.hpp"
+#include "tasks/dns.hpp"
+#include "tasks/http.hpp"
+#include "tasks/http_wifi_con_handler.hpp"
+#include "tasks/imu.hpp"
+#include "tasks/ws.hpp"
 
-ImuThread imu_thread;
-HttpService http_thread;
-ControlState control_state;
-WebSocketService ws_service;
-HttpWifiConHandlerService http_wifi_con_handler_service;
-DnsService dns_thread("192.168.4.1", "hexa.lan");
+extern HttpService http_service;
+extern ImuTask imu_task;
+extern WebSocketTask ws_task;
+extern WifiConHandlerTask wifi_con_handler_task;
+extern DnsTask dns_task;
 
 class App {
   private:
@@ -113,18 +111,18 @@ class App {
     setup_netif();
     setup_wifi();
     // setup_i2c();
-
     start_tasks();
+
+    http_service.start();
   }
 
   void start_tasks() {
-    http_wifi_con_handler_service.start("http_con",
-                                        CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
-                                        CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
-    dns_thread.start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
-    ws_service.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
-    // imu_thread.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
-    http_thread.start();
+    wifi_con_handler_task.start("http_con",
+                                CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
+                                CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
+    dns_task.start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
+    ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    // imu_task.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
   }
 
   public:

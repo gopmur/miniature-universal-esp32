@@ -1,5 +1,4 @@
 #include "callbacks/wifi_event_handler.hpp"
-#include "context/services/http_wifi_con_handler.hpp"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
