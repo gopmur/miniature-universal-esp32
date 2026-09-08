@@ -316,7 +316,7 @@ void WebSocketTask::main() {
         stm_cpu_usage_json = JsonObject();
         imu_data_json = JsonObject();
       }
-      Sync::sleep(5);
+      Sync::sleep(25);
     }
   }
 }
