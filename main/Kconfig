@@ -1,5 +1,37 @@
 menu "HEXA"
 
+menu "Motors"
+
+config HEXA_MOTOR_RIGHT_ID
+  int "Right CAN ID"
+  default 2
+
+config HEXA_MOTOR_LEFT_ID
+  int "Left CAN ID"
+  default 1
+
+endmenu
+
+menu "CAN"
+
+config HEXA_CAN_RX_PIN
+  int "Rx Pin Number"
+  default 26
+
+config HEXA_CAN_TX_PIN
+  int "Tx Pin Number"
+  default 25
+
+config HEXA_CAN_BAUDRATE_KHZ
+  int "Buadrate (KHz)"
+  default 1000
+
+config HEXA_CAN_TX_QUEUE_LEN
+  int "Transmit Queue Len"
+  default 8
+
+endmenu
+
 menu "OTA"
 
 config HEXA_OTA_SERVER_ADDRESS
@@ -59,7 +91,6 @@ config HEXA_TASKS_WS_STACK_SIZE
 config HEXA_WS_MAX_CONNECTIONS
   int "Max Connections"
   default 3
-
 
 endmenu
 
