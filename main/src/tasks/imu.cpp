@@ -1,4 +1,6 @@
 #include "tasks/imu.hpp"
+#include <cmath>
+#include "assert.h"
 #include "esp_log.h"
 #include "icm20948.h"
 #include "icm20948_i2c.h"
@@ -27,6 +29,7 @@ void ImuTask::main() {
   }
   icm20948_sw_reset(&icm);
   Sync::sleep(250);
+
   icm20948_internal_sensor_id_bm sensors =
       (icm20948_internal_sensor_id_bm)(ICM_20948_INTERNAL_ACC | ICM_20948_INTERNAL_GYR);
   icm20948_set_sample_mode(&icm, sensors, SAMPLE_MODE_CONTINUOUS);
@@ -46,21 +49,69 @@ void ImuTask::main() {
 
   icm20948_sleep(&icm, false);
   icm20948_low_power(&icm, false);
+
+  bool success = true;
+  success &= (icm20948_init_dmp_sensor_with_defaults(&icm) == ICM_20948_STAT_OK);
+
+  success &= (inv_icm20948_enable_dmp_sensor(&icm, INV_ICM20948_SENSOR_ORIENTATION, 1) ==
+              ICM_20948_STAT_OK);
+
+  success &= (inv_icm20948_set_dmp_sensor_period(&icm, DMP_ODR_Reg_Quat9, 0) == ICM_20948_STAT_OK);
+  success &= (icm20948_enable_fifo(&icm, true) == ICM_20948_STAT_OK);
+  success &= (icm20948_enable_dmp(&icm, 1) == ICM_20948_STAT_OK);
+  success &= (icm20948_reset_dmp(&icm) == ICM_20948_STAT_OK);
+  success &= (icm20948_reset_fifo(&icm) == ICM_20948_STAT_OK);
+
+  if (success) {
+    ESP_LOGI(__FILENAME__, "DMP enabled!");
+  } else {
+    ESP_LOGE(__FILENAME__, "Enable DMP failed!");
+    while (1)
+      ;
+  }
   while (true) {
-    icm20948_agmt_t agmt;
-    if (icm20948_get_agmt(&icm, &agmt) == ICM_20948_STAT_OK) {
-      data.accel.x = agmt.acc.axes.x;
-      data.accel.y = agmt.acc.axes.y;
-      data.accel.z = agmt.acc.axes.z;
+    icm_20948_DMP_data_t icm_data;
+    icm20948_status_e status = inv_icm20948_read_dmp_data(&icm, &icm_data);
+    if ((status == ICM_20948_STAT_OK) || (status == ICM_20948_STAT_FIFO_MORE_DATA_AVAIL)) {
+      if ((icm_data.header & DMP_header_bitmap_Quat9) > 0) {
+        double q1 = ((double)icm_data.Quat9.Data.Q1) / 1073741824.0;
+        double q2 = ((double)icm_data.Quat9.Data.Q2) / 1073741824.0;
+        double q3 = ((double)icm_data.Quat9.Data.Q3) / 1073741824.0;
+        double q0 = std::sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+        double q_sum = (q1 * q1) + (q2 * q2) + (q3 * q3);
+        if (q_sum >= 1.0) {
+          q0 = 0.0;
+        } else {
+          q0 = sqrt(1.0 - q_sum);
+        }
+        float q2sqr = q2 * q2;
+        // Roll
+        float t0 = +2.0 * (q0 * q1 + q2 * q3);
+        float t1 = +1.0 - 2.0 * (q1 * q1 + q2sqr);
+        float roll = atan2(t0, t1) * 180.0 / M_PI;
 
-      data.gyro.x = agmt.gyr.axes.x;
-      data.gyro.y = agmt.gyr.axes.y;
-      data.gyro.z = agmt.gyr.axes.z;
+        // Pitch
+        float t2 = +2.0 * (q0 * q2 - q3 * q1);
+        t2 = (t2 > 1.0) ? 1.0 : t2;  // Existing clamp is excellent
+        t2 = (t2 < -1.0) ? -1.0 : t2;
+        float pitch = asin(t2) * 180.0 / M_PI;
 
-      data.temp = agmt.tmp.val;
-    } else {
-      ESP_LOGE("tag", "data acquisition failed");
+        // Yaw
+        float t3 = +2.0 * (q0 * q3 + q1 * q2);
+        float t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
+        float yaw = atan2(t3, t4) * 180.0 / M_PI;
+        
+        data.gyro.x = roll;
+        data.gyro.y = pitch;
+        data.gyro.z = yaw;
+      }
+
+      if (status != ICM_20948_STAT_FIFO_MORE_DATA_AVAIL) {
+        Sync::sleep(10);
+      }
+      else {
+        Sync::sleep(5);
+      }
     }
-    Sync::sleep(100);
   }
 };

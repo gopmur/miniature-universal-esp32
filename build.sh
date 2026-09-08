@@ -30,6 +30,6 @@ function build_firmware() {
   idf.py build
 }
 
-# build_web_app
+build_web_app
 generate_assets
 build_firmware

@@ -5,11 +5,11 @@
 
 void Thread::_main(Thread* self) {
   self->main();
-  vTaskDelete(self->handle);
+  self->started = false;
+  vTaskDelete(nullptr);
 }
 
 void Thread::start(std::string name, int priority, int stack_size) {
-  // ! this is probably unsafe need to check compiler output
   if (started.exchange(true)) {
     ESP_LOGE(JAY_LOG_TAG, "duplicate start called on thread %s", name.c_str());
     return;

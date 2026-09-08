@@ -174,7 +174,6 @@ class App {
     setup_netif();
     setup_wifi();
     setup_i2c();
-
     setup_twai();
     setup_motors();
 
@@ -193,7 +192,7 @@ class App {
                        CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
                        CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
 
-    // imu_task.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    imu_task.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
   }
 
   public:
