@@ -20,17 +20,19 @@
 #include "icm20948.h"
 #include "icm20948_i2c.h"
 #include "sdkconfig.h"
+#include "tasks/control.hpp"
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
-#include "tasks/http_wifi_con_handler.hpp"
+#include "tasks/wifi_con_handler.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/ws.hpp"
 
-extern HttpService http_service;
-extern ImuTask imu_task;
-extern WebSocketTask ws_task;
-extern WifiConHandlerTask wifi_con_handler_task;
-extern DnsTask dns_task;
+HttpService http_service;
+ImuTask imu_task;
+WebSocketTask ws_task;
+WifiConHandlerTask wifi_con_handler_task;
+DnsTask dns_task("192.168.4.1", CONFIG_HEXA_TASKS_DNS_NAME_SIZE);
+ControlTask control_task;
 
 class App {
   private:
@@ -122,6 +124,9 @@ class App {
                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
     dns_task.start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
     ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    control_task.start("control",
+                       CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
+                       CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
     // imu_task.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
   }
 

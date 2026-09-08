@@ -4,7 +4,7 @@
 #include "icm20948_i2c.h"
 #include "jaythread/sync.hpp"
 
-void ImuThread::main() {
+void ImuTask::main() {
   icm0948_config_i2c_t icm_config = {
       .i2c_port = I2C_NUM_0,
       .i2c_addr = ICM_20948_I2C_ADDR_AD0,

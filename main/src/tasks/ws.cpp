@@ -15,21 +15,21 @@
 #include "tasks/http.hpp"
 #include "tasks/imu.hpp"
 
-extern ImuThread imu_thread;
-extern HttpService http_thread;
+extern ImuTask imu_task;
+extern HttpService http_service;
 
-WebSocketService::WebSocketService() : connection_mutex(true) {
+WebSocketTask::WebSocketTask() : connection_mutex(true) {
   connection_age.fill(-1);
   connection_fds.fill(-1);
   connection_count = 0;
   stream_enabled.fill(false);
 };
 
-bool WebSocketService::stream_is_enabled(WsStream stream) {
+bool WebSocketTask::stream_is_enabled(WsStream stream) {
   return this->stream_enabled[static_cast<size_t>(stream)];
 }
 
-void WebSocketService::enable_stream(WsStream stream) {
+void WebSocketTask::enable_stream(WsStream stream) {
   if (this->stream_is_enabled(stream)) {
     return;
   }
@@ -39,7 +39,7 @@ void WebSocketService::enable_stream(WsStream stream) {
     this->resume();
   }
 }
-void WebSocketService::disable_stream(WsStream stream) {
+void WebSocketTask::disable_stream(WsStream stream) {
   if (!this->stream_is_enabled(stream)) {
     return;
   }
@@ -50,11 +50,11 @@ void WebSocketService::disable_stream(WsStream stream) {
   }
 }
 
-bool WebSocketService::has_connections() {
+bool WebSocketTask::has_connections() {
   return connection_count > 0;
 }
 
-// void WebSocketService::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
+// void WebSocketTask::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
 //                                                JsonObject* esp_heap_json) {
 //   auto thread_list = Thread::get_thread_list();
 //   auto task_list = monitor_service.get_task_list();
@@ -79,10 +79,10 @@ bool WebSocketService::has_connections() {
 //   esp_heap_json->set("largestBlock", heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 // }
 
-void WebSocketService::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json,
-                                                  JsonObject* imu_data_json,
-                                                  JsonObject* motor_data_json,
-                                                  JsonObject* stm_heap) {
+void WebSocketTask::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json,
+                                               JsonObject* imu_data_json,
+                                               JsonObject* motor_data_json,
+                                               JsonObject* stm_heap) {
   // if (this->stream_is_enabled(WsStream::STM_TASK_DATA)) {
   //   switch (packet.address) {
   //     case SspAddress::LED_SERVICE_CPU_USAGE: {
@@ -220,26 +220,26 @@ void WebSocketService::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json
   // }
 }
 
-void WebSocketService::fill_imu_data_json(JsonObject* imu_data_json) {
+void WebSocketTask::fill_imu_data_json(JsonObject* imu_data_json) {
   if (this->stream_is_enabled(WsStream::IMU_DATA)) {
-    imu_data_json->set("x", imu_thread.data.gyro.x);
-    imu_data_json->set("y", imu_thread.data.gyro.y);
-    imu_data_json->set("z", imu_thread.data.gyro.z);
+    imu_data_json->set("x", imu_task.data.gyro.x);
+    imu_data_json->set("y", imu_task.data.gyro.y);
+    imu_data_json->set("z", imu_task.data.gyro.z);
   }
 }
 
-void WebSocketService::fill_ota_progress_json(JsonObject* ota_json) {
-  ota_json->set("total", ota_total);
-  ota_json->set("progress", ota_progress);
-}
+// void WebSocketTask::fill_ota_progress_json(JsonObject* ota_json) {
+//   ota_json->set("total", ota_total);
+//   ota_json->set("progress", ota_progress);
+// }
 
-void WebSocketService::fill_root_json(JsonObject* json,
-                                      JsonObject* stm_cpu_usage_json,
-                                      JsonObject* esp_cpu_usage_json,
-                                      JsonObject* imu_data_json,
-                                      JsonObject* motor_data_json,
-                                      JsonObject* esp_heap,
-                                      JsonObject* ota_progress) {
+void WebSocketTask::fill_root_json(JsonObject* json,
+                                   JsonObject* stm_cpu_usage_json,
+                                   JsonObject* esp_cpu_usage_json,
+                                   JsonObject* imu_data_json,
+                                   JsonObject* motor_data_json,
+                                   JsonObject* esp_heap,
+                                   JsonObject* ota_progress) {
   if (this->stream_is_enabled(WsStream::STM_TASK_DATA))
     json->set("stmCpuUsage", stm_cpu_usage_json);
   if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
@@ -254,7 +254,7 @@ void WebSocketService::fill_root_json(JsonObject* json,
     json->set("ota_progress", ota_progress);
 }
 
-void WebSocketService::send_to_connections(const char* data) {
+void WebSocketTask::send_to_connections(const char* data) {
   connection_mutex.take();
   httpd_ws_frame_t ws_packet = {
       .final = true,
@@ -265,7 +265,7 @@ void WebSocketService::send_to_connections(const char* data) {
   };
   for (int i = 0; i < this->connection_count; i++) {
     int fd = this->connection_fds[i];
-    esp_err_t ret = httpd_ws_send_data(http_thread.server_instance, fd, &ws_packet);
+    esp_err_t ret = httpd_ws_send_data(http_service.server_instance, fd, &ws_packet);
 
     if (ret != ESP_OK) {
       this->stop_sending(fd);
@@ -279,7 +279,7 @@ void WebSocketService::send_to_connections(const char* data) {
   connection_mutex.give();
 }
 
-void WebSocketService::main() {
+void WebSocketTask::main() {
   JsonObject json;
   JsonObject esp_cpu_usage_json;
   JsonObject stm_cpu_usage_json;
@@ -321,7 +321,7 @@ void WebSocketService::main() {
   }
 }
 
-void WebSocketService::start_sending(int fd) {
+void WebSocketTask::start_sending(int fd) {
   connection_mutex.take();
   for (int i = 0; i < this->connection_count; i++) {
     if (this->connection_fds[i] == fd) {
@@ -356,7 +356,7 @@ cleanup:
   connection_mutex.give();
 }
 
-void WebSocketService::stop_sending(int fd) {
+void WebSocketTask::stop_sending(int fd) {
   connection_mutex.take();
   int connection_to_remove = -1;
   int connection_to_remove_age = 0;

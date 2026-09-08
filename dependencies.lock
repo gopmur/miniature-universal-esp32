@@ -27,5 +27,5 @@ direct_dependencies:
 - espressif/cjson
 - gopmur/icm20948
 manifest_hash: bbe3e0de637a04157792cd6d96a6d3b322ccfe68d932190ac6a6e165548cffd9
-target: esp32c5
+target: esp32
 version: 3.0.0

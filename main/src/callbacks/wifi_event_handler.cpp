@@ -2,6 +2,9 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
+#include "tasks/wifi_con_handler.hpp"
+
+extern WifiConHandlerTask wifi_con_handler_task;
 
 void wifi_event_handler(void* arg,
                         esp_event_base_t event_base,
@@ -19,29 +22,24 @@ void wifi_event_handler(void* arg,
       case WIFI_REASON_AUTH_EXPIRE:
       case WIFI_REASON_HANDSHAKE_TIMEOUT:
       case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        http_wifi_con_handler_service.connection_result_queue.send(
-            WifiConnectionRequestResult::FAILED,
-            0);
+        wifi_con_handler_task.connection_result_queue.send(WifiConnectionRequestResult::FAILED, 0);
         break;
 
       case WIFI_REASON_NO_AP_FOUND:
-        http_wifi_con_handler_service.connection_result_queue.send(
-            WifiConnectionRequestResult::WRONG_SSID,
-            0);
+        wifi_con_handler_task.connection_result_queue.send(WifiConnectionRequestResult::WRONG_SSID,
+                                                           0);
         break;
 
       case WIFI_REASON_ASSOC_LEAVE:
         break;
 
       default:
-        http_wifi_con_handler_service.connection_result_queue.send(
-            WifiConnectionRequestResult::OTHER,
-            0);
+        wifi_con_handler_task.connection_result_queue.send(WifiConnectionRequestResult::OTHER, 0);
         break;
     }
   }
 
   else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-    http_wifi_con_handler_service.connection_result_queue.send(WifiConnectionRequestResult::OK, 0);
+    wifi_con_handler_task.connection_result_queue.send(WifiConnectionRequestResult::OK, 0);
   }
 }

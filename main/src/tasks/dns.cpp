@@ -10,17 +10,17 @@
 
 #include "tasks/dns.hpp"
 
-DnsService::DnsService(const char* iface_address, const char* name) {
+DnsTask::DnsTask(const char* iface_address, const char* name) {
   inet_pton(AF_INET, iface_address, &this->iface_address);
   this->name = static_cast<char*>(malloc(strlen(name) + 1));
   strcpy(this->name, name);
 }
 
-bool DnsService::drop_packet(DNSPacket& packet) {
+bool DnsTask::drop_packet(DNSPacket& packet) {
   return packet.get_header().is_response();
 }
 
-void DnsService::set_dns_rcode(DNSPacket& packet, int parse_err) {
+void DnsTask::set_dns_rcode(DNSPacket& packet, int parse_err) {
   auto& header = packet.get_header();
   auto& question = packet.get_question();
   if (parse_err) {
@@ -36,7 +36,7 @@ void DnsService::set_dns_rcode(DNSPacket& packet, int parse_err) {
   }
 }
 
-void DnsService::make_dns_answer(DNSPacket& packet) {
+void DnsTask::make_dns_answer(DNSPacket& packet) {
   packet.get_header().set_number_of_answers(1);
   packet.get_answer().set_rr_type(RRTYPE_A);
   packet.get_answer().set_rr_class(RRCLASS_IN);
@@ -44,7 +44,7 @@ void DnsService::make_dns_answer(DNSPacket& packet) {
   packet.get_answer().set_rdata("192.168.4.1");
 }
 
-void DnsService::make_dns_response(DNSPacket& packet, int parse_err) {
+void DnsTask::make_dns_response(DNSPacket& packet, int parse_err) {
   packet.get_header().set_response();
   set_dns_rcode(packet, parse_err);
   if (packet.get_header().get_rcode() == RCODE_NO_ERR) {
@@ -52,7 +52,7 @@ void DnsService::make_dns_response(DNSPacket& packet, int parse_err) {
   }
 }
 
-void DnsService::main() {
+void DnsTask::main() {
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
   struct sockaddr_in sock_addres = {};

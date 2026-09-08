@@ -1,3 +1,0 @@
-
-
-// MonitoringData monitoring_data{};

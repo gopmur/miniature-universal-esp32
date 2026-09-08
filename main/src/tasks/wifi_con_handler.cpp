@@ -1,4 +1,4 @@
-#include "tasks/http_wifi_con_handler.hpp"
+#include "tasks/wifi_con_handler.hpp"
 #include <cstdlib>
 #include <cstring>
 #include <variant>
@@ -10,7 +10,7 @@
 #include "helper/json.hpp"
 
 
-void HttpWifiConHandlerService::main() {
+void WifiConHandlerTask::main() {
   while (true) {
     auto req_result = req_queue.receive();
     if (!req_result.has_value()) {

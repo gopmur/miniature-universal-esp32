@@ -87,6 +87,18 @@ config HEXA_TASKS_IMU_STACK_SIZE
 
 endmenu
 
+menu "Control"
+
+config HEXA_TASKS_CONTROL_PRIORITY
+  int "Priority"
+  default 2
+
+config HEXA_TASKS_CONTROL_STACK_SIZE
+  int "Stack Size"
+  default 4096
+
+endmenu
+
 endmenu
 
 endmenu
