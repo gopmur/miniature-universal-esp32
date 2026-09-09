@@ -7,6 +7,7 @@
 #include "callbacks/wifi_event_handler.hpp"
 #include "custom_drivers/motor/odrive.hpp"
 #include "driver/gpio.h"
+#include "esp_console.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -19,6 +20,7 @@
 #include "esp_wifi_types_generic.h"
 #include "hal/gpio_types.h"
 #include "hal/i2c_types.h"
+#include "hal/uart_types.h"
 #include "jaythread/sync.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -166,6 +168,39 @@ class App {
 
     gpio_config(&power_switch);
     gpio_set_level(GPIO_NUM_12, 1);
+  }
+
+  void init_console() {
+    esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_init(&console_config));
+
+    // esp_console_cmd_t hello = {
+    //     .command = "hello",
+    //     .help = "Print hello",
+    //     .hint = nullptr,
+    //     .func = hello_cmd,
+    // };
+
+    // ESP_ERROR_CHECK(esp_console_cmd_register(&hello));
+
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+
+    uart_config.channel = UART_NUM_0;
+    uart_config.baud_rate = 115200;
+    uart_config.tx_gpio_num = -1;
+    uart_config.rx_gpio_num = -1;
+
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+
+    repl_config.prompt = "esp> ";
+    repl_config.max_cmdline_length = 256;
+    repl_config.max_cmdline_args = 16;
+
+    esp_console_repl_t* repl = nullptr;
+
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
   }
 
   void setup() {
