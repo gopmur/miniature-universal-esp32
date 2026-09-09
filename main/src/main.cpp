@@ -4,6 +4,7 @@
 #include <freertos/FreeRTOS.h>
 
 // #include "callbacks/wifi_event_handler.hpp"
+#include "callbacks/twai.hpp"
 #include "callbacks/wifi_event_handler.hpp"
 #include "custom_drivers/motor/odrive.hpp"
 #include "driver/gpio.h"
@@ -30,6 +31,7 @@
 #include "icm20948_i2c.h"
 #include "sdkconfig.h"
 #include "soc/gpio_num.h"
+#include "tasks/can_recv.hpp"
 #include "tasks/control.hpp"
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
@@ -38,6 +40,7 @@
 #include "tasks/ws.hpp"
 
 HttpService http_service;
+CanRecvTask can_recv_task;
 ImuTask imu_task;
 WebSocketTask ws_task;
 WifiConHandlerTask wifi_con_handler_task;
@@ -124,6 +127,12 @@ class App {
   }
 
   void setup_twai() {
+    twai_event_callbacks_t twai_callback = {
+        .on_tx_done = nullptr,
+        .on_rx_done = TwaiCallback::rx_done,
+        .on_state_change = nullptr,
+        .on_error = nullptr,
+    };
     twai_onchip_node_config_t twai_config = {
         .io_cfg =
             {
@@ -146,9 +155,19 @@ class App {
                 .sp_permill = 750,
                 .ssp_permill = 500,
             },
+        .timestamp_resolution_hz = 0,
+        .fail_retry_cnt = -1,
         .tx_queue_depth = CONFIG_HEXA_CAN_TX_QUEUE_LEN,
-    };
+        .intr_priority = 0,
+        .flags = {
+            .enable_self_test = 0,
+            .enable_loopback = 0,
+            .enable_listen_only = 0,
+            .no_receive_rtr = 0,
+            .sleep_allow_pd = 0,
+        }};
     ESP_ERROR_CHECK(twai_new_node_onchip(&twai_config, &twai));
+    ESP_ERROR_CHECK(twai_node_register_event_callbacks(twai, &twai_callback, nullptr));
     ESP_ERROR_CHECK(twai_node_enable(twai));
   }
 
@@ -218,6 +237,7 @@ class App {
   }
 
   void start_tasks() {
+    can_recv_task.start("can_recv", 2, 4096);
     wifi_con_handler_task.start("http_con",
                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
@@ -231,7 +251,21 @@ class App {
   }
 
   public:
-  void run() { setup(); }
+  void run() {
+    setup();
+
+    can_recv_task.bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
+    can_recv_task.bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
+
+    left_motor->send_enable_command();
+    right_motor->send_enable_command();
+    while (true) {
+      left_motor->send_torque_command(0);
+      right_motor->send_torque_command(0);
+      ESP_LOGI("motor", "sent command");
+      Sync::sleep(1000);
+    }
+  }
 };
 
 extern "C" void app_main() {

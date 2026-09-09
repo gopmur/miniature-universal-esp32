@@ -1,6 +1,7 @@
 #include "custom_drivers/motor/odrive.hpp"
 #include <cmath>
 #include <cstring>
+#include "custom_drivers/can_device_reader/can_packet.hpp"
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive/command.hpp"
 #include "esp_log.h"
@@ -93,4 +94,8 @@ void ODriveMotorDriver::send_enable_command() {
 
 void ODriveMotorDriver::send_disable_command() {
   send_set_axis_state_command(ODriveMotorAxisState::IDLE);
+}
+
+void ODriveMotorDriver::consume(CanPacket packet) {
+  ESP_LOGI("motor feedback", "received id %d", packet.header.id);
 }

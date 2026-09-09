@@ -2,6 +2,7 @@
 
 #include <optional>
 #include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
 #include "portmacro.h"
 
 template <typename T, int N>
@@ -15,6 +16,8 @@ class Queue {
   Queue();
   bool send(T val, int ticks_to_wait);
   bool send(T val);
+  bool send_from_isr(T val);
+
   std::optional<T> receive(int ticks_to_wait);
   std::optional<T> receive();
   void flush();
@@ -30,6 +33,12 @@ Queue<T, N>::Queue() {
 template <typename T, int N>
 bool Queue<T, N>::send(T val, int ticks_to_wait) {
   return xQueueSend(queue, &val, ticks_to_wait);
+}
+
+template <typename T, int N>
+bool Queue<T, N>::send_from_isr(T val) {
+  BaseType_t higher_priority_task_woken = false;
+  return xQueueSendFromISR(queue, &val, &higher_priority_task_woken);
 }
 
 template <typename T, int N>
@@ -51,7 +60,6 @@ template <typename T, int N>
 std::optional<T> Queue<T, N>::receive() {
   return receive(portMAX_DELAY);
 }
-
 
 template <typename T, int N>
 void Queue<T, N>::flush() {

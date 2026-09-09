@@ -1,10 +1,11 @@
 #pragma once
 
+#include "custom_drivers/can_device_reader.hpp"
 #include "custom_drivers/motor/packet.hpp"
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
 
-class AbstractMotorDriver {
+class AbstractMotorDriver : public AbstractCanDeviceReader {
   protected:
   int id;
   twai_node_handle_t twai;

@@ -1,8 +1,13 @@
 #pragma once
 
+#include "custom_drivers/can_device_reader.hpp"
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive/command.hpp"
 #include "custom_drivers/motor/packet.hpp"
+
+class ODriveMotorFeedbackReader : public AbstractCanDeviceReader {
+  void consume(CanPacket packet);
+};
 
 class ODriveMotorDriver : public AbstractMotorDriver {
   private:
@@ -22,9 +27,9 @@ class ODriveMotorDriver : public AbstractMotorDriver {
   void send_set_torque_mode_command();
   void send_set_axis_state_command(ODriveMotorAxisState axis_state);
 
-  
   public:
   void send_enable_command();
   void send_disable_command();
+  void consume(CanPacket packet);
   ODriveMotorDriver(int id, twai_node_handle_t twai);
 };
