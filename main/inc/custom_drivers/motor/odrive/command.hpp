@@ -12,7 +12,7 @@ enum class ODriveMotorCommand : uint8_t {
   CLEAR_ERRORS = 0x18,
   GET_TORQUES = 0x1c,
   HEARTBEAT = 0x01,
-  ABSOULTE_POSITION = 0x19,
+  ABSOLUTE_POSITION = 0x19,
 };
 
 enum class ODriveMotorAxisState : uint8_t {

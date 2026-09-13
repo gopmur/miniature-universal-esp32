@@ -4,6 +4,7 @@
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive/command.hpp"
 #include "custom_drivers/motor/packet.hpp"
+#include "ipc/binary_semaphore.hpp"
 
 class ODriveMotorFeedbackReader : public AbstractCanDeviceReader {
   void consume(CanPacket packet);
@@ -11,8 +12,11 @@ class ODriveMotorFeedbackReader : public AbstractCanDeviceReader {
 
 class ODriveMotorDriver : public AbstractMotorDriver {
   private:
+  float position_offset;
+  const char* tag = "ODrive";
   int get_packet_id(ODriveMotorCommand command);
   twai_frame_header_t make_header(ODriveMotorCommand command);
+  BinarySemaphore position_valid_sem;
 
   MotorPacket make_torque_packet(float torque);
   MotorPacket make_read_encoder_packet();
@@ -28,8 +32,10 @@ class ODriveMotorDriver : public AbstractMotorDriver {
   void send_set_axis_state_command(ODriveMotorAxisState axis_state);
 
   public:
-  void send_enable_command();
-  void send_disable_command();
+  void enable();
+  void disable();
+  void zero_pose();
   void consume(CanPacket packet);
-  ODriveMotorDriver(int id, twai_node_handle_t twai);
+  float get_position();
+  ODriveMotorDriver(int id, twai_node_handle_t twai, float max_torque, MotorDirection direction, float torque_constant);
 };

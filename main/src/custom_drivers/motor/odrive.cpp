@@ -9,8 +9,12 @@
 #include "hal/twai_types.h"
 #include "jaythread/sync.hpp"
 
-ODriveMotorDriver::ODriveMotorDriver(int id, twai_node_handle_t twai)
-    : AbstractMotorDriver(id, twai) {}
+ODriveMotorDriver::ODriveMotorDriver(int id,
+                                     twai_node_handle_t twai,
+                                     float max_torque,
+                                     MotorDirection direction,
+                                     float torque_constant)
+    : AbstractMotorDriver(id, twai, max_torque, direction, torque_constant) {}
 
 int ODriveMotorDriver::get_packet_id(ODriveMotorCommand command) {
   return (id << 5) | static_cast<int>(command);
@@ -73,6 +77,10 @@ MotorPacket ODriveMotorDriver::make_disable_packet() {
 
 MotorPacket ODriveMotorDriver::make_zero_pos_packet() {
   MotorPacket packet;
+  packet.header = make_header(ODriveMotorCommand::ABSOLUTE_POSITION);
+  packet.header.dlc = 4;
+  float zero = -1;
+  memcpy(packet.data.data(), &zero, 4);
   return packet;
 }
 
@@ -86,16 +94,40 @@ void ODriveMotorDriver::send_set_axis_state_command(ODriveMotorAxisState axis_st
   send_packet(packet);
 }
 
-void ODriveMotorDriver::send_enable_command() {
+void ODriveMotorDriver::enable() {
   send_set_torque_mode_command();
   Sync::sleep(10);
   send_set_axis_state_command(ODriveMotorAxisState::CLOSED_LOOP_CONTROL);
 }
 
-void ODriveMotorDriver::send_disable_command() {
+void ODriveMotorDriver::disable() {
   send_set_axis_state_command(ODriveMotorAxisState::IDLE);
 }
 
+void ODriveMotorDriver::zero_pose() {
+  position_offset = feedback.position;
+  // auto packet = make_zero_pos_packet();
+  // send_packet(packet);
+}
+
 void ODriveMotorDriver::consume(CanPacket packet) {
-  ESP_LOGI("motor feedback", "received id %d", packet.header.id);
+  auto command = packet.header.id & ((1 << 5) - 1);
+  switch (static_cast<ODriveMotorCommand>(command)) {
+    case ODriveMotorCommand::GET_ENCODER_ESTIMATES:
+      memcpy(&feedback.position, &packet.data.data()[0], 4);
+      memcpy(&feedback.velocity, &packet.data.data()[4], 4);
+      break;
+    case ODriveMotorCommand::HEARTBEAT:
+      break;
+    default:
+      ESP_LOGW(tag,
+               "unhandled command received 0x%02x value: %f",
+               command,
+               *(float*)(packet.data.data()));
+      break;
+  }
+}
+
+float ODriveMotorDriver::get_position() {
+  return feedback.position - position_offset;
 }

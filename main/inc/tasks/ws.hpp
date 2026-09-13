@@ -43,6 +43,7 @@ class WebSocketTask : public Thread {
   void fill_ota_progress_json(JsonObject* ota_json);
   bool stream_is_enabled(WsStream stream);
   void fill_imu_data_json(JsonObject* imu_data_json);
+  void fill_motor_data_json(JsonObject* motor_data_json);
   void stop_sending(int fd);
 
   public:

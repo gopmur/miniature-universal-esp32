@@ -4,8 +4,7 @@
 #include "esp_twai.h"
 #include "tasks/can_recv.hpp"
 
-extern CanRecvTask can_recv_task;
-
+extern CanRecvTask* can_recv_task;
 
 bool TwaiCallback::rx_done(twai_node_handle_t handle,
                            const twai_rx_done_event_data_t* edata,
@@ -20,7 +19,7 @@ bool TwaiCallback::rx_done(twai_node_handle_t handle,
     CanPacket packet;
     packet.header = rx_frame.header;
     memcpy(packet.data.data(), rx_frame.buffer, 8);
-    can_recv_task.packet_queue.send_from_isr(packet);
+    can_recv_task->packet_queue.send_from_isr(packet);
   }
   return false;
 }

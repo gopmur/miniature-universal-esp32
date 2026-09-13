@@ -6,6 +6,7 @@
 // #include "callbacks/wifi_event_handler.hpp"
 #include "callbacks/twai.hpp"
 #include "callbacks/wifi_event_handler.hpp"
+#include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive.hpp"
 #include "driver/gpio.h"
 #include "esp_console.h"
@@ -36,25 +37,28 @@
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
 #include "tasks/imu.hpp"
+#include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
 
-HttpService http_service;
-CanRecvTask can_recv_task;
-ImuTask imu_task;
-WebSocketTask ws_task;
-WifiConHandlerTask wifi_con_handler_task;
-DnsTask dns_task("192.168.4.1", CONFIG_HEXA_TASKS_DNS_NAME_SIZE);
-ControlTask control_task;
-
 twai_node_handle_t twai;
 
-ODriveMotorDriver* left_motor;
-ODriveMotorDriver* right_motor;
+AbstractMotorDriver* left_motor;
+AbstractMotorDriver* right_motor;
+
+HttpService* http_service;
+CanRecvTask* can_recv_task;
+ImuTask* imu_task;
+WebSocketTask* ws_task;
+WifiConHandlerTask* wifi_con_handler_task;
+DnsTask* dns_task;
+ControlTask* control_task;
+MotorTask* motor_task;
 
 class App {
   private:
   esp_err_t res;
+  // const char* tag = "main";
 
   void setup_flash() {
     res = nvs_flash_init();
@@ -172,8 +176,10 @@ class App {
   }
 
   void setup_motors() {
-    left_motor = new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai);
-    right_motor = new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai);
+    left_motor =
+        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.2, MotorDirection::BACKWARD, 0.01);
+    right_motor =
+        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.2, MotorDirection::FORWARD, 0.01);
   }
 
   void setup_gpio() {
@@ -233,36 +239,54 @@ class App {
 
     start_tasks();
 
-    http_service.start();
+    http_service->start();
   }
 
   void start_tasks() {
-    can_recv_task.start("can_recv", 2, 4096);
-    wifi_con_handler_task.start("http_con",
-                                CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
-                                CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
-    dns_task.start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
-    ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
-    control_task.start("control",
-                       CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
-                       CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
+    motor_task = new MotorTask(left_motor, right_motor);
+    can_recv_task = new CanRecvTask();
+    wifi_con_handler_task = new WifiConHandlerTask();
+    dns_task = new DnsTask("192.168.4.1", "hexa.lan");
+    ws_task = new WebSocketTask();
+    control_task = new ControlTask();
+    imu_task = new ImuTask();
+    http_service = new HttpService();
 
-    imu_task.start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    motor_task->start("motor", 2, 4096);
+    can_recv_task->start("can_recv", 2, 4096);
+    wifi_con_handler_task->start("http_con",
+                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
+                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
+    dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
+    ws_task->start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    control_task->start("control",
+                        CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
+                        CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
+
+    imu_task->start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+  }
+
+  void print_cpu_usage() {
+    // Allocate a buffer large enough for all task names and stats
+    // ~40 bytes per task is a good rule of thumb
+    char stats_buffer[1024];
+
+    vTaskGetRunTimeStats(stats_buffer);
+
+    ESP_LOGI("main",
+             "Task Run-Time Statistics:\nTask Name\tRuntime (ticks)\tPercentage\n%s",
+             stats_buffer);
   }
 
   public:
   void run() {
     setup();
 
-    can_recv_task.bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
-    can_recv_task.bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
+    can_recv_task->bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
+    can_recv_task->bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
 
-    left_motor->send_enable_command();
-    right_motor->send_enable_command();
     while (true) {
-      left_motor->send_torque_command(0);
-      right_motor->send_torque_command(0);
-      ESP_LOGI("motor", "sent command");
+      print_cpu_usage();
       Sync::sleep(1000);
     }
   }

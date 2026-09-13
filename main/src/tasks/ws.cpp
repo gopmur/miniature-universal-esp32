@@ -2,6 +2,7 @@
 #include <optional>
 #include "config.hpp"
 
+#include "custom_drivers/motor.hpp"
 #include "esp_heap_caps.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
@@ -15,8 +16,10 @@
 #include "tasks/http.hpp"
 #include "tasks/imu.hpp"
 
-extern ImuTask imu_task;
-extern HttpService http_service;
+extern ImuTask* imu_task;
+extern HttpService* http_service;
+extern AbstractMotorDriver* left_motor;
+extern AbstractMotorDriver* right_motor;
 
 WebSocketTask::WebSocketTask() : connection_mutex(true) {
   connection_age.fill(-1);
@@ -59,11 +62,11 @@ bool WebSocketTask::has_connections() {
 //   auto thread_list = Thread::get_thread_list();
 //   auto task_list = monitor_service.get_task_list();
 //   for (auto task : task_list) {
-//     auto name = task.get_name();
+//     auto name = task->get_name();
 //     esp_cpu_usage_json->add_object(name);
 //     auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
-//     service_object.set("cpuUsage", task.get_cpu_usage());
-//     service_object.set("minFreeStack", task.get_min_free_stack());
+//     service_object.set("cpuUsage", task->get_cpu_usage());
+//     service_object.set("minFreeStack", task->get_min_free_stack());
 //   }
 
 //   for (auto thread : thread_list) {
@@ -222,9 +225,16 @@ void WebSocketTask::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json,
 
 void WebSocketTask::fill_imu_data_json(JsonObject* imu_data_json) {
   if (this->stream_is_enabled(WsStream::IMU_DATA)) {
-    imu_data_json->set("x", imu_task.data.gyro.x);
-    imu_data_json->set("y", imu_task.data.gyro.y);
-    imu_data_json->set("z", imu_task.data.gyro.z);
+    imu_data_json->set("x", imu_task->data.gyro.x);
+    imu_data_json->set("y", imu_task->data.gyro.y);
+    imu_data_json->set("z", imu_task->data.gyro.z);
+  }
+}
+
+void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {
+  if (this->stream_is_enabled(WsStream::MOTOR_DATA)) {
+    motor_data_json->set("leftPosition", left_motor->get_position());
+    motor_data_json->set("rightPosition", right_motor->get_position());
   }
 }
 
@@ -265,7 +275,7 @@ void WebSocketTask::send_to_connections(const char* data) {
   };
   for (int i = 0; i < this->connection_count; i++) {
     int fd = this->connection_fds[i];
-    esp_err_t ret = httpd_ws_send_data(http_service.server_instance, fd, &ws_packet);
+    esp_err_t ret = httpd_ws_send_data(http_service->server_instance, fd, &ws_packet);
 
     if (ret != ESP_OK) {
       this->stop_sending(fd);
@@ -298,6 +308,7 @@ void WebSocketTask::main() {
         break;
       }
       fill_imu_data_json(&imu_data_json);
+      fill_motor_data_json(&motor_data_json);
       this->fill_root_json(&json,
                            &stm_cpu_usage_json,
                            &esp_cpu_usage_json,

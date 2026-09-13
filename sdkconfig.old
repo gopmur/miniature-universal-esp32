@@ -695,8 +695,7 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # ICM-20948 Settings
 #
-# default:
-# CONFIG_ICM_20948_USE_DMP is not set
+CONFIG_ICM_20948_USE_DMP=y
 # end of ICM-20948 Settings
 
 #

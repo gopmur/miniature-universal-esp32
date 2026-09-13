@@ -2,7 +2,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <format>
 #include <variant>
 
 #include "tasks/http.hpp"
@@ -13,6 +12,7 @@
 #include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_http_server.h"
+#include "esp_log.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "freertos/idf_additions.h"
@@ -24,6 +24,7 @@
 #include "jaythread/sync.hpp"
 #include "tasks/control.hpp"
 #include "tasks/http/helper.hpp"
+#include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
 #include "threads/get_stack_sizes.hpp"
@@ -31,9 +32,10 @@
 #include "threads/scan_wifis.hpp"
 #include "version.hpp"
 
-extern WebSocketTask ws_task;
-extern ControlTask control_task;
-extern WifiConHandlerTask wifi_con_handler_task;
+extern WebSocketTask* ws_task;
+extern ControlTask* control_task;
+extern MotorTask* motor_task;
+extern WifiConHandlerTask* wifi_con_handler_task;
 ScanWifisThread scan_wifis_thread;
 
 esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json) {
@@ -89,7 +91,7 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
   set_header(req);
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
-  auto service_not_busy = wifi_con_handler_task.req_queue.send(async_req, 0);
+  auto service_not_busy = wifi_con_handler_task->req_queue.send(async_req, 0);
   if (!service_not_busy) {
     JsonObject res_json;
     res_json.set("message", "another connection request is pending");
@@ -284,51 +286,52 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   JsonObject semiautomatic_control_params_right_json;
   JsonObject smart_control_params_right_json;
 
-  res_json.set("running", control_task.running);
-  res_json.set("mode", get_control_mode_str(control_task.control_mode));
-  manual_control_params_left_json.set("torque", control_task.control_params.manual.left.torque);
-  manual_control_params_right_json.set("torque", control_task.control_params.manual.right.torque);
+  res_json.set("running", control_task->running);
+  res_json.set("mode", get_control_mode_str(control_task->control_mode));
+  manual_control_params_left_json.set("torque", control_task->control_params.manual.left.torque);
+  manual_control_params_right_json.set("torque", control_task->control_params.manual.right.torque);
   automatic_control_params_left_json.set("torque",
-                                         control_task.control_params.automatic.left.torque);
+                                         control_task->control_params.automatic.left.torque);
   automatic_control_params_left_json.set("timeout",
-                                         control_task.control_params.automatic.left.timeout);
+                                         control_task->control_params.automatic.left.timeout);
   automatic_control_params_left_json.set(
       "velocityThreshold",
-      control_task.control_params.automatic.left.velocity_threshold);
+      control_task->control_params.automatic.left.velocity_threshold);
   automatic_control_params_right_json.set("torque",
-                                          control_task.control_params.automatic.right.torque);
+                                          control_task->control_params.automatic.right.torque);
   automatic_control_params_right_json.set("timeout",
-                                          control_task.control_params.automatic.right.timeout);
+                                          control_task->control_params.automatic.right.timeout);
   automatic_control_params_right_json.set(
       "velocityThreshold",
-      control_task.control_params.automatic.right.velocity_threshold);
+      control_task->control_params.automatic.right.velocity_threshold);
   semiautomatic_control_params_json.set(
       "weakLeg",
-      get_leg_str(control_task.control_params.semiautomatic.weak_leg));
-  semiautomatic_control_params_left_json.set("torque",
-                                             control_task.control_params.semiautomatic.left.torque);
+      get_leg_str(control_task->control_params.semiautomatic.weak_leg));
+  semiautomatic_control_params_left_json.set(
+      "torque",
+      control_task->control_params.semiautomatic.left.torque);
   semiautomatic_control_params_left_json.set(
       "timeout",
-      control_task.control_params.semiautomatic.left.timeout);
+      control_task->control_params.semiautomatic.left.timeout);
   semiautomatic_control_params_left_json.set("delay",
-                                             control_task.control_params.semiautomatic.left.delay);
+                                             control_task->control_params.semiautomatic.left.delay);
   semiautomatic_control_params_right_json.set(
       "torque",
-      control_task.control_params.semiautomatic.right.torque);
+      control_task->control_params.semiautomatic.right.torque);
   semiautomatic_control_params_right_json.set(
       "timeout",
-      control_task.control_params.semiautomatic.right.timeout);
+      control_task->control_params.semiautomatic.right.timeout);
   semiautomatic_control_params_right_json.set(
       "delay",
-      control_task.control_params.semiautomatic.right.delay);
+      control_task->control_params.semiautomatic.right.delay);
   semiautomatic_control_params_json.set(
       "startAssistAngle",
-      control_task.control_params.semiautomatic.start_assist_angle);
+      control_task->control_params.semiautomatic.start_assist_angle);
   semiautomatic_control_params_json.set(
       "stopAssistAngle",
-      control_task.control_params.semiautomatic.stop_assist_angle);
-  smart_control_params_left_json.set("torque", control_task.control_params.smart.left.torque);
-  smart_control_params_right_json.set("torque", control_task.control_params.smart.right.torque);
+      control_task->control_params.semiautomatic.stop_assist_angle);
+  smart_control_params_left_json.set("torque", control_task->control_params.smart.left.torque);
+  smart_control_params_right_json.set("torque", control_task->control_params.smart.right.torque);
 
   manual_control_params_json.set("right", &manual_control_params_right_json);
   manual_control_params_json.set("left", &manual_control_params_left_json);
@@ -354,7 +357,8 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_handler(httpd_req_t* req) {
   set_header(req);
-  control_task.running = true;
+  control_task->running = true;
+  motor_task->enable();
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start response transmission failed");
@@ -363,7 +367,8 @@ esp_err_t HttpService::start_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_handler(httpd_req_t* req) {
   set_header(req);
-  control_task.running = false;
+  control_task->running = false;
+  motor_task->disable();
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -372,7 +377,7 @@ esp_err_t HttpService::stop_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
   set_header(req);
-  control_task.control_mode = ControlMode::MANUAL;
+  control_task->control_mode = ControlMode::MANUAL;
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -380,7 +385,7 @@ esp_err_t HttpService::set_mode_manual_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
   set_header(req);
-  control_task.control_mode = ControlMode::AUTO;
+  control_task->control_mode = ControlMode::AUTO;
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -388,7 +393,7 @@ esp_err_t HttpService::set_mode_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
   set_header(req);
-  control_task.control_mode = ControlMode::SEMI_AUTO;
+  control_task->control_mode = ControlMode::SEMI_AUTO;
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -396,7 +401,7 @@ esp_err_t HttpService::set_mode_semi_automatic_handler(httpd_req_t* req) {
 }
 esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   set_header(req);
-  control_task.control_mode = ControlMode::SMART;
+  control_task->control_mode = ControlMode::SMART;
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop response transmission failed");
@@ -418,7 +423,7 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_task.enable_stream(WsStream::IMU_DATA);
+  ws_task->enable_stream(WsStream::IMU_DATA);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start imu data stream failed");
@@ -427,7 +432,7 @@ esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_task.disable_stream(WsStream::IMU_DATA);
+  ws_task->disable_stream(WsStream::IMU_DATA);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop imu data stream failed");
@@ -436,7 +441,7 @@ esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_task.enable_stream(WsStream::MOTOR_DATA);
+  ws_task->enable_stream(WsStream::MOTOR_DATA);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Start motor data stream failed");
@@ -445,7 +450,7 @@ esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
   set_header(req);
-  ws_task.disable_stream(WsStream::MOTOR_DATA);
+  ws_task->disable_stream(WsStream::MOTOR_DATA);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
                       HttpService::LOG_TAG,
                       "Stop motor data stream failed");
@@ -483,7 +488,7 @@ esp_err_t HttpService::options_handler(httpd_req_t* req) {
 
 esp_err_t HttpService::ws_data_post_handshake_handler(httpd_req_t* req) {
   auto client_fd = httpd_req_to_sockfd(req);
-  ws_task.start_sending(client_fd);
+  ws_task->start_sending(client_fd);
   return ESP_OK;
 }
 
@@ -510,10 +515,10 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   auto left_torque = data.get_number("leftTorque");
   auto right_torque = data.get_number("rightTorque");
   if (std::holds_alternative<double>(left_torque)) {
-    control_task.control_params.manual.left.torque = std::get<double>(left_torque);
+    control_task->control_params.manual.left.torque = std::get<double>(left_torque);
   }
   if (std::holds_alternative<double>(right_torque)) {
-    control_task.control_params.manual.right.torque = std::get<double>(right_torque);
+    control_task->control_params.manual.right.torque = std::get<double>(right_torque);
   }
 
   free(ws_frame.payload);
@@ -721,12 +726,12 @@ esp_err_t HttpService::set_automatic_control_params(httpd_req_t* req) {
   ESP_LOGI("PARAMS LEFT", "%f %f %f", left_timeout, left_torque, left_velocity_threshold);
   ESP_LOGI("PARAMS RIGHT", "%f %f %f", right_timeout, right_torque, right_velocity_threshold);
 
-  control_task.control_params.automatic.left.timeout = left_timeout;
-  control_task.control_params.automatic.left.torque = left_torque;
-  control_task.control_params.automatic.left.velocity_threshold = left_velocity_threshold;
-  control_task.control_params.automatic.right.timeout = right_timeout;
-  control_task.control_params.automatic.right.torque = right_torque;
-  control_task.control_params.automatic.right.velocity_threshold = right_velocity_threshold;
+  control_task->control_params.automatic.left.timeout = left_timeout;
+  control_task->control_params.automatic.left.torque = left_torque;
+  control_task->control_params.automatic.left.velocity_threshold = left_velocity_threshold;
+  control_task->control_params.automatic.right.timeout = right_timeout;
+  control_task->control_params.automatic.right.torque = right_torque;
+  control_task->control_params.automatic.right.velocity_threshold = right_velocity_threshold;
 
   httpd_resp_send(req, nullptr, 0);
 
@@ -790,15 +795,15 @@ esp_err_t HttpService::set_semiautomatic_control_params(httpd_req_t* req) {
   auto right_timeout = std::get<double>(right_timeout_result);
   auto right_delay = std::get<double>(right_delay_result);
 
-  control_task.control_params.semiautomatic.left.torque = left_torque;
-  control_task.control_params.semiautomatic.left.timeout = left_timeout;
-  control_task.control_params.semiautomatic.left.delay = left_delay;
-  control_task.control_params.semiautomatic.right.torque = right_torque;
-  control_task.control_params.semiautomatic.right.timeout = right_timeout;
-  control_task.control_params.semiautomatic.right.delay = right_delay;
-  control_task.control_params.semiautomatic.weak_leg = weak_leg;
-  control_task.control_params.semiautomatic.start_assist_angle = start_assist_angle;
-  control_task.control_params.semiautomatic.stop_assist_angle = stop_assist_angle;
+  control_task->control_params.semiautomatic.left.torque = left_torque;
+  control_task->control_params.semiautomatic.left.timeout = left_timeout;
+  control_task->control_params.semiautomatic.left.delay = left_delay;
+  control_task->control_params.semiautomatic.right.torque = right_torque;
+  control_task->control_params.semiautomatic.right.timeout = right_timeout;
+  control_task->control_params.semiautomatic.right.delay = right_delay;
+  control_task->control_params.semiautomatic.weak_leg = weak_leg;
+  control_task->control_params.semiautomatic.start_assist_angle = start_assist_angle;
+  control_task->control_params.semiautomatic.stop_assist_angle = stop_assist_angle;
 
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
@@ -839,8 +844,8 @@ esp_err_t HttpService::set_smart_control_params(httpd_req_t* req) {
   }
   auto left_torque = std::get<double>(left_torque_result);
   auto right_torque = std::get<double>(right_torque_result);
-  control_task.control_params.smart.left.torque = left_torque;
-  control_task.control_params.smart.right.torque = right_torque;
+  control_task->control_params.smart.left.torque = left_torque;
+  control_task->control_params.smart.right.torque = right_torque;
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }

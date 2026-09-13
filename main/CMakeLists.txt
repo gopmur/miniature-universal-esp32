@@ -13,7 +13,14 @@ file(GLOB_RECURSE ASSET_FILES
   "${CMAKE_SOURCE_DIR}/main/certs/*.pem"
 )
 
-message("${CMAKE_SOURCE_DIR}/certs/*.pem")
+message("C Source files:")
+foreach(file ${SOURCE_C_FILES})
+  message("  ${file}")
+endforeach()
+message("CPP Source files:")
+foreach(file ${SOURCE_CPP_FILES})
+  message("  ${file}")
+endforeach()
 
 idf_component_register(
   SRCS
