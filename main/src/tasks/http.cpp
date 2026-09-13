@@ -208,43 +208,7 @@ void HttpService::set_header(httpd_req_t* req) {
   HttpService::set_type_json(req);
 }
 
-// esp_err_t HttpService::get_esp_task_stack_size(httpd_req_t* req) {
-//   set_header(req);
-//   JsonObject res_json;
 
-//   for (auto service : Thread::get_thread_list()) {
-//     auto service_name = service.get_name();
-//     if (service.stack_size) {
-//       res_json.set(service_name, service.stack_size);
-//     }
-//   }
-
-//   auto res_str = res_json.stringify();
-
-//   httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
-
-//   return ESP_OK;
-// }
-
-// esp_err_t HttpService::get_stm_task_stack_size(httpd_req_t* req) {
-//   set_header(req);
-//   http_service.task_stack_size_queue.flush();
-
-//   read_addresses({SspAddress::LED_SERVICE_STACK_SIZE,
-//                   SspAddress::IMU_SERVICE_STACK_SIZE,
-//                   SspAddress::ESP_UART_TX_SERVICE_STACK_SIZE,
-//                   SspAddress::ESP_UART_RX_SERVICE_STACK_SIZE,
-//                   SspAddress::MOTOR_SERVICE_STACK_SIZE,
-//                   SspAddress::CAN_RECV_SERVICE_STACK_SIZE,
-//                   SspAddress::SD_SERVICE_STACK_SIZE,
-//                   SspAddress::MONITOR_SERVICE_STACK_SIZE});
-
-//   GetStackSizes async_handler("get_stack_sized", 5, 4096);
-//   httpd_req_t* async_req;
-//   httpd_req_async_handler_begin(req, &async_req);
-//   async_handler.start(&async_req);
-//   return ESP_OK;
-// }
 const char* get_control_mode_str(ControlMode control_mode) {
   switch (control_mode) {
     case ControlMode::MANUAL:
@@ -857,8 +821,6 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   // this->register_http_uri("/api/update/check", HTTP_GET, HttpService::check_for_update_handler);
   this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
   this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
-  // this->register_http_uri("/api/stm_stack_size", HTTP_GET, HttpService::get_stm_task_stack_size);
-  // this->register_http_uri("/api/esp_stack_size", HTTP_GET, HttpService::get_esp_task_stack_size);
   this->register_http_uri("/api/streams/start/imu",
                           HTTP_GET,
                           HttpService::start_imu_data_stream_handler);

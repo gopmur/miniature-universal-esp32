@@ -57,30 +57,30 @@ bool WebSocketTask::has_connections() {
   return connection_count > 0;
 }
 
-// void WebSocketTask::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
-//                                                JsonObject* esp_heap_json) {
-//   auto thread_list = Thread::get_thread_list();
-//   auto task_list = monitor_service.get_task_list();
-//   for (auto task : task_list) {
-//     auto name = task->get_name();
-//     esp_cpu_usage_json->add_object(name);
-//     auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
-//     service_object.set("cpuUsage", task->get_cpu_usage());
-//     service_object.set("minFreeStack", task->get_min_free_stack());
-//   }
+void WebSocketTask::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
+                                               JsonObject* esp_heap_json) {
+  auto thread_list = Thread::get_thread_list();
+  auto task_list = monitor_service.get_task_list();
+  for (auto task : task_list) {
+    auto name = task->get_name();
+    esp_cpu_usage_json->add_object(name);
+    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
+    service_object.set("cpuUsage", task->get_cpu_usage());
+    service_object.set("minFreeStack", task->get_min_free_stack());
+  }
 
-//   for (auto thread : thread_list) {
-//     auto name = thread.get_name();
-//     esp_cpu_usage_json->add_object(name);
-//     auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
-//     service_object.set("stackSize", thread.stack_size);
-//   }
+  for (auto thread : thread_list) {
+    auto name = thread.get_name();
+    esp_cpu_usage_json->add_object(name);
+    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
+    service_object.set("stackSize", thread.stack_size);
+  }
 
-//   esp_heap_json->set("free", esp_get_free_heap_size());
-//   esp_heap_json->set("minFree", esp_get_minimum_free_heap_size());
-//   esp_heap_json->set("totalSize", heap_caps_get_total_size(MALLOC_CAP_DEFAULT));
-//   esp_heap_json->set("largestBlock", heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
-// }
+  esp_heap_json->set("free", esp_get_free_heap_size());
+  esp_heap_json->set("minFree", esp_get_minimum_free_heap_size());
+  esp_heap_json->set("totalSize", heap_caps_get_total_size(MALLOC_CAP_DEFAULT));
+  esp_heap_json->set("largestBlock", heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+}
 
 void WebSocketTask::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json,
                                                JsonObject* imu_data_json,
