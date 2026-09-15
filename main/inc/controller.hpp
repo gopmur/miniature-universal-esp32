@@ -22,5 +22,6 @@ struct ControllerOutput {
 class Controller {
   public:
   float torque_profile(float count_timer, int total_time);
-  virtual ControllerOutput run(ControllerInput input);
+  virtual void reset();
+  virtual ControllerOutput run(ControllerInput input) = 0;
 };

@@ -29,7 +29,6 @@ ControllerOutput AutomaticController::run(ControllerInput input) {
   if (ro == true) {
     right_timer = right_timer + 1;
     torque_profile_right_value = torque_profile(right_timer, params.right.timeout);
-    ESP_LOGE("automatic", "applying torque to the right leg");
   } else if (ro == false) {
     right_timer = 0;
     torque_profile_right_value = 0;
@@ -38,7 +37,6 @@ ControllerOutput AutomaticController::run(ControllerInput input) {
   if (lo == true) {
     left_timer = left_timer + 1;
     torque_profile_left_value = torque_profile(left_timer, params.left.timeout);
-    ESP_LOGE("automatic", "applying torque to the left leg");
   } else if (lo == false) {
     left_timer = 0;
     torque_profile_left_value = 0;
@@ -48,4 +46,13 @@ ControllerOutput AutomaticController::run(ControllerInput input) {
   output.right_motor.torque = params.right.torque * torque_profile_right_value;
 
   return output;
+}
+
+void AutomaticController::reset() {
+  right_timer = 0;
+  left_timer = 0;
+  ro = false;
+  ri = false;
+  lo = false;
+  li = false;
 }

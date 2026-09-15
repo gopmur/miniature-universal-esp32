@@ -23,6 +23,7 @@ class AutomaticController : public Controller {
   bool li = false;
 
   public:
+  void reset();
   AutomaticControlParams params;
   ControllerOutput run(ControllerInput input);
 };

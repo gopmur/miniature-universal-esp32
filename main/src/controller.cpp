@@ -19,3 +19,5 @@ float Controller::torque_profile(float count_timer, int total_time) {
     return 0;
   }
 }
+
+void Controller::reset() {}

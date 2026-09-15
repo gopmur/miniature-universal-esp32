@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "controller/automatic.hpp"
 #include "controller/manual.hpp"
+#include "controller/zero.hpp"
 #include "jaythread/thread.hpp"
 
 enum class ControlMode : uint8_t {
@@ -55,11 +56,14 @@ class ControlTask : public Thread {
   public:
   bool running = false;
   ControlMode control_mode = ControlMode::MANUAL;
+  ControlMode prev_control_mod = ControlMode::MANUAL;
   ControlParams control_params;
+  ZeroController zero_controller;
   ManualController manual_controller;
   AutomaticController automatic_controller;
 
   private:
   std::string tag = "control task";
+  void reset();
   void main();
 };
