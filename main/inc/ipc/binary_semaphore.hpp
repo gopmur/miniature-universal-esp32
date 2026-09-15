@@ -13,4 +13,5 @@ class BinarySemaphore {
 
   void take();
   void give();
+  void clear();
 };

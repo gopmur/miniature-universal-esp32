@@ -1,5 +1,6 @@
 #include "tasks/ws.hpp"
 #include <optional>
+#include <vector>
 #include "config.hpp"
 
 #include "custom_drivers/motor.hpp"
@@ -58,22 +59,30 @@ bool WebSocketTask::has_connections() {
 }
 
 void WebSocketTask::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
-                                               JsonObject* esp_heap_json) {
-  auto thread_list = Thread::get_thread_list();
-  auto task_list = monitor_service.get_task_list();
-  for (auto task : task_list) {
-    auto name = task->get_name();
-    esp_cpu_usage_json->add_object(name);
-    auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
-    service_object.set("cpuUsage", task->get_cpu_usage());
-    service_object.set("minFreeStack", task->get_min_free_stack());
+                                            JsonObject* esp_heap_json) {
+  if (!this->stream_is_enabled(WsStream::ESP_TASK_DATA)) {
+    return;
   }
 
-  for (auto thread : thread_list) {
-    auto name = thread.get_name();
+  UBaseType_t taskCount = uxTaskGetNumberOfTasks();
+  std::vector<TaskStatus_t> statusArray(taskCount);
+  uint64_t totalRunTime = 0;
+
+  taskCount = uxTaskGetSystemState(statusArray.data(), taskCount, &totalRunTime);
+
+  if (totalRunTime == 0) {
+    totalRunTime = 1;
+  }
+
+  for (UBaseType_t i = 0; i < taskCount; i++) {
+    uint32_t taskTime = statusArray[i].ulRunTimeCounter;
+    float cpuPercent = ((float)taskTime / (float)totalRunTime) * 100.0f;
+
+    auto name = statusArray[i].pcTaskName;
     esp_cpu_usage_json->add_object(name);
     auto service_object = std::get<JsonObject>(esp_cpu_usage_json->get_object(name));
-    service_object.set("stackSize", thread.stack_size);
+    service_object.set("cpuUsage", cpuPercent);
+    service_object.set("minFreeStack", 0);
   }
 
   esp_heap_json->set("free", esp_get_free_heap_size());
@@ -309,14 +318,14 @@ void WebSocketTask::main() {
       }
       fill_imu_data_json(&imu_data_json);
       fill_motor_data_json(&motor_data_json);
-      this->fill_root_json(&json,
-                           &stm_cpu_usage_json,
-                           &esp_cpu_usage_json,
-                           &imu_data_json,
-                           &motor_data_json,
-                           &esp_heap,
-                           &ota_progress);
-      // this->fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
+      fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
+      fill_root_json(&json,
+                     &stm_cpu_usage_json,
+                     &esp_cpu_usage_json,
+                     &imu_data_json,
+                     &motor_data_json,
+                     &esp_heap,
+                     &ota_progress);
       // this->fill_ota_progress_json(&ota_progress);
 
       if (!json.is_empty()) {
@@ -327,7 +336,7 @@ void WebSocketTask::main() {
         stm_cpu_usage_json = JsonObject();
         imu_data_json = JsonObject();
       }
-      Sync::sleep(25);
+      Sync::sleep(30);
     }
   }
 }

@@ -7,6 +7,7 @@
 #include "tasks/http.hpp"
 
 #include "config.hpp"
+#include "custom_drivers/motor.hpp"
 #include "driver/uart.h"
 #include "esp_check.h"
 #include "esp_err.h"
@@ -36,6 +37,8 @@ extern WebSocketTask* ws_task;
 extern ControlTask* control_task;
 extern MotorTask* motor_task;
 extern WifiConHandlerTask* wifi_con_handler_task;
+extern AbstractMotorDriver* left_motor;
+extern AbstractMotorDriver* right_motor;
 ScanWifisThread scan_wifis_thread;
 
 esp_err_t HttpService::send_json(httpd_req_t* req, JsonObject& json) {
@@ -204,10 +207,9 @@ void HttpService::set_type_json(httpd_req_t* req) {
 }
 void HttpService::set_header(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  HttpService::set_close_connection(req);
+  // HttpService::set_close_connection(req);
   HttpService::set_type_json(req);
 }
-
 
 const char* get_control_mode_str(ControlMode control_mode) {
   switch (control_mode) {
@@ -372,18 +374,18 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-// esp_err_t HttpService::start_esp_cpu_usage_stream_handler(httpd_req_t* req) {
-//   set_header(req);
-//   ws_service.enable_stream(WsStream::ESP_TASK_DATA);
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
-// esp_err_t HttpService::stop_esp_cpu_usage_stream_handler(httpd_req_t* req) {
-//   set_header(req);
-//   ws_service.disable_stream(WsStream::ESP_TASK_DATA);
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
+  set_header(req);
+  ws_task->enable_stream(WsStream::ESP_TASK_DATA);
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+esp_err_t HttpService::stop_cpu_usage_stream_handler(httpd_req_t* req) {
+  set_header(req);
+  ws_task->disable_stream(WsStream::ESP_TASK_DATA);
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
 
 esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
   set_header(req);
@@ -436,7 +438,7 @@ esp_err_t HttpService::restart_handler(httpd_req_t* req) {
 //   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
 //   return ESP_OK;
 // }
-// esp_err_t HttpService::restart_esp32_handler(httpd_req_t* req) {
+// esp_err_t HttpService::restart32_handler(httpd_req_t* req) {
 //   set_header(req);
 //   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
 //   vTaskDelay(10);
@@ -814,6 +816,14 @@ esp_err_t HttpService::set_smart_control_params(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::motor_zero_pos(httpd_req_t* req) {
+  set_header(req);
+  left_motor->zero_pos();
+  right_motor->zero_pos();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/null", HTTP_GET, HttpService::null_request_handler);
   // this->register_http_uri("/api/version", HTTP_GET, HttpService::get_version_handler);
@@ -834,16 +844,17 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_http_uri("/api/streams/stop/motor",
                           HTTP_GET,
                           HttpService::stop_motor_data_stream_handler);
-  // this->register_http_uri("/api/streams/start/esp_cpu_usage",
-  //                         HTTP_GET,
-  //                         HttpService::start_esp_cpu_usage_stream_handler);
-  // this->register_http_uri("/api/streams/stop/esp_cpu_usage",
-  //                         HTTP_GET,
-  //                         HttpService::stop_esp_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/start/esp_cpu_usage",
+                          HTTP_GET,
+                          HttpService::start_cpu_usage_stream_handler);
+  this->register_http_uri("/api/streams/stop/esp_cpu_usage",
+                          HTTP_GET,
+                          HttpService::stop_cpu_usage_stream_handler);
   this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
   this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
   this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
   this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
+  this->register_http_uri("/api/motors/zero_pos", HTTP_GET, HttpService::motor_zero_pos);
   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
   this->register_http_uri_with_option("/api/set-mode/manual",

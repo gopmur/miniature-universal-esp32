@@ -55,11 +55,12 @@ void MotorTask::disable_right() {
 }
 
 void MotorTask::main() {
+  left_motor->init();
+  right_motor->init();
   disable();
   while (true) {
     right_motor->set_torque(right_torque);
     left_motor->set_torque(left_torque);
-    ESP_LOGI("torque", "%f", right_torque);
     Sync::sleep(10);
   }
 }

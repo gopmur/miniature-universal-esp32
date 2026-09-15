@@ -12,8 +12,7 @@ class ODriveMotorFeedbackReader : public AbstractCanDeviceReader {
 
 class ODriveMotorDriver : public AbstractMotorDriver {
   private:
-  float position_offset;
-  const char* tag = "ODrive";
+  float position_offset = 0;
   int get_packet_id(ODriveMotorCommand command);
   twai_frame_header_t make_header(ODriveMotorCommand command);
   BinarySemaphore position_valid_sem;
@@ -34,8 +33,9 @@ class ODriveMotorDriver : public AbstractMotorDriver {
   public:
   void enable();
   void disable();
-  void zero_pose();
+  void zero_pos();
   void consume(CanPacket packet);
   float get_position();
+  void init();
   ODriveMotorDriver(int id, twai_node_handle_t twai, float max_torque, MotorDirection direction, float torque_constant);
 };

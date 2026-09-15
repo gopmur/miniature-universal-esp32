@@ -23,6 +23,14 @@ bool Sync::wait_for_notification(int ms_to_wait) {
   return ulTaskNotifyTake(false, pdMS_TO_TICKS(ms_to_wait)) != 0;
 }
 
+void Sync::suspend() {
+  vTaskSuspend(nullptr);
+}
+
+void Sync::clear_notifications() {
+  xTaskNotifyStateClear(nullptr);
+}
+
 // void Sync::enter_critical() {
 //   vPortEnterCritical();
 // }

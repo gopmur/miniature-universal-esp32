@@ -14,3 +14,7 @@ void BinarySemaphore::take() {
 void BinarySemaphore::give() {
   xSemaphoreGive(this->semaphore);
 }
+
+void BinarySemaphore::clear() {
+  xSemaphoreTake(this->semaphore, 0);
+}

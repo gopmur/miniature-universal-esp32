@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include "esp_log.h"
 #include "esp_log_level.h"
 #include "esp_twai.h"
@@ -17,7 +18,7 @@ AbstractMotorDriver::AbstractMotorDriver(int id,
       max_torque(max_torque),
       direction(direction),
       torque_constant(torque_constant) {
-  tag = "main" + std::to_string(id);
+  tag = std::format("motor {:#02x}", id);
   if (max_torque < 0) {
     ESP_LOGE(tag.c_str(),
              "max_torque is set to %f, max_torque can only be a positive value",

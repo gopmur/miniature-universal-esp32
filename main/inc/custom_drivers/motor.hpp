@@ -47,8 +47,9 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   virtual void enable();
   virtual void disable();
   virtual void zero_pos();
-  float get_torque();
-  float get_position();
-  float get_velocity();
-  float get_temperature();
+  virtual float get_torque();
+  virtual float get_position();
+  virtual float get_velocity();
+  virtual float get_temperature();
+  virtual void init() = 0;
 };

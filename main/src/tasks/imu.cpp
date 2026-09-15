@@ -15,16 +15,16 @@ void ImuTask::main() {
 
   icm20948_init_i2c(&icm, &icm_config);
   while (icm20948_check_id(&icm) != ICM_20948_STAT_OK) {
-    ESP_LOGE(tag, "check id failed");
+    ESP_LOGE(tag.c_str(), "check id failed");
     Sync::sleep(1000);
   }
-  ESP_LOGI(tag, "check id passed");
+  ESP_LOGI(tag.c_str(), "check id passed");
   icm20948_status_e stat = ICM_20948_STAT_ERR;
   uint8_t whoami = 0x00;
+  whoami = 0x00;
+  stat = icm20948_get_who_am_i(&icm, &whoami);
   while ((stat != ICM_20948_STAT_OK) || (whoami != ICM_20948_WHOAMI)) {
-    whoami = 0x00;
-    stat = icm20948_get_who_am_i(&icm, &whoami);
-    ESP_LOGE("ICM", "whoami does not match (0x %d). Halting...", whoami);
+    ESP_LOGE(tag.c_str(), "whoami does not match (0x %d). Halting...", whoami);
     Sync::sleep(1000);
   }
   icm20948_sw_reset(&icm);
@@ -100,7 +100,7 @@ void ImuTask::main() {
         float t3 = +2.0 * (q0 * q3 + q1 * q2);
         float t4 = +1.0 - 2.0 * (q2sqr + q3 * q3);
         float yaw = atan2(t3, t4) * 180.0 / M_PI;
-        
+
         data.gyro.x = roll;
         data.gyro.y = pitch;
         data.gyro.z = yaw;
@@ -108,8 +108,7 @@ void ImuTask::main() {
 
       if (status != ICM_20948_STAT_FIFO_MORE_DATA_AVAIL) {
         Sync::sleep(10);
-      }
-      else {
+      } else {
         Sync::sleep(5);
       }
     }

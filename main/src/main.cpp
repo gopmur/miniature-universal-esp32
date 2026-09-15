@@ -131,6 +131,7 @@ class App {
   }
 
   void setup_twai() {
+    can_recv_task = new CanRecvTask();
     twai_event_callbacks_t twai_callback = {
         .on_tx_done = nullptr,
         .on_rx_done = TwaiCallback::rx_done,
@@ -180,6 +181,7 @@ class App {
         new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.2, MotorDirection::BACKWARD, 0.01);
     right_motor =
         new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.2, MotorDirection::FORWARD, 0.01);
+    
   }
 
   void setup_gpio() {
@@ -244,7 +246,7 @@ class App {
 
   void start_tasks() {
     motor_task = new MotorTask(left_motor, right_motor);
-    can_recv_task = new CanRecvTask();
+    
     wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
     ws_task = new WebSocketTask();
@@ -284,11 +286,6 @@ class App {
 
     can_recv_task->bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
     can_recv_task->bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
-
-    while (true) {
-      print_cpu_usage();
-      Sync::sleep(1000);
-    }
   }
 };
 

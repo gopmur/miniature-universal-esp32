@@ -16,9 +16,9 @@ struct ImuData {
 
 class ImuTask : public Thread {
   public:
-  static constexpr const char* tag = "ImuThread";
   ImuData data;
 
   private:
+  std::string tag = "imu task";
   void main();
 };
