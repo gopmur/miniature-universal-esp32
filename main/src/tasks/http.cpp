@@ -271,30 +271,31 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
       control_task->automatic_controller.params.right.velocity_threshold);
   semiautomatic_control_params_json.set(
       "weakLeg",
-      get_leg_str(control_task->control_params.semiautomatic.weak_leg));
+      get_leg_str(control_task->semiautomatic_controller.params.weak_leg));
   semiautomatic_control_params_left_json.set(
       "torque",
-      control_task->control_params.semiautomatic.left.torque);
+      control_task->semiautomatic_controller.params.left.torque);
   semiautomatic_control_params_left_json.set(
       "timeout",
-      control_task->control_params.semiautomatic.left.timeout);
-  semiautomatic_control_params_left_json.set("delay",
-                                             control_task->control_params.semiautomatic.left.delay);
+      control_task->semiautomatic_controller.params.left.timeout);
+  semiautomatic_control_params_left_json.set(
+      "delay",
+      control_task->semiautomatic_controller.params.left.delay);
   semiautomatic_control_params_right_json.set(
       "torque",
-      control_task->control_params.semiautomatic.right.torque);
+      control_task->semiautomatic_controller.params.right.torque);
   semiautomatic_control_params_right_json.set(
       "timeout",
-      control_task->control_params.semiautomatic.right.timeout);
+      control_task->semiautomatic_controller.params.right.timeout);
   semiautomatic_control_params_right_json.set(
       "delay",
-      control_task->control_params.semiautomatic.right.delay);
+      control_task->semiautomatic_controller.params.right.delay);
   semiautomatic_control_params_json.set(
       "startAssistAngle",
-      control_task->control_params.semiautomatic.start_assist_angle);
+      control_task->semiautomatic_controller.params.start_assist_angle);
   semiautomatic_control_params_json.set(
       "stopAssistAngle",
-      control_task->control_params.semiautomatic.stop_assist_angle);
+      control_task->semiautomatic_controller.params.stop_assist_angle);
   smart_control_params_left_json.set("torque", control_task->control_params.smart.left.torque);
   smart_control_params_right_json.set("torque", control_task->control_params.smart.right.torque);
 
@@ -760,15 +761,15 @@ esp_err_t HttpService::set_semiautomatic_control_params(httpd_req_t* req) {
   auto right_timeout = std::get<double>(right_timeout_result);
   auto right_delay = std::get<double>(right_delay_result);
 
-  control_task->control_params.semiautomatic.left.torque = left_torque;
-  control_task->control_params.semiautomatic.left.timeout = left_timeout;
-  control_task->control_params.semiautomatic.left.delay = left_delay;
-  control_task->control_params.semiautomatic.right.torque = right_torque;
-  control_task->control_params.semiautomatic.right.timeout = right_timeout;
-  control_task->control_params.semiautomatic.right.delay = right_delay;
-  control_task->control_params.semiautomatic.weak_leg = weak_leg;
-  control_task->control_params.semiautomatic.start_assist_angle = start_assist_angle;
-  control_task->control_params.semiautomatic.stop_assist_angle = stop_assist_angle;
+  control_task->semiautomatic_controller.params.left.torque = left_torque;
+  control_task->semiautomatic_controller.params.left.timeout = left_timeout;
+  control_task->semiautomatic_controller.params.left.delay = left_delay;
+  control_task->semiautomatic_controller.params.right.torque = right_torque;
+  control_task->semiautomatic_controller.params.right.timeout = right_timeout;
+  control_task->semiautomatic_controller.params.right.delay = right_delay;
+  control_task->semiautomatic_controller.params.weak_leg = weak_leg;
+  control_task->semiautomatic_controller.params.start_assist_angle = start_assist_angle;
+  control_task->semiautomatic_controller.params.stop_assist_angle = stop_assist_angle;
 
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;

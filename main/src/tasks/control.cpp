@@ -13,6 +13,7 @@ extern AbstractMotorDriver* right_motor;
 void ControlTask::reset() {
   manual_controller.reset();
   automatic_controller.reset();
+  semiautomatic_controller.reset();
 }
 
 void ControlTask::main() {
@@ -34,6 +35,9 @@ void ControlTask::main() {
           break;
         case ControlMode::AUTO:
           output = automatic_controller.run(input);
+          break;
+        case ControlMode::SEMI_AUTO:
+          output = semiautomatic_controller.run(input);
           break;
         default:
           output = zero_controller.run(input);

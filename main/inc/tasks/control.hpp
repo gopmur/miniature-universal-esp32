@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "controller/automatic.hpp"
 #include "controller/manual.hpp"
+#include "controller/semi_automatic.hpp"
 #include "controller/zero.hpp"
 #include "jaythread/thread.hpp"
 
@@ -19,25 +20,6 @@ struct Data3D {
   float z;
 };
 
-enum class Leg {
-  LEFT,
-  RIGHT,
-};
-
-struct SemiautomaticControlParamsLeg {
-  float torque = 5;
-  float delay = 1;
-  float timeout = 100;
-};
-
-struct SemiautomaticControlParams {
-  Leg weak_leg = Leg::LEFT;
-  float start_assist_angle = 0.287979327;
-  float stop_assist_angle = 2.583087293;
-  SemiautomaticControlParamsLeg left;
-  SemiautomaticControlParamsLeg right;
-};
-
 struct SmartControlParamsLeg {
   float torque = 5;
 };
@@ -48,7 +30,6 @@ struct SmartControlParams {
 };
 
 struct ControlParams {
-  SemiautomaticControlParams semiautomatic;
   SmartControlParams smart;
 };
 
@@ -61,6 +42,7 @@ class ControlTask : public Thread {
   ZeroController zero_controller;
   ManualController manual_controller;
   AutomaticController automatic_controller;
+  SemiautomaticController semiautomatic_controller;
 
   private:
   std::string tag = "control task";

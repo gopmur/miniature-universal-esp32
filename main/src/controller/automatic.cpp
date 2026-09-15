@@ -1,6 +1,5 @@
 #include "controller/automatic.hpp"
 #include "controller.hpp"
-#include "esp_log.h"
 
 ControllerOutput AutomaticController::run(ControllerInput input) {
   ControllerOutput output;

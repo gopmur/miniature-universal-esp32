@@ -1,5 +1,11 @@
 #pragma once
 
+enum class Leg {
+  LEFT,
+  RIGHT,
+};
+
+
 struct ControllerMotorInput {
   float velocity;
   float position;
