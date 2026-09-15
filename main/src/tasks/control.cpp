@@ -14,6 +14,7 @@ void ControlTask::reset() {
   manual_controller.reset();
   automatic_controller.reset();
   semiautomatic_controller.reset();
+  smart_controller.reset();
 }
 
 void ControlTask::main() {
@@ -38,6 +39,9 @@ void ControlTask::main() {
           break;
         case ControlMode::SEMI_AUTO:
           output = semiautomatic_controller.run(input);
+          break;
+        case ControlMode::SMART:
+          output = smart_controller.run(input);
           break;
         default:
           output = zero_controller.run(input);

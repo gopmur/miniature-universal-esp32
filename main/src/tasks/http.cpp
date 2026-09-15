@@ -296,8 +296,8 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   semiautomatic_control_params_json.set(
       "stopAssistAngle",
       control_task->semiautomatic_controller.params.stop_assist_angle);
-  smart_control_params_left_json.set("torque", control_task->control_params.smart.left.torque);
-  smart_control_params_right_json.set("torque", control_task->control_params.smart.right.torque);
+  smart_control_params_left_json.set("torque", control_task->smart_controller.params.left.torque);
+  smart_control_params_right_json.set("torque", control_task->smart_controller.params.right.torque);
 
   manual_control_params_json.set("right", &manual_control_params_right_json);
   manual_control_params_json.set("left", &manual_control_params_left_json);
@@ -810,8 +810,8 @@ esp_err_t HttpService::set_smart_control_params(httpd_req_t* req) {
   }
   auto left_torque = std::get<double>(left_torque_result);
   auto right_torque = std::get<double>(right_torque_result);
-  control_task->control_params.smart.left.torque = left_torque;
-  control_task->control_params.smart.right.torque = right_torque;
+  control_task->smart_controller.params.left.torque = left_torque;
+  control_task->smart_controller.params.right.torque = right_torque;
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
