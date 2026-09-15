@@ -207,7 +207,7 @@ void HttpService::set_type_json(httpd_req_t* req) {
 }
 void HttpService::set_header(httpd_req_t* req) {
   HttpService::allow_cors(req);
-  // HttpService::set_close_connection(req);
+  HttpService::set_close_connection(req);
   HttpService::set_type_json(req);
 }
 
@@ -254,8 +254,9 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
 
   res_json.set("running", control_task->running);
   res_json.set("mode", get_control_mode_str(control_task->control_mode));
-  manual_control_params_left_json.set("torque", control_task->control_params.manual.left.torque);
-  manual_control_params_right_json.set("torque", control_task->control_params.manual.right.torque);
+  manual_control_params_left_json.set("torque", control_task->manual_controller.params.left.torque);
+  manual_control_params_right_json.set("torque",
+                                       control_task->manual_controller.params.right.torque);
   automatic_control_params_left_json.set("torque",
                                          control_task->control_params.automatic.left.torque);
   automatic_control_params_left_json.set("timeout",
@@ -481,10 +482,10 @@ esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
   auto left_torque = data.get_number("leftTorque");
   auto right_torque = data.get_number("rightTorque");
   if (std::holds_alternative<double>(left_torque)) {
-    control_task->control_params.manual.left.torque = std::get<double>(left_torque);
+    control_task->manual_controller.params.left.torque = std::get<double>(left_torque);
   }
   if (std::holds_alternative<double>(right_torque)) {
-    control_task->control_params.manual.right.torque = std::get<double>(right_torque);
+    control_task->manual_controller.params.right.torque = std::get<double>(right_torque);
   }
 
   free(ws_frame.payload);

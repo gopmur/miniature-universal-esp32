@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "controller/manual.hpp"
 #include "jaythread/thread.hpp"
 
 enum class ControlMode : uint8_t {
@@ -55,17 +56,7 @@ struct SmartControlParams {
   SmartControlParamsLeg right;
 };
 
-struct ManualControlParamsLeg {
-  float torque = 0;
-};
-
-struct ManualControlParams {
-  ManualControlParamsLeg left;
-  ManualControlParamsLeg right;
-};
-
 struct ControlParams {
-  ManualControlParams manual;
   AutomaticControlParams automatic;
   SemiautomaticControlParams semiautomatic;
   SmartControlParams smart;
@@ -76,7 +67,10 @@ class ControlTask : public Thread {
   bool running = false;
   ControlMode control_mode = ControlMode::MANUAL;
   ControlParams control_params;
+  ManualController manual_controller;
 
   private:
+  std::string tag = "control task";
+  double torque_profile(double count_timer, int total_time);
   void main();
 };
