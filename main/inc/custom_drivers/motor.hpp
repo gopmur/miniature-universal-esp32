@@ -20,9 +20,9 @@ enum class MotorDirection {
 
 class AbstractMotorDriver : public AbstractCanDeviceReader {
   protected:
+  MotorFeedback feedback;
   int id;
   twai_node_handle_t twai;
-  MotorFeedback feedback;
   float max_torque = 0;
   std::string tag = "motor";
   MotorDirection direction;
@@ -35,6 +35,10 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   virtual MotorPacket make_disable_packet() = 0;
   virtual MotorPacket make_zero_pos_packet() = 0;
   void send_packet(MotorPacket packet);
+  float apply_direction(float value);
+  void consume_position(float position);
+  void consume_velocity(float velocity);
+  void consume_torque(float torque);
 
   public:
   AbstractMotorDriver(int id,

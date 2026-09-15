@@ -28,8 +28,6 @@
 #include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
-#include "threads/get_stack_sizes.hpp"
-#include "threads/get_states.hpp"
 #include "threads/scan_wifis.hpp"
 #include "version.hpp"
 
@@ -258,19 +256,19 @@ esp_err_t HttpService::get_state_handler(httpd_req_t* req) {
   manual_control_params_right_json.set("torque",
                                        control_task->manual_controller.params.right.torque);
   automatic_control_params_left_json.set("torque",
-                                         control_task->control_params.automatic.left.torque);
+                                         control_task->automatic_controller.params.left.torque);
   automatic_control_params_left_json.set("timeout",
-                                         control_task->control_params.automatic.left.timeout);
+                                         control_task->automatic_controller.params.left.timeout);
   automatic_control_params_left_json.set(
       "velocityThreshold",
-      control_task->control_params.automatic.left.velocity_threshold);
+      control_task->automatic_controller.params.left.velocity_threshold);
   automatic_control_params_right_json.set("torque",
-                                          control_task->control_params.automatic.right.torque);
+                                          control_task->automatic_controller.params.right.torque);
   automatic_control_params_right_json.set("timeout",
-                                          control_task->control_params.automatic.right.timeout);
+                                          control_task->automatic_controller.params.right.timeout);
   automatic_control_params_right_json.set(
       "velocityThreshold",
-      control_task->control_params.automatic.right.velocity_threshold);
+      control_task->automatic_controller.params.right.velocity_threshold);
   semiautomatic_control_params_json.set(
       "weakLeg",
       get_leg_str(control_task->control_params.semiautomatic.weak_leg));
@@ -693,12 +691,12 @@ esp_err_t HttpService::set_automatic_control_params(httpd_req_t* req) {
   ESP_LOGI("PARAMS LEFT", "%f %f %f", left_timeout, left_torque, left_velocity_threshold);
   ESP_LOGI("PARAMS RIGHT", "%f %f %f", right_timeout, right_torque, right_velocity_threshold);
 
-  control_task->control_params.automatic.left.timeout = left_timeout;
-  control_task->control_params.automatic.left.torque = left_torque;
-  control_task->control_params.automatic.left.velocity_threshold = left_velocity_threshold;
-  control_task->control_params.automatic.right.timeout = right_timeout;
-  control_task->control_params.automatic.right.torque = right_torque;
-  control_task->control_params.automatic.right.velocity_threshold = right_velocity_threshold;
+  control_task->automatic_controller.params.left.timeout = left_timeout;
+  control_task->automatic_controller.params.left.torque = left_torque;
+  control_task->automatic_controller.params.left.velocity_threshold = left_velocity_threshold;
+  control_task->automatic_controller.params.right.timeout = right_timeout;
+  control_task->automatic_controller.params.right.torque = right_torque;
+  control_task->automatic_controller.params.right.velocity_threshold = right_velocity_threshold;
 
   httpd_resp_send(req, nullptr, 0);
 

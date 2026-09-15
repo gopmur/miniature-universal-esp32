@@ -14,12 +14,13 @@ struct ControllerMotorOutput {
   float torque;
 };
 
-struct ControllerOuput {
+struct ControllerOutput {
   ControllerMotorOutput left_motor;
   ControllerMotorOutput right_motor;
 };
 
 class Controller {
   public:
-  virtual ControllerOuput run(ControllerInput input);
+  float torque_profile(float count_timer, int total_time);
+  virtual ControllerOutput run(ControllerInput input);
 };

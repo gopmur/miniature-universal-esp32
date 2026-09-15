@@ -15,5 +15,5 @@ struct ManualControlParams {
 class ManualController : public Controller {
   public:
   ManualControlParams params;
-  ControllerOuput run(ControllerInput input);
+  ControllerOutput run(ControllerInput input);
 };

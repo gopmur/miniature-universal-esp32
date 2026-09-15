@@ -15,9 +15,7 @@ ODriveMotorDriver::ODriveMotorDriver(int id,
                                      float max_torque,
                                      MotorDirection direction,
                                      float torque_constant)
-    : AbstractMotorDriver(id, twai, max_torque, direction, torque_constant) {
-
-}
+    : AbstractMotorDriver(id, twai, max_torque, direction, torque_constant) {}
 
 int ODriveMotorDriver::get_packet_id(ODriveMotorCommand command) {
   return (id << 5) | static_cast<int>(command);
@@ -114,11 +112,14 @@ void ODriveMotorDriver::zero_pos() {
 void ODriveMotorDriver::consume(CanPacket packet) {
   auto command = packet.header.id & ((1 << 5) - 1);
   switch (static_cast<ODriveMotorCommand>(command)) {
-    case ODriveMotorCommand::GET_ENCODER_ESTIMATES:
+    case ODriveMotorCommand::GET_ENCODER_ESTIMATES: {
+      float* raw_position = reinterpret_cast<float*>(&packet.data.data()[0]);
+      float* raw_velocity = reinterpret_cast<float*>(&packet.data.data()[4]);
+      consume_position(*raw_position);
+      consume_velocity(*raw_velocity);
       position_valid_sem.give();
-      memcpy(&feedback.position, &packet.data.data()[0], 4);
-      memcpy(&feedback.velocity, &packet.data.data()[4], 4);
       break;
+    }
     case ODriveMotorCommand::HEARTBEAT:
       break;
     default:

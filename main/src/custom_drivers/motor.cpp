@@ -43,9 +43,7 @@ twai_frame_header_t AbstractMotorDriver::make_header() {
 
 void AbstractMotorDriver::set_torque(float torque) {
   torque *= torque_constant;
-  if (direction == MotorDirection::BACKWARD) {
-    torque = -torque;
-  }
+  torque = apply_direction(torque);
   int torque_sign = torque >= 0 ? 1 : -1;
   if (fabs(torque) > max_torque) {
     ESP_LOGW(tag.c_str(),
@@ -101,4 +99,20 @@ float AbstractMotorDriver::get_velocity() {
 }
 float AbstractMotorDriver::get_temperature() {
   return feedback.temperature;
+}
+
+float AbstractMotorDriver::apply_direction(float value) {
+  return direction == MotorDirection::BACKWARD ? -value : value;
+}
+
+void AbstractMotorDriver::consume_position(float position) {
+  feedback.position = apply_direction(position);
+}
+
+void AbstractMotorDriver::consume_velocity(float velocity) {
+  feedback.velocity = apply_direction(velocity);
+}
+
+void AbstractMotorDriver::consume_torque(float torque) {
+  feedback.torque = apply_direction(torque);
 }

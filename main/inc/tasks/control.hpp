@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include "controller/automatic.hpp"
 #include "controller/manual.hpp"
 #include "jaythread/thread.hpp"
 
@@ -15,17 +16,6 @@ struct Data3D {
   float x;
   float y;
   float z;
-};
-
-struct AutomaticControlParamsLeg {
-  float timeout = 200;
-  float torque = 5;
-  float velocity_threshold = 1.431169987;
-};
-
-struct AutomaticControlParams {
-  AutomaticControlParamsLeg left;
-  AutomaticControlParamsLeg right;
 };
 
 enum class Leg {
@@ -57,7 +47,6 @@ struct SmartControlParams {
 };
 
 struct ControlParams {
-  AutomaticControlParams automatic;
   SemiautomaticControlParams semiautomatic;
   SmartControlParams smart;
 };
@@ -68,9 +57,9 @@ class ControlTask : public Thread {
   ControlMode control_mode = ControlMode::MANUAL;
   ControlParams control_params;
   ManualController manual_controller;
+  AutomaticController automatic_controller;
 
   private:
   std::string tag = "control task";
-  double torque_profile(double count_timer, int total_time);
   void main();
 };

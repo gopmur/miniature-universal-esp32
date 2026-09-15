@@ -54,6 +54,7 @@ void MotorTask::disable_right() {
   right_motor->set_torque(0);
 }
 
+
 void MotorTask::main() {
   left_motor->init();
   right_motor->init();
