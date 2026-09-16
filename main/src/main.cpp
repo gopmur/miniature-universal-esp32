@@ -9,6 +9,8 @@
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive.hpp"
 #include "driver/gpio.h"
+#include "driver/sdspi_host.h"
+#include "driver/spi_common.h"
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_event.h"
@@ -17,11 +19,13 @@
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
 #include "esp_twai_types.h"
+#include "esp_vfs_fat.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_types_generic.h"
 #include "hal/gpio_types.h"
 #include "hal/i2c_types.h"
+#include "hal/spi_types.h"
 #include "hal/uart_types.h"
 #include "jaythread/sync.hpp"
 #include "nvs.h"
@@ -31,6 +35,7 @@
 #include "icm20948.h"
 #include "icm20948_i2c.h"
 #include "sdkconfig.h"
+#include "sdmmc_cmd.h"
 #include "soc/gpio_num.h"
 #include "tasks/can_recv.hpp"
 #include "tasks/control.hpp"
@@ -181,7 +186,6 @@ class App {
         new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.8, MotorDirection::BACKWARD, 0.08);
     right_motor =
         new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.4, MotorDirection::FORWARD, 0.04);
-    
   }
 
   void setup_gpio() {
@@ -230,6 +234,62 @@ class App {
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
   }
 
+  void setup_sd() {
+    esp_err_t ret;
+
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = false,
+        .max_files = 5,
+        .allocation_unit_size = 16 * 1024,
+    };
+    sdmmc_card_t* card;
+    const char mount_point[] = "/sd";
+
+    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
+    host.unaligned_multi_block_rw_max_chunk_size = 8;
+
+    spi_bus_config_t bus_cfg = {
+        .mosi_io_num = 23,
+        .miso_io_num = 19,
+        .sclk_io_num = 18,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4000,
+    };
+
+    ret =
+        spi_bus_initialize(static_cast<spi_host_device_t>(host.slot), &bus_cfg, SDSPI_DEFAULT_DMA);
+    if (ret != ESP_OK) {
+      ESP_LOGE("main", "failed to initialize bus.");
+      return;
+    }
+
+    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    slot_config.gpio_cs = static_cast<gpio_num_t>(5);
+    slot_config.host_id = static_cast<spi_host_device_t>(host.slot);
+
+    ESP_LOGI("main", "Mounting filesystem");
+    ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
+
+    if (ret != ESP_OK) {
+      if (ret == ESP_FAIL) {
+        ESP_LOGE("main",
+                 "Failed to mount filesystem. "
+                 "If you want the card to be formatted, set the "
+                 "CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+      } else {
+        ESP_LOGE("main",
+                 "Failed to initialize the card (%s). "
+                 "Make sure SD card lines have pull-up resistors in place.",
+                 esp_err_to_name(ret));
+      }
+      return;
+    }
+    ESP_LOGI("main", "Filesystem mounted");
+    
+    sdmmc_card_print_info(stdout, card);
+  }
+
   void setup() {
     setup_gpio();
     setup_flash();
@@ -238,6 +298,7 @@ class App {
     setup_i2c();
     setup_twai();
     setup_motors();
+    setup_sd();
 
     start_tasks();
 
@@ -246,7 +307,7 @@ class App {
 
   void start_tasks() {
     motor_task = new MotorTask(left_motor, right_motor);
-    
+
     wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
     ws_task = new WebSocketTask();
