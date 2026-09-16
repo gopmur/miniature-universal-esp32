@@ -178,9 +178,9 @@ class App {
 
   void setup_motors() {
     left_motor =
-        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.2, MotorDirection::BACKWARD, 0.01);
+        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.8, MotorDirection::BACKWARD, 0.08);
     right_motor =
-        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.2, MotorDirection::FORWARD, 0.01);
+        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.4, MotorDirection::FORWARD, 0.04);
     
   }
 
