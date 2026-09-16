@@ -1,6 +1,5 @@
 dependencies:
   espressif/cjson: ^1.7.18
   gopmur/icm20948: ^1.0.1 
-  jaythread:
-    path: "/home/ali/Documents/repos/self/jaythread"
+  gopmur/jaythread: ^1.1.0
 
