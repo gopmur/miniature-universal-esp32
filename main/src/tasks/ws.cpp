@@ -11,7 +11,7 @@
 #include "esp_timer.h"
 #include "freertos/idf_additions.h"
 #include "helper/json.hpp"
-#include "ipc/mutex.hpp"
+#include "jaythread/ipc/mutex.hpp"
 #include "jaythread/sync.hpp"
 #include "sdkconfig.h"
 #include "tasks/http.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "esp_http_server.h"
-#include "ipc/queue.hpp"
+#include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
 
 enum WifiConnectionRequestResult {

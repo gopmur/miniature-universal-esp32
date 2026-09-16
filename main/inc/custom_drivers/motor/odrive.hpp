@@ -4,7 +4,7 @@
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive/command.hpp"
 #include "custom_drivers/motor/packet.hpp"
-#include "ipc/binary_semaphore.hpp"
+#include "jaythread/ipc/binary_semaphore.hpp"
 
 class ODriveMotorFeedbackReader : public AbstractCanDeviceReader {
   void consume(CanPacket packet);

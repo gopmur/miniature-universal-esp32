@@ -3,7 +3,7 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 #include "helper/json.hpp"
-#include "ipc/queue.hpp"
+#include "jaythread/ipc/queue.hpp"
 
 
 class HttpService {

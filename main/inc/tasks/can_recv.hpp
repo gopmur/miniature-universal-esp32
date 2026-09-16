@@ -7,7 +7,7 @@
 #include "custom_drivers/can_device_reader.hpp"
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
-#include "ipc/queue.hpp"
+#include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
 
 class CanRecvTask : public Thread {

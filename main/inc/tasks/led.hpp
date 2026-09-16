@@ -1,7 +1,7 @@
 // #pragma once
 
 // #include "config.hpp"
-// #include "ipc/queue.hpp"
+// #include "jaythread/ipc/queue.hpp"
 // #include "led/modes.hpp"
 // #include "service.hpp"
 

@@ -4,8 +4,8 @@
 #include <cstddef>
 #include "config.hpp"
 #include "helper/json.hpp"
-#include "ipc/mutex.hpp"
-#include "ipc/queue.hpp"
+#include "jaythread/ipc/mutex.hpp"
+#include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
 #include "sdkconfig.h"
 

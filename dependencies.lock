@@ -23,9 +23,16 @@ dependencies:
     source:
       type: idf
     version: 6.0.2
+  jaythread:
+    dependencies: []
+    source:
+      path: ../../../repos/self/jaythread
+      type: local
+    version: 1.1.0
 direct_dependencies:
 - espressif/cjson
 - gopmur/icm20948
-manifest_hash: bbe3e0de637a04157792cd6d96a6d3b322ccfe68d932190ac6a6e165548cffd9
+- jaythread
+manifest_hash: 9fc79d597727ef3147776366720dcd3a810fb6954b3fd8f210e305a46d43e64e
 target: esp32
 version: 3.0.0
