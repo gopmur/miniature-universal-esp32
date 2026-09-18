@@ -25,6 +25,7 @@
 #include "jaythread/sync.hpp"
 #include "tasks/control.hpp"
 #include "tasks/http/helper.hpp"
+#include "tasks/logger.hpp"
 #include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
@@ -35,6 +36,7 @@ extern WebSocketTask* ws_task;
 extern ControlTask* control_task;
 extern MotorTask* motor_task;
 extern WifiConHandlerTask* wifi_con_handler_task;
+extern LoggerTask* logger_task;
 extern AbstractMotorDriver* left_motor;
 extern AbstractMotorDriver* right_motor;
 ScanWifisThread scan_wifis_thread;
@@ -105,6 +107,20 @@ esp_err_t HttpService::connect_to_wifi_handler(httpd_req_t* req) {
 esp_err_t HttpService::disconnect_wifi_handler(httpd_req_t* req) {
   set_header(req);
   esp_wifi_disconnect();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::start_log(httpd_req_t* req) {
+  set_header(req);
+  logger_task->start_new_log();
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::stop_log(httpd_req_t* req) {
+  set_header(req);
+  logger_task->stop_log();
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }
@@ -374,55 +390,6 @@ esp_err_t HttpService::set_mode_smart_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::start_cpu_usage_stream_handler(httpd_req_t* req) {
-  set_header(req);
-  ws_task->enable_stream(WsStream::ESP_TASK_DATA);
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
-}
-esp_err_t HttpService::stop_cpu_usage_stream_handler(httpd_req_t* req) {
-  set_header(req);
-  ws_task->disable_stream(WsStream::ESP_TASK_DATA);
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
-}
-
-esp_err_t HttpService::start_imu_data_stream_handler(httpd_req_t* req) {
-  set_header(req);
-  ws_task->enable_stream(WsStream::IMU_DATA);
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-                      HttpService::LOG_TAG,
-                      "Start imu data stream failed");
-  return ESP_OK;
-}
-
-esp_err_t HttpService::stop_imu_data_stream_handler(httpd_req_t* req) {
-  set_header(req);
-  ws_task->disable_stream(WsStream::IMU_DATA);
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-                      HttpService::LOG_TAG,
-                      "Stop imu data stream failed");
-  return ESP_OK;
-}
-
-esp_err_t HttpService::start_motor_data_stream_handler(httpd_req_t* req) {
-  set_header(req);
-  ws_task->enable_stream(WsStream::MOTOR_DATA);
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-                      HttpService::LOG_TAG,
-                      "Start motor data stream failed");
-  return ESP_OK;
-}
-
-esp_err_t HttpService::stop_motor_data_stream_handler(httpd_req_t* req) {
-  set_header(req);
-  ws_task->disable_stream(WsStream::MOTOR_DATA);
-  ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0),
-                      HttpService::LOG_TAG,
-                      "Stop motor data stream failed");
-  return ESP_OK;
-}
-
 esp_err_t HttpService::restart_handler(httpd_req_t* req) {
   set_header(req);
   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), HttpService::LOG_TAG, "Restart failed");
@@ -452,42 +419,53 @@ esp_err_t HttpService::options_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::ws_data_post_handshake_handler(httpd_req_t* req) {
-  auto client_fd = httpd_req_to_sockfd(req);
-  ws_task->start_sending(client_fd);
+// esp_err_t HttpService::ws_data_post_handshake_handler(httpd_req_t* req) {
+//   auto client_fd = httpd_req_to_sockfd(req);
+//   ws_task->start_sending(client_fd);
+//   return ESP_OK;
+// }
+
+// esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
+//   httpd_ws_frame_t ws_frame;
+//   memset(&ws_frame, 0, sizeof(ws_frame));
+//   ws_frame.type = HTTPD_WS_TYPE_TEXT;
+//   httpd_ws_recv_frame(req, &ws_frame, 0);
+//   if (!ws_frame.len) {
+//     return ESP_OK;
+//   }
+//   ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
+//   httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
+//   ws_frame.payload[ws_frame.len] = 0;
+//   auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
+
+//   if (std::holds_alternative<JsonError>(data_result)) {
+//     free(ws_frame.payload);
+//     return ESP_OK;
+//   }
+
+//   auto data = std::get<JsonObject>(data_result);
+
+//   auto left_torque = data.get_number("leftTorque");
+//   auto right_torque = data.get_number("rightTorque");
+//   if (std::holds_alternative<double>(left_torque)) {
+//     control_task->manual_controller.params.left.torque = std::get<double>(left_torque);
+//   }
+//   if (std::holds_alternative<double>(right_torque)) {
+//     control_task->manual_controller.params.right.torque = std::get<double>(right_torque);
+//   }
+
+//   free(ws_frame.payload);
+//   return ESP_OK;
+// }
+
+esp_err_t HttpService::ws_imu_stream_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
-  httpd_ws_frame_t ws_frame;
-  memset(&ws_frame, 0, sizeof(ws_frame));
-  ws_frame.type = HTTPD_WS_TYPE_TEXT;
-  httpd_ws_recv_frame(req, &ws_frame, 0);
-  if (!ws_frame.len) {
-    return ESP_OK;
-  }
-  ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
-  httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
-  ws_frame.payload[ws_frame.len] = 0;
-  auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
-
-  if (std::holds_alternative<JsonError>(data_result)) {
-    free(ws_frame.payload);
-    return ESP_OK;
-  }
-
-  auto data = std::get<JsonObject>(data_result);
-
-  auto left_torque = data.get_number("leftTorque");
-  auto right_torque = data.get_number("rightTorque");
-  if (std::holds_alternative<double>(left_torque)) {
-    control_task->manual_controller.params.left.torque = std::get<double>(left_torque);
-  }
-  if (std::holds_alternative<double>(right_torque)) {
-    control_task->manual_controller.params.right.torque = std::get<double>(right_torque);
-  }
-
-  free(ws_frame.payload);
+esp_err_t HttpService::ws_imu_stream_post_handshake_handler(httpd_req_t* req) {
+  ESP_LOGI("ws", "imu stream websocket handshake completed");
+  auto client_fd = httpd_req_to_sockfd(req);
+  ws_task->start_sending(client_fd, WsStream::IMU_DATA);
   return ESP_OK;
 }
 
@@ -831,30 +809,13 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   // this->register_http_uri("/api/update/check", HTTP_GET, HttpService::check_for_update_handler);
   this->register_http_uri("/api/restart", HTTP_GET, HttpService::restart_handler);
   this->register_http_uri("/api/states", HTTP_GET, HttpService::get_state_handler);
-  this->register_http_uri("/api/streams/start/imu",
-                          HTTP_GET,
-                          HttpService::start_imu_data_stream_handler);
-  this->register_http_uri("/api/streams/stop/imu",
-                          HTTP_GET,
-                          HttpService::stop_imu_data_stream_handler);
-
-  this->register_http_uri("/api/streams/start/motor",
-                          HTTP_GET,
-                          HttpService::start_motor_data_stream_handler);
-  this->register_http_uri("/api/streams/stop/motor",
-                          HTTP_GET,
-                          HttpService::stop_motor_data_stream_handler);
-  this->register_http_uri("/api/streams/start/esp_cpu_usage",
-                          HTTP_GET,
-                          HttpService::start_cpu_usage_stream_handler);
-  this->register_http_uri("/api/streams/stop/esp_cpu_usage",
-                          HTTP_GET,
-                          HttpService::stop_cpu_usage_stream_handler);
   this->register_http_uri("/api/wifi/scan", HTTP_GET, HttpService::scan_wifi_handler);
   this->register_http_uri("/api/wifi", HTTP_GET, HttpService::get_connected_wifi);
   this->register_http_uri("/api/wifi/connect", HTTP_POST, HttpService::connect_to_wifi_handler);
   this->register_http_uri("/api/wifi/disconnect", HTTP_GET, HttpService::disconnect_wifi_handler);
   this->register_http_uri("/api/motors/zero_pos", HTTP_GET, HttpService::motor_zero_pos);
+  this->register_http_uri("/api/log/stop", HTTP_GET, HttpService::stop_log);
+  this->register_http_uri("/api/log/start", HTTP_GET, HttpService::start_log);
   this->register_http_uri_with_option("/api/start", HTTP_PUT, HttpService::start_handler);
   this->register_http_uri_with_option("/api/stop", HTTP_PUT, HttpService::stop_handler);
   this->register_http_uri_with_option("/api/set-mode/manual",
@@ -877,7 +838,11 @@ esp_err_t HttpService::register_dynamic_endpoints() {
                                       HTTP_PUT,
                                       set_semiautomatic_control_params);
   this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
-  this->register_ws_uri("/api/data", HttpService::ws_data_handler, ws_data_post_handshake_handler);
+  // this->register_ws_uri("/api/data", HttpService::ws_data_handler,
+  // ws_data_post_handshake_handler);
+  this->register_ws_uri("/api/stream/imu",
+                        HttpService::ws_imu_stream_handler,
+                        ws_imu_stream_post_handshake_handler);
   return ESP_OK;
 }
 

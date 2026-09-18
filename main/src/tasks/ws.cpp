@@ -22,48 +22,10 @@ extern HttpService* http_service;
 extern AbstractMotorDriver* left_motor;
 extern AbstractMotorDriver* right_motor;
 
-WebSocketTask::WebSocketTask() : connection_mutex(true) {
-  connection_age.fill(-1);
-  connection_fds.fill(-1);
-  connection_count = 0;
-  stream_enabled.fill(false);
-};
-
-bool WebSocketTask::stream_is_enabled(WsStream stream) {
-  return this->stream_enabled[static_cast<size_t>(stream)];
-}
-
-void WebSocketTask::enable_stream(WsStream stream) {
-  if (this->stream_is_enabled(stream)) {
-    return;
-  }
-  enabled_stream_count++;
-  this->stream_enabled[static_cast<size_t>(stream)] = true;
-  if (enabled_stream_count == 1) {
-    this->resume();
-  }
-}
-void WebSocketTask::disable_stream(WsStream stream) {
-  if (!this->stream_is_enabled(stream)) {
-    return;
-  }
-  enabled_stream_count--;
-  this->stream_enabled[static_cast<size_t>(stream)] = false;
-  if (enabled_stream_count == 0) {
-    this->suspend();
-  }
-}
-
-bool WebSocketTask::has_connections() {
-  return connection_count > 0;
-}
+WebSocketTask::WebSocketTask() : connection_mutex(true) {};
 
 void WebSocketTask::fill_esp_task_data_json(JsonObject* esp_cpu_usage_json,
                                             JsonObject* esp_heap_json) {
-  if (!this->stream_is_enabled(WsStream::ESP_TASK_DATA)) {
-    return;
-  }
-
   UBaseType_t taskCount = uxTaskGetNumberOfTasks();
   std::vector<TaskStatus_t> statusArray(taskCount);
   uint64_t totalRunTime = 0;
@@ -233,18 +195,14 @@ void WebSocketTask::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json,
 }
 
 void WebSocketTask::fill_imu_data_json(JsonObject* imu_data_json) {
-  if (this->stream_is_enabled(WsStream::IMU_DATA)) {
-    imu_data_json->set("x", imu_task->data.gyro.x);
-    imu_data_json->set("y", imu_task->data.gyro.y);
-    imu_data_json->set("z", imu_task->data.gyro.z);
-  }
+  imu_data_json->set("x", imu_task->data.gyro.x);
+  imu_data_json->set("y", imu_task->data.gyro.y);
+  imu_data_json->set("z", imu_task->data.gyro.z);
 }
 
 void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {
-  if (this->stream_is_enabled(WsStream::MOTOR_DATA)) {
-    motor_data_json->set("leftPosition", left_motor->get_position());
-    motor_data_json->set("rightPosition", right_motor->get_position());
-  }
+  motor_data_json->set("leftPosition", left_motor->get_position());
+  motor_data_json->set("rightPosition", right_motor->get_position());
 }
 
 // void WebSocketTask::fill_ota_progress_json(JsonObject* ota_json) {
@@ -259,22 +217,21 @@ void WebSocketTask::fill_root_json(JsonObject* json,
                                    JsonObject* motor_data_json,
                                    JsonObject* esp_heap,
                                    JsonObject* ota_progress) {
-  if (this->stream_is_enabled(WsStream::STM_TASK_DATA))
-    json->set("stmCpuUsage", stm_cpu_usage_json);
-  if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
-    json->set("espCpuUsage", esp_cpu_usage_json);
-  if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
-    json->set("espHeap", esp_heap);
-  if (this->stream_is_enabled(WsStream::IMU_DATA))
-    json->set("imu", imu_data_json);
-  if (this->stream_is_enabled(WsStream::MOTOR_DATA))
-    json->set("motor", motor_data_json);
-  if (this->stream_is_enabled(WsStream::OTA_PROGRESS))
-    json->set("ota_progress", ota_progress);
+  // if (this->stream_is_enabled(WsStream::STM_TASK_DATA))
+  //   json->set("stmCpuUsage", stm_cpu_usage_json);
+  // if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
+  //   json->set("espCpuUsage", esp_cpu_usage_json);
+  // if (this->stream_is_enabled(WsStream::ESP_TASK_DATA))
+  //   json->set("espHeap", esp_heap);
+  // if (this->stream_is_enabled(WsStream::IMU_DATA))
+  //   json->set("imu", imu_data_json);
+  // if (this->stream_is_enabled(WsStream::MOTOR_DATA))
+  //   json->set("motor", motor_data_json);
+  // if (this->stream_is_enabled(WsStream::OTA_PROGRESS))
+  //   json->set("ota_progress", ota_progress);
 }
 
-void WebSocketTask::send_to_connections(const char* data) {
-  connection_mutex.take();
+esp_err_t WebSocketTask::send_to_connection(int fd, const char* data) {
   httpd_ws_frame_t ws_packet = {
       .final = true,
       .fragmented = false,
@@ -282,94 +239,78 @@ void WebSocketTask::send_to_connections(const char* data) {
       .payload = (uint8_t*)data,
       .len = strlen(data),
   };
-  for (int i = 0; i < this->connection_count; i++) {
-    int fd = this->connection_fds[i];
-    esp_err_t ret = httpd_ws_send_data(http_service->server_instance, fd, &ws_packet);
 
-    if (ret != ESP_OK) {
-      this->stop_sending(fd);
-      if (this->connection_count == 0) {
-        connection_mutex.give();
-        this->suspend();
-        return;
-      }
-    }
-  }
-  connection_mutex.give();
+  return httpd_ws_send_data(http_service->server_instance, fd, &ws_packet);
 }
 
 void WebSocketTask::main() {
-  JsonObject json;
   JsonObject esp_cpu_usage_json;
-  JsonObject stm_cpu_usage_json;
   JsonObject imu_data_json;
   JsonObject motor_data_json;
   JsonObject esp_heap;
-  JsonObject stm_heap;
   JsonObject ota_progress;
 
-  auto json_str = json.stringify();
   while (true) {
-    this->suspend();
+    Sync::wait_for_notification();
+    ESP_LOGI(tag.c_str(), "woke up");
     while (true) {
-      uint64_t microseconds = esp_timer_get_time();
-      if (!this->has_connections()) {
+      connection_mutex.take();
+      auto no_connections = connections.empty();
+      connection_mutex.give();
+      if (no_connections) {
+        ESP_LOGI(tag.c_str(), "no connections available. going to sleep");
         break;
       }
-      fill_imu_data_json(&imu_data_json);
-      fill_motor_data_json(&motor_data_json);
-      fill_esp_task_data_json(&esp_cpu_usage_json, &esp_heap);
-      fill_root_json(&json,
-                     &stm_cpu_usage_json,
-                     &esp_cpu_usage_json,
-                     &imu_data_json,
-                     &motor_data_json,
-                     &esp_heap,
-                     &ota_progress);
-      // this->fill_ota_progress_json(&ota_progress);
 
-      if (!json.is_empty()) {
-        json.set("microseconds", microseconds);
-        this->send_to_connections(json.stringify().c_str());
-        json = JsonObject();
-        esp_cpu_usage_json = JsonObject();
-        stm_cpu_usage_json = JsonObject();
-        imu_data_json = JsonObject();
+      esp_cpu_usage_json = JsonObject();
+      imu_data_json = JsonObject();
+      motor_data_json = JsonObject();
+      esp_heap = JsonObject();
+      ota_progress = JsonObject();
+
+      connection_mutex.take();
+      auto connections_copy = this->connections;
+      esp_err_t ret;
+      for (auto connection : connections_copy) {
+        switch (connection.stream) {
+          case WsStream::IMU_DATA: {
+            if (imu_data_json.is_empty())
+              fill_imu_data_json(&imu_data_json);
+            auto imu_str = imu_data_json.stringify();
+            ret = send_to_connection(connection.fd, imu_str.c_str());
+            break;
+          }
+          default:
+            ESP_LOGE(tag.c_str(),
+                     "unhandled outgoing stream %d",
+                     static_cast<uint32_t>(connection.stream));
+        }
+        if (ret != ESP_OK) {
+          stop_sending(connection.fd);
+        }
       }
+      connection_mutex.give();
       Sync::sleep(30);
     }
   }
 }
 
-void WebSocketTask::start_sending(int fd) {
+void WebSocketTask::start_sending(int fd, WsStream stream) {
   connection_mutex.take();
-  for (int i = 0; i < this->connection_count; i++) {
-    if (this->connection_fds[i] == fd) {
+  for (auto& connection : connections) {
+    if (connection.fd == fd) {
+      connection.stream = stream;
       goto cleanup;
     }
   }
-  if (connection_count < CONFIG_HEXA_WS_MAX_CONNECTIONS) {
-    this->connection_fds[this->connection_count] = fd;
-    for (int i = 0; i < this->connection_count; i++) {
-      this->connection_age[i]++;
-    }
-    this->connection_age[this->connection_count] = 0;
-    this->connection_count++;
-  } else {
-    int max_age_connection = 0;
-    int max_age = 0;
-    for (int i = 0; i < this->connection_count; i++) {
-      if (this->connection_age[i] > max_age) {
-        max_age = this->connection_age[i];
-        max_age_connection = i;
-      }
-      this->connection_age[i]++;
-    }
-    this->connection_age[max_age_connection] = 0;
-    this->connection_fds[max_age_connection] = fd;
-  }
-  if (enabled_stream_count > 0) {
-    this->resume();
+
+  connections.push_back({
+      .fd = fd,
+      .stream = stream,
+  });
+
+  if (connections.size() == 1) {
+    notify();
   }
 
 cleanup:
@@ -378,31 +319,16 @@ cleanup:
 
 void WebSocketTask::stop_sending(int fd) {
   connection_mutex.take();
-  int connection_to_remove = -1;
-  int connection_to_remove_age = 0;
-  if (this->connection_count == 0) {
-    goto cleanup;
-  }
-  for (int i = 0; i < this->connection_count; i++) {
-    if (this->connection_fds[i] == fd) {
-      connection_to_remove = i;
-      connection_to_remove_age = this->connection_age[i];
+  int connection_index_to_remove = -1;
+  for (int i = 0; i < connections.size(); i++) {
+    auto connection = connections[i];
+    if (connection.fd == fd) {
+      connection_index_to_remove = i;
       break;
     }
   }
-  if (connection_to_remove == -1) {
-    goto cleanup;
+  if (connection_index_to_remove != -1) {
+    connections.erase(connections.begin() + connection_index_to_remove);
   }
-  for (int i = 0; i < this->connection_count; i++) {
-    if (this->connection_age[i] > connection_to_remove_age) {
-      this->connection_age[i]--;
-    }
-  }
-  for (int i = connection_to_remove; i < this->connection_count - 1; i++) {
-    this->connection_age[i] = this->connection_age[i + 1];
-    this->connection_fds[i] = this->connection_fds[i + 1];
-  }
-  this->connection_count--;
-cleanup:
   connection_mutex.give();
 }

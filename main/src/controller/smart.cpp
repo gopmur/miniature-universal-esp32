@@ -6,15 +6,15 @@ float SmartController::calculate_output(const std::vector<float>& x) {
   float last = x[2];
 
   if (last == 0) {
-    if (velocity > 1.4) {
+    if (velocity > 0.8) {
       return 1.0;
     } else {
       return 0.0;
     }
   } else {  // last == 1
-    if (velocity > 1.4) {
+    if (velocity > 0.8) {
       return 1.0;
-    } else if (velocity >= 1.4) {
+    } else if (velocity >= 0.8) {
       return 1.0;
     } else {
       return 0.0;

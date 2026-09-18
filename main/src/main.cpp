@@ -42,6 +42,7 @@
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
 #include "tasks/imu.hpp"
+#include "tasks/logger.hpp"
 #include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
@@ -59,6 +60,7 @@ WifiConHandlerTask* wifi_con_handler_task;
 DnsTask* dns_task;
 ControlTask* control_task;
 MotorTask* motor_task;
+LoggerTask* logger_task;
 
 class App {
   private:
@@ -286,8 +288,34 @@ class App {
       return;
     }
     ESP_LOGI("main", "Filesystem mounted");
-    
+
     sdmmc_card_print_info(stdout, card);
+  }
+
+  void start_tasks() {
+    motor_task = new MotorTask(left_motor, right_motor);
+
+    wifi_con_handler_task = new WifiConHandlerTask();
+    dns_task = new DnsTask("192.168.4.1", "hexa.lan");
+    ws_task = new WebSocketTask();
+    control_task = new ControlTask();
+    imu_task = new ImuTask();
+    http_service = new HttpService();
+    logger_task = new LoggerTask();
+
+    motor_task->start("motor", 2, 4096);
+    can_recv_task->start("can_recv", 2, 4096);
+    wifi_con_handler_task->start("http_con",
+                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
+                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
+    dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
+    ws_task->start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    control_task->start("control",
+                        CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
+                        CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
+    logger_task->start("logger", 2, 4096);
+
+    imu_task->start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
   }
 
   void setup() {
@@ -303,51 +331,12 @@ class App {
     start_tasks();
 
     http_service->start();
-  }
-
-  void start_tasks() {
-    motor_task = new MotorTask(left_motor, right_motor);
-
-    wifi_con_handler_task = new WifiConHandlerTask();
-    dns_task = new DnsTask("192.168.4.1", "hexa.lan");
-    ws_task = new WebSocketTask();
-    control_task = new ControlTask();
-    imu_task = new ImuTask();
-    http_service = new HttpService();
-
-    motor_task->start("motor", 2, 4096);
-    can_recv_task->start("can_recv", 2, 4096);
-    wifi_con_handler_task->start("http_con",
-                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
-                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
-    dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
-    ws_task->start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
-    control_task->start("control",
-                        CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
-                        CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
-
-    imu_task->start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
-  }
-
-  void print_cpu_usage() {
-    // Allocate a buffer large enough for all task names and stats
-    // ~40 bytes per task is a good rule of thumb
-    char stats_buffer[1024];
-
-    vTaskGetRunTimeStats(stats_buffer);
-
-    ESP_LOGI("main",
-             "Task Run-Time Statistics:\nTask Name\tRuntime (ticks)\tPercentage\n%s",
-             stats_buffer);
-  }
-
-  public:
-  void run() {
-    setup();
-
     can_recv_task->bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
     can_recv_task->bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
   }
+
+  public:
+  void run() { setup(); }
 };
 
 extern "C" void app_main() {
