@@ -42,8 +42,7 @@ class HttpService {
   static esp_err_t set_rtc(httpd_req_t* req);
   static esp_err_t get_state_handler(httpd_req_t* req);
   static esp_err_t options_handler(httpd_req_t* req);
-  static esp_err_t ws_data_handler(httpd_req_t* req);
-  static esp_err_t ws_data_post_handshake_handler(httpd_req_t* req);
+  
   static esp_err_t set_automatic_control_params(httpd_req_t* req);
   static esp_err_t set_semiautomatic_control_params(httpd_req_t* req);
   static esp_err_t set_smart_control_params(httpd_req_t* req);
@@ -79,6 +78,8 @@ class HttpService {
   static esp_err_t ws_task_stream_post_handshake_handler(httpd_req_t* req);
   static esp_err_t ws_ota_stream_handler(httpd_req_t* req);
   static esp_err_t ws_ota_stream_post_handshake_handler(httpd_req_t* req);
+  static esp_err_t ws_manual_torque_handler(httpd_req_t* req);
+  static esp_err_t ws_manual_torque_post_handshake_handler(httpd_req_t* req);
 
   esp_err_t register_dynamic_endpoints();
 

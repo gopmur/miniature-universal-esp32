@@ -303,7 +303,7 @@ void WebSocketTask::main() {
           stop_sending(connection.fd);
         }
       }
-      Sync::sleep(30);
+      Sync::sleep(10);
     }
   }
 }

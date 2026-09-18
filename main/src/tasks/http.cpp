@@ -419,44 +419,42 @@ esp_err_t HttpService::options_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-// esp_err_t HttpService::ws_data_post_handshake_handler(httpd_req_t* req) {
-//   auto client_fd = httpd_req_to_sockfd(req);
-//   ws_task->start_sending(client_fd);
-//   return ESP_OK;
-// }
+esp_err_t HttpService::ws_manual_torque_post_handshake_handler(httpd_req_t* req) {
+  return ESP_OK;
+}
 
-// esp_err_t HttpService::ws_data_handler(httpd_req_t* req) {
-//   httpd_ws_frame_t ws_frame;
-//   memset(&ws_frame, 0, sizeof(ws_frame));
-//   ws_frame.type = HTTPD_WS_TYPE_TEXT;
-//   httpd_ws_recv_frame(req, &ws_frame, 0);
-//   if (!ws_frame.len) {
-//     return ESP_OK;
-//   }
-//   ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
-//   httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
-//   ws_frame.payload[ws_frame.len] = 0;
-//   auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
+esp_err_t HttpService::ws_manual_torque_handler(httpd_req_t* req) {
+  httpd_ws_frame_t ws_frame;
+  memset(&ws_frame, 0, sizeof(ws_frame));
+  ws_frame.type = HTTPD_WS_TYPE_TEXT;
+  httpd_ws_recv_frame(req, &ws_frame, 0);
+  if (!ws_frame.len) {
+    return ESP_OK;
+  }
+  ws_frame.payload = static_cast<uint8_t*>(malloc(ws_frame.len + 1));
+  httpd_ws_recv_frame(req, &ws_frame, ws_frame.len);
+  ws_frame.payload[ws_frame.len] = 0;
+  auto data_result = JsonObject::parse(reinterpret_cast<char*>(ws_frame.payload));
 
-//   if (std::holds_alternative<JsonError>(data_result)) {
-//     free(ws_frame.payload);
-//     return ESP_OK;
-//   }
+  if (std::holds_alternative<JsonError>(data_result)) {
+    free(ws_frame.payload);
+    return ESP_OK;
+  }
 
-//   auto data = std::get<JsonObject>(data_result);
+  auto data = std::get<JsonObject>(data_result);
 
-//   auto left_torque = data.get_number("leftTorque");
-//   auto right_torque = data.get_number("rightTorque");
-//   if (std::holds_alternative<double>(left_torque)) {
-//     control_task->manual_controller.params.left.torque = std::get<double>(left_torque);
-//   }
-//   if (std::holds_alternative<double>(right_torque)) {
-//     control_task->manual_controller.params.right.torque = std::get<double>(right_torque);
-//   }
+  auto left_torque = data.get_number("leftTorque");
+  auto right_torque = data.get_number("rightTorque");
+  if (std::holds_alternative<double>(left_torque)) {
+    control_task->manual_controller.params.left.torque = std::get<double>(left_torque);
+  }
+  if (std::holds_alternative<double>(right_torque)) {
+    control_task->manual_controller.params.right.torque = std::get<double>(right_torque);
+  }
 
-//   free(ws_frame.payload);
-//   return ESP_OK;
-// }
+  free(ws_frame.payload);
+  return ESP_OK;
+}
 
 esp_err_t HttpService::ws_imu_stream_handler(httpd_req_t* req) {
   return ESP_OK;
@@ -867,8 +865,9 @@ esp_err_t HttpService::register_dynamic_endpoints() {
                                       HTTP_PUT,
                                       set_semiautomatic_control_params);
   this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
-  // this->register_ws_uri("/api/data", HttpService::ws_data_handler,
-  // ws_data_post_handshake_handler);
+  this->register_ws_uri("/api/manual-torque",
+                        HttpService::ws_manual_torque_handler,
+                        ws_manual_torque_post_handshake_handler);
   this->register_ws_uri("/api/stream/imu",
                         HttpService::ws_imu_stream_handler,
                         ws_imu_stream_post_handshake_handler);

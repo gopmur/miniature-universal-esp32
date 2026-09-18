@@ -315,7 +315,7 @@ class App {
                         CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
     logger_task->start("logger", 2, 4096);
 
-    imu_task->start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
   }
 
   void setup() {
