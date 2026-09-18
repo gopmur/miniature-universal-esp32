@@ -9,6 +9,7 @@ Json::Json(cJSON* root, bool owned) {
   this->owned = owned;
   this->ref_count = static_cast<int*>(malloc(sizeof(int)));
   *this->ref_count = 1;
+  this->str_invalid = true;
 }
 
 Json& Json::operator=(const Json& other) {
@@ -61,6 +62,7 @@ std::variant<JsonObject, JsonError> JsonObject::parse(char* str) {
 JsonObject::JsonObject() : JsonObject(cJSON_CreateObject(), true) {}
 
 void JsonObject::set(const char* name, const char* string) {
+  str_invalid = true;
   auto item = cJSON_GetObjectItem(this->root, name);
   if (item && cJSON_IsString(item)) {
     cJSON_SetValuestring(item, string);
@@ -72,6 +74,7 @@ void JsonObject::set(const char* name, const char* string) {
 }
 
 void JsonObject::set(const char* name, JsonObject* object) {
+  str_invalid = true;
   cJSON* copy = cJSON_Duplicate(object->root, true);
   if (!copy)
     return;
@@ -84,6 +87,7 @@ void JsonObject::set(const char* name, JsonObject* object) {
 }
 
 void JsonObject::add_object(const char* name) {
+  str_invalid = true;
   auto object = cJSON_GetObjectItem(this->root, name);
   if (object && cJSON_IsObject(object)) {
     return;
@@ -92,6 +96,7 @@ void JsonObject::add_object(const char* name) {
 }
 
 void JsonObject::set(const char* name, JsonArray* array) {
+  str_invalid = true;
   cJSON* copy = cJSON_Duplicate(array->root, true);
   if (!copy) {
     return;
@@ -105,6 +110,7 @@ void JsonObject::set(const char* name, JsonArray* array) {
 }
 
 void JsonObject::set(const char* name, bool boolean) {
+  str_invalid = true;
   auto item = cJSON_GetObjectItem(this->root, name);
   if (item && cJSON_IsBool(item)) {
     cJSON_SetBoolValue(item, boolean);
@@ -116,6 +122,7 @@ void JsonObject::set(const char* name, bool boolean) {
 }
 
 void JsonObject::set(const char* name, JsonError error) {
+  str_invalid = true;
   const char* error_message = "";
   switch (error) {
     case JsonError::NOT_PROVIDED:
@@ -151,9 +158,8 @@ std::variant<JsonObject, JsonError> JsonObject::get_object(const char* name) {
   }
 }
 
-std::variant<JsonObject, JsonError> JsonObject::get_object(
-    const char* name,
-    JsonObject* error_object) {
+std::variant<JsonObject, JsonError> JsonObject::get_object(const char* name,
+                                                           JsonObject* error_object) {
   auto child_object = this->get_object(name);
   if (std::holds_alternative<JsonError>(child_object)) {
     error_object->set(name, std::get<JsonError>(child_object));
@@ -172,9 +178,7 @@ std::variant<double, JsonError> JsonObject::get_number(const char* name) {
   }
 }
 
-std::variant<double, JsonError> JsonObject::get_number(
-    const char* name,
-    JsonObject* error_object) {
+std::variant<double, JsonError> JsonObject::get_number(const char* name, JsonObject* error_object) {
   auto number = this->get_number(name);
   if (std::holds_alternative<JsonError>(number)) {
     error_object->set(name, std::get<JsonError>(number));
@@ -193,9 +197,7 @@ std::variant<char*, JsonError> JsonObject::get_string(const char* name) {
   }
 }
 
-std::variant<char*, JsonError> JsonObject::get_string(
-    const char* name,
-    JsonObject* error_object) {
+std::variant<char*, JsonError> JsonObject::get_string(const char* name, JsonObject* error_object) {
   auto string = this->get_string(name);
   if (std::holds_alternative<JsonError>(string)) {
     error_object->set(name, std::get<JsonError>(string));
@@ -207,10 +209,14 @@ bool JsonObject::is_empty() {
   return cJSON_IsObject(this->root) && this->root->child == nullptr;
 }
 
-std::string JsonObject::stringify() {
+std::string Json::stringify() {
+  if (!str_invalid) {
+    return str;
+  }
   auto c_str = cJSON_PrintUnformatted(this->root);
-  auto str = std::string(c_str);
+  str = std::string(c_str);
   free(c_str);
+  str_invalid = false;
   return str;
 }
 
@@ -233,13 +239,10 @@ int JsonArray::len() {
 }
 
 void JsonArray::append_object(JsonObject* object) {
+  str_invalid = true;
   auto copy = cJSON_Duplicate(object->root, true);
   if (!copy) {
     return;
   }
   cJSON_AddItemToArray(this->root, copy);
 };
-
-char* JsonArray::stringify() {
-  return cJSON_PrintUnformatted(this->root);
-}

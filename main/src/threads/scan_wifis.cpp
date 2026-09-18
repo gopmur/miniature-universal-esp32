@@ -54,9 +54,9 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
     root_json.append_object(&ap_json);
   }
   auto res_str = root_json.stringify();
+  auto res_str_c = res_str.c_str();
 
-  httpd_resp_send(req, res_str, HTTPD_RESP_USE_STRLEN);
-  free(res_str);
+  httpd_resp_send(req, res_str_c, HTTPD_RESP_USE_STRLEN);
   free(ap_records);
   httpd_req_async_handler_complete(req);
 }

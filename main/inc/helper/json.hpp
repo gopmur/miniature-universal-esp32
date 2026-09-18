@@ -20,16 +20,19 @@ class Json {
   private:
   int* ref_count;
   bool owned;
-  
+
   protected:
   cJSON* root;
   Json(cJSON* root, bool owned);
+  std::string str;
+  bool str_invalid = true;
   void release();
-
+  
   public:
   Json& operator=(const Json& other);
   Json(const Json& other);
   ~Json();
+  std::string stringify();
 };
 
 class JsonArray : public Json {
@@ -45,8 +48,6 @@ class JsonArray : public Json {
   int len();
 
   void append_object(JsonObject* object);
-
-  char* stringify();
 };
 
 class JsonObject : public Json {
@@ -71,20 +72,16 @@ class JsonObject : public Json {
   void add_object(const char* name);
 
   std::variant<JsonObject, JsonError> get_object(const char* name);
-  std::variant<JsonObject, JsonError> get_object(const char* name,
-                                                 JsonObject* error_object);
+  std::variant<JsonObject, JsonError> get_object(const char* name, JsonObject* error_object);
   std::variant<double, JsonError> get_number(const char* name);
-  std::variant<double, JsonError> get_number(const char* name,
-                                             JsonObject* error_object);
+  std::variant<double, JsonError> get_number(const char* name, JsonObject* error_object);
   std::variant<char*, JsonError> get_string(const char* name);
-  std::variant<char*, JsonError> get_string(const char* name,
-                                            JsonObject* error_object);
-
-  std::string stringify();
+  std::variant<char*, JsonError> get_string(const char* name, JsonObject* error_object);
 };
 
 template <Numeric T>
 void JsonObject::set(const char* name, T number) {
+  str_invalid = true;
   auto item = cJSON_GetObjectItem(this->root, name);
   if (item && cJSON_IsNumber(item)) {
     cJSON_SetNumberValue(item, number);

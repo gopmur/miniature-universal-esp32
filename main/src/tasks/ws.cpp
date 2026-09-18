@@ -239,7 +239,6 @@ esp_err_t WebSocketTask::send_to_connection(int fd, const char* data) {
       .payload = (uint8_t*)data,
       .len = strlen(data),
   };
-
   return httpd_ws_send_data(http_service->server_instance, fd, &ws_packet);
 }
 
@@ -270,6 +269,7 @@ void WebSocketTask::main() {
 
       connection_mutex.take();
       auto connections_copy = this->connections;
+      connection_mutex.give();
       esp_err_t ret;
       for (auto connection : connections_copy) {
         switch (connection.stream) {
@@ -284,12 +284,12 @@ void WebSocketTask::main() {
             ESP_LOGE(tag.c_str(),
                      "unhandled outgoing stream %d",
                      static_cast<uint32_t>(connection.stream));
+            break;
         }
         if (ret != ESP_OK) {
           stop_sending(connection.fd);
         }
       }
-      connection_mutex.give();
       Sync::sleep(30);
     }
   }

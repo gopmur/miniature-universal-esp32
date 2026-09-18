@@ -463,7 +463,6 @@ esp_err_t HttpService::ws_imu_stream_handler(httpd_req_t* req) {
 }
 
 esp_err_t HttpService::ws_imu_stream_post_handshake_handler(httpd_req_t* req) {
-  ESP_LOGI("ws", "imu stream websocket handshake completed");
   auto client_fd = httpd_req_to_sockfd(req);
   ws_task->start_sending(client_fd, WsStream::IMU_DATA);
   return ESP_OK;
