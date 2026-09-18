@@ -468,6 +468,36 @@ esp_err_t HttpService::ws_imu_stream_post_handshake_handler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpService::ws_motor_stream_handler(httpd_req_t* req) {
+  return ESP_OK;
+}
+
+esp_err_t HttpService::ws_motor_stream_post_handshake_handler(httpd_req_t* req) {
+  auto client_fd = httpd_req_to_sockfd(req);
+  ws_task->start_sending(client_fd, WsStream::MOTOR_DATA);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::ws_task_stream_handler(httpd_req_t* req) {
+  return ESP_OK;
+}
+
+esp_err_t HttpService::ws_task_stream_post_handshake_handler(httpd_req_t* req) {
+  auto client_fd = httpd_req_to_sockfd(req);
+  ws_task->start_sending(client_fd, WsStream::ESP_TASK_DATA);
+  return ESP_OK;
+}
+
+esp_err_t HttpService::ws_ota_stream_handler(httpd_req_t* req) {
+  return ESP_OK;
+}
+
+esp_err_t HttpService::ws_ota_stream_post_handshake_handler(httpd_req_t* req) {
+  auto client_fd = httpd_req_to_sockfd(req);
+  ws_task->start_sending(client_fd, WsStream::OTA_PROGRESS);
+  return ESP_OK;
+}
+
 esp_err_t HttpService::register_http_uri(const char* uri_address,
                                          httpd_method_t method,
                                          esp_err_t (*handler)(httpd_req_t* req)) {
@@ -842,6 +872,15 @@ esp_err_t HttpService::register_dynamic_endpoints() {
   this->register_ws_uri("/api/stream/imu",
                         HttpService::ws_imu_stream_handler,
                         ws_imu_stream_post_handshake_handler);
+  this->register_ws_uri("/api/stream/motor",
+                        HttpService::ws_motor_stream_handler,
+                        ws_motor_stream_post_handshake_handler);
+  this->register_ws_uri("/api/stream/tasks",
+                        HttpService::ws_task_stream_handler,
+                        ws_task_stream_post_handshake_handler);
+  this->register_ws_uri("/api/stream/ota",
+                        HttpService::ws_ota_stream_handler,
+                        ws_ota_stream_post_handshake_handler);
   return ESP_OK;
 }
 

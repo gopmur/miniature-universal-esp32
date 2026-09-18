@@ -194,13 +194,19 @@ void WebSocketTask::fill_json_with_packet_data(JsonObject* stm_cpu_usage_json,
   // }
 }
 
+void WebSocketTask::add_time_stamp(JsonObject* json) {
+  json->set("microseconds", esp_timer_get_time());
+}
+
 void WebSocketTask::fill_imu_data_json(JsonObject* imu_data_json) {
+  add_time_stamp(imu_data_json);
   imu_data_json->set("x", imu_task->data.gyro.x);
   imu_data_json->set("y", imu_task->data.gyro.y);
   imu_data_json->set("z", imu_task->data.gyro.z);
 }
 
 void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {
+  add_time_stamp(motor_data_json);
   motor_data_json->set("leftPosition", left_motor->get_position());
   motor_data_json->set("rightPosition", right_motor->get_position());
 }
@@ -231,13 +237,13 @@ void WebSocketTask::fill_root_json(JsonObject* json,
   //   json->set("ota_progress", ota_progress);
 }
 
-esp_err_t WebSocketTask::send_to_connection(int fd, const char* data) {
+esp_err_t WebSocketTask::send_to_connection(int fd, std::string& data) {
   httpd_ws_frame_t ws_packet = {
       .final = true,
       .fragmented = false,
       .type = HTTPD_WS_TYPE_TEXT,
-      .payload = (uint8_t*)data,
-      .len = strlen(data),
+      .payload = reinterpret_cast<uint8_t*>(const_cast<char*>(data.c_str())),
+      .len = data.size(),
   };
   return httpd_ws_send_data(http_service->server_instance, fd, &ws_packet);
 }
@@ -277,7 +283,14 @@ void WebSocketTask::main() {
             if (imu_data_json.is_empty())
               fill_imu_data_json(&imu_data_json);
             auto imu_str = imu_data_json.stringify();
-            ret = send_to_connection(connection.fd, imu_str.c_str());
+            ret = send_to_connection(connection.fd, imu_str);
+            break;
+          }
+          case WsStream::MOTOR_DATA: {
+            if (motor_data_json.is_empty())
+              fill_motor_data_json(&motor_data_json);
+            auto motor_str = motor_data_json.stringify();
+            ret = send_to_connection(connection.fd, motor_str);
             break;
           }
           default:
