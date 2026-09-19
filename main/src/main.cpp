@@ -27,6 +27,7 @@
 #include "hal/i2c_types.h"
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
+#include "jaythread/executable.hpp"
 #include "jaythread/sync.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -43,6 +44,7 @@
 #include "tasks/http.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/logger.hpp"
+#include "tasks/monitor.hpp"
 #include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
@@ -61,6 +63,7 @@ DnsTask* dns_task;
 ControlTask* control_task;
 MotorTask* motor_task;
 LoggerTask* logger_task;
+MonitorTask* monitor_task;
 
 class App {
   private:
@@ -302,6 +305,7 @@ class App {
     imu_task = new ImuTask();
     http_service = new HttpService();
     logger_task = new LoggerTask();
+    monitor_task = new MonitorTask();
 
     motor_task->start("motor", 2, 4096);
     can_recv_task->start("can_recv", 2, 4096);
@@ -316,6 +320,7 @@ class App {
     logger_task->start("logger", 2, 4096);
 
     imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    monitor_task->start("monitor", 2, 4096);
   }
 
   void setup() {
@@ -336,7 +341,9 @@ class App {
   }
 
   public:
-  void run() { setup(); }
+  void run() {
+    setup();
+  }
 };
 
 extern "C" void app_main() {
