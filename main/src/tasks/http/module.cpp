@@ -39,3 +39,75 @@ void HttpModule::register_uri(const char* uri_address,
   ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
   ESP_LOGI("http module", "uri address registered %s", full_uri_address->c_str());
 }
+
+void HttpModule::register_ws_uri(const char* uri_address,
+                                 esp_err_t (*handler)(httpd_req_t* req),
+                                 esp_err_t (*post_handshake_handler)(httpd_req_t* req)) {
+  httpd_uri_t uri = {
+      .uri = uri_address,
+      .method = HTTP_GET,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = true,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = post_handshake_handler,
+
+  };
+  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
+}
+
+void HttpModule::register_http_uri_with_option(const char* uri_address,
+                                               httpd_method_t method,
+                                               esp_err_t (*handler)(httpd_req_t* req)) {
+  httpd_uri uri = {
+      .uri = uri_address,
+      .method = method,
+      .handler = handler,
+      .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = nullptr,
+  };
+
+  httpd_uri option_uri = {
+      .uri = uri_address,
+      .method = HTTP_OPTIONS,
+      .handler = options_handler,
+      .user_ctx = nullptr,
+      .is_websocket = false,
+      .handle_ws_control_frames = false,
+      .supported_subprotocol = nullptr,
+      .ws_post_handshake_cb = nullptr,
+  };
+
+  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
+  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &option_uri));
+}
+
+esp_err_t HttpModule::options_handler(httpd_req_t* req) {
+  set_header(req);
+  httpd_resp_send(req, NULL, 0);
+  return ESP_OK;
+}
+
+void HttpModule::allow_cors(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, PUT, POST, OPTIONS");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+}
+
+void HttpModule::set_close_connection(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Connection", "close");
+}
+
+void HttpModule::set_type_json(httpd_req_t* req) {
+  httpd_resp_set_type(req, "application/json");
+}
+
+void HttpModule::set_header(httpd_req_t* req) {
+  allow_cors(req);
+  set_close_connection(req);
+  set_type_json(req);
+}
