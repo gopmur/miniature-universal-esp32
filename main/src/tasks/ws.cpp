@@ -16,11 +16,13 @@
 #include "sdkconfig.h"
 #include "tasks/http.hpp"
 #include "tasks/imu.hpp"
+#include "tasks/monitor.hpp"
 
 extern ImuTask* imu_task;
 extern HttpService* http_service;
 extern AbstractMotorDriver* left_motor;
 extern AbstractMotorDriver* right_motor;
+extern MonitorTask* monitor_task;
 
 WebSocketTask::WebSocketTask() : connection_mutex(true) {};
 
@@ -211,6 +213,22 @@ void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {
   motor_data_json->set("rightPosition", right_motor->get_position());
 }
 
+void WebSocketTask::fill_task_status_json(JsonObject* task_status_json) {
+  auto tasks_status = monitor_task->get_threads_status();
+  for (auto status : tasks_status) {
+    auto status_json = JsonObject();
+    status_json.set("cpu", status.cpu_usage);
+    status_json.set("minFreeStack", status.min_free_stack);
+    status_json.set("currentPriority", status.current_priority);
+    status_json.set("basePriority", status.base_priority);
+    status_json.set("state", status.get_state_view());
+    if (status.stack_size) {
+      status_json.set("stackSize", status.stack_size);
+    }
+    task_status_json->set(status.name, &status_json);
+  }
+}
+
 // void WebSocketTask::fill_ota_progress_json(JsonObject* ota_json) {
 //   ota_json->set("total", ota_total);
 //   ota_json->set("progress", ota_progress);
@@ -248,8 +266,13 @@ esp_err_t WebSocketTask::send_to_connection(int fd, std::string& data) {
   return httpd_ws_send_data(http_service->server_instance, fd, &ws_packet);
 }
 
+esp_err_t WebSocketTask::send_to_connection(int fd, JsonObject* json) {
+  auto json_str = json->stringify();
+  return send_to_connection(fd, json_str);
+}
+
 void WebSocketTask::main() {
-  JsonObject esp_cpu_usage_json;
+  JsonObject task_status_json;
   JsonObject imu_data_json;
   JsonObject motor_data_json;
   JsonObject esp_heap;
@@ -267,7 +290,7 @@ void WebSocketTask::main() {
         break;
       }
 
-      esp_cpu_usage_json = JsonObject();
+      task_status_json = JsonObject();
       imu_data_json = JsonObject();
       motor_data_json = JsonObject();
       esp_heap = JsonObject();
@@ -280,17 +303,24 @@ void WebSocketTask::main() {
       for (auto connection : connections_copy) {
         switch (connection.stream) {
           case WsStream::IMU_DATA: {
-            if (imu_data_json.is_empty())
+            if (imu_data_json.is_empty()) {
               fill_imu_data_json(&imu_data_json);
-            auto imu_str = imu_data_json.stringify();
-            ret = send_to_connection(connection.fd, imu_str);
+            }
+            ret = send_to_connection(connection.fd, &imu_data_json);
             break;
           }
           case WsStream::MOTOR_DATA: {
-            if (motor_data_json.is_empty())
+            if (motor_data_json.is_empty()) {
               fill_motor_data_json(&motor_data_json);
-            auto motor_str = motor_data_json.stringify();
-            ret = send_to_connection(connection.fd, motor_str);
+            }
+            ret = send_to_connection(connection.fd, &motor_data_json);
+            break;
+          }
+          case WsStream::ESP_TASK_DATA: {
+            if (task_status_json.is_empty()) {
+              fill_task_status_json(&task_status_json);
+            }
+            ret = send_to_connection(connection.fd, &task_status_json);
             break;
           }
           default:

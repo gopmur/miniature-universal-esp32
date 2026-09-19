@@ -45,13 +45,15 @@ class WebSocketTask : public Thread {
   void fill_ota_progress_json(JsonObject* ota_json);
   void fill_imu_data_json(JsonObject* imu_data_json);
   void fill_motor_data_json(JsonObject* motor_data_json);
+  void fill_task_status_json(JsonObject* task_status_json);
   void add_time_stamp(JsonObject* json);
   void stop_sending(int fd);
+  esp_err_t send_to_connection(int fd, std::string& data);
+  esp_err_t send_to_connection(int fd, JsonObject* json);
 
   public:
   void main();
   WebSocketTask();
-  esp_err_t send_to_connection(int fd, std::string& data);
   bool uart_streams_enabled();
   void start_sending(int fd, WsStream stream);
 };
