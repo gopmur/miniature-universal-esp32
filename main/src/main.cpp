@@ -14,6 +14,7 @@
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_event.h"
+#include "esp_http_server.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_twai.h"
@@ -27,6 +28,7 @@
 #include "hal/i2c_types.h"
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
+#include "http_parser.h"
 #include "jaythread/executable.hpp"
 #include "jaythread/sync.hpp"
 #include "nvs.h"
@@ -42,6 +44,7 @@
 #include "tasks/control.hpp"
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
+#include "tasks/http/module.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/logger.hpp"
 #include "tasks/monitor.hpp"
@@ -54,7 +57,6 @@ twai_node_handle_t twai;
 AbstractMotorDriver* left_motor;
 AbstractMotorDriver* right_motor;
 
-HttpService* http_service;
 CanRecvTask* can_recv_task;
 ImuTask* imu_task;
 WebSocketTask* ws_task;
@@ -64,6 +66,37 @@ ControlTask* control_task;
 MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
+
+class HttpRootModule : public HttpModule {
+  private:
+  static esp_err_t null_handler(httpd_req_t* req) {
+    httpd_resp_send(req, nullptr, 0);
+    return ESP_OK;
+  }
+
+  public:
+  void register_direct_uris() { register_uri("/null", HTTP_GET, null_handler); }
+  HttpRootModule(const char* name, std::vector<HttpModule*> modules) : HttpModule(name, modules) {};
+  HttpRootModule(const char* name) : HttpModule(name) {};
+};
+
+class HttpHelloModule : public HttpModule {
+  private:
+  static esp_err_t hello_world_handler(httpd_req_t* req) {
+    httpd_resp_send(req, "Hello, World!", strlen("Hello, World!"));
+    return ESP_OK;
+  }
+
+  public:
+  void register_direct_uris() { register_uri("/world", HTTP_GET, hello_world_handler); }
+  HttpHelloModule(const char* name, std::vector<HttpModule*> modules)
+      : HttpModule(name, modules) {};
+  HttpHelloModule(const char* name) : HttpModule(name) {};
+};
+
+HttpHelloModule http_hello_module("hello");
+HttpRootModule http_root_module("api", {&http_hello_module});
+HttpServer http_server(&http_root_module);
 
 class App {
   private:
@@ -303,7 +336,6 @@ class App {
     ws_task = new WebSocketTask();
     control_task = new ControlTask();
     imu_task = new ImuTask();
-    http_service = new HttpService();
     logger_task = new LoggerTask();
     monitor_task = new MonitorTask();
 
@@ -324,6 +356,7 @@ class App {
   }
 
   void setup() {
+    esp_log_level_set("*", ESP_LOG_DEBUG);
     setup_gpio();
     setup_flash();
     setup_netif();
@@ -335,15 +368,13 @@ class App {
 
     start_tasks();
 
-    http_service->start();
+    http_server.start();
     can_recv_task->bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
     can_recv_task->bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
   }
 
   public:
-  void run() {
-    setup();
-  }
+  void run() { setup(); }
 };
 
 extern "C" void app_main() {
