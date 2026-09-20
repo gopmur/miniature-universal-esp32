@@ -1,9 +1,9 @@
-#include "threads/scan_wifis.hpp"
+#include "tasks/http/modules/wifi/scan_wifis.hpp"
 #include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
-#include "tasks/http/helper.hpp"
+#include "helper/formats.hpp"
 
 void ScanWifisThread::main(httpd_req_t** req_p) {
   auto req = *req_p;
@@ -31,7 +31,7 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
   };
   ESP_ERROR_CHECK(esp_wifi_scan_stop());
   ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, true));
-  
+
   uint16_t ap_count = 0;
   esp_wifi_scan_get_ap_num(&ap_count);
 

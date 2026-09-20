@@ -134,3 +134,15 @@ bool HttpModule::check_uri(const char* uri) {
   }
   return true;
 }
+
+esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json) {
+  auto json_string = json.stringify();
+  httpd_resp_send(req, json_string.c_str(), HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+
+esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
+  auto json_string = json.stringify();
+  httpd_resp_send_err(req, status, json_string.c_str());
+  return ESP_OK;
+}

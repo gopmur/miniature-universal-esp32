@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "esp_http_server.h"
+#include "helper/json.hpp"
 #include "loggable.hpp"
 
 class HttpModule {
@@ -35,6 +36,8 @@ class HttpModule {
   static void set_type_json(httpd_req_t* req);
   static void set_header(httpd_req_t* req);
   static bool check_uri(const char* uri);
+  static esp_err_t send_json(httpd_req_t* req, JsonObject& json);
+  static esp_err_t send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status);
 
   public:
   void register_uris(httpd_handle_t server_instance);

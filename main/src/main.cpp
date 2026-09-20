@@ -1,5 +1,4 @@
 #include <string.h>
-#include <algorithm>
 
 #include <freertos/FreeRTOS.h>
 
@@ -9,13 +8,12 @@
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive.hpp"
 #include "driver/gpio.h"
+#include "driver/i2c_types_legacy.h"
 #include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
 #include "esp_console.h"
 #include "esp_err.h"
 #include "esp_event.h"
-#include "esp_http_server.h"
-#include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
@@ -28,9 +26,6 @@
 #include "hal/i2c_types.h"
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
-#include "http_parser.h"
-#include "jaythread/executable.hpp"
-#include "jaythread/sync.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -44,10 +39,12 @@
 #include "tasks/control.hpp"
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
-#include "tasks/http/module.hpp"
 #include "tasks/http/modules/control.hpp"
+#include "tasks/http/modules/motor.hpp"
 #include "tasks/http/modules/root.hpp"
 #include "tasks/http/modules/stream.hpp"
+#include "tasks/http/modules/system.hpp"
+#include "tasks/http/modules/wifi.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/logger.hpp"
 #include "tasks/monitor.hpp"
@@ -70,9 +67,14 @@ MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
 
+HttpMotorModule http_motor_module("motor");
+HttpWifiModule http_wifi_module("wifi");
+HttpSystemModule http_system_module("system", {&http_wifi_module});
 HttpStreamModule http_stream_module("stream");
 HttpControlModule http_control_module("control");
-HttpRootModule http_root_module("api", {&http_control_module, &http_stream_module});
+HttpRootModule http_root_module(
+    "api",
+    {&http_control_module, &http_stream_module, &http_system_module, &http_motor_module});
 HttpServer http_server(&http_root_module);
 
 class App {

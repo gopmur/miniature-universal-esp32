@@ -26,28 +26,17 @@
 #include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
-#include "threads/scan_wifis.hpp"
+// #include "threads/scan_wifis.hpp"
 
 // extern WebSocketTask* ws_task;
 // extern ControlTask* control_task;
 // extern MotorTask* motor_task;
-// extern WifiConHandlerTask* wifi_con_handler_task;
 // extern LoggerTask* logger_task;
 // extern AbstractMotorDriver* left_motor;
 // extern AbstractMotorDriver* right_motor;
 // ScanWifisThread scan_wifis_thread;
 
-// esp_err_t send_json(httpd_req_t* req, JsonObject& json) {
-//   auto json_string = json.stringify();
-//   httpd_resp_send(req, json_string.c_str(), HTTPD_RESP_USE_STRLEN);
-//   return ESP_OK;
-// }
 
-// esp_err_t send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
-//   auto json_string = json.stringify();
-//   httpd_resp_send_err(req, status, json_string.c_str());
-//   return ESP_OK;
-// }
 
 // esp_err_t null_request_handler(httpd_req_t* req) {
 //   set_header(req);
@@ -55,57 +44,6 @@
 //   return ESP_OK;
 // }
 
-// esp_err_t scan_wifi_handler(httpd_req_t* req) {
-//   set_header(req);
-//   httpd_req_t* async_req;
-//   httpd_req_async_handler_begin(req, &async_req);
-//   scan_wifis_thread.start("ws_service", 2, 4096, async_req);
-//   return ESP_OK;
-// }
-
-// esp_err_t get_connected_wifi(httpd_req_t* req) {
-//   set_header(req);
-//   wifi_ap_record_t ap_info;
-//   auto result = esp_wifi_sta_get_ap_info(&ap_info);
-//   JsonObject res_json;
-//   if (result == ESP_ERR_WIFI_NOT_CONNECT) {
-//     res_json.set("connected", false);
-//     res_json.set("errorMessage", "not connected");
-//   } else if (result == ESP_ERR_WIFI_CONN) {
-//     res_json.set("connected", false);
-//     res_json.set("errorMessage", "wifi not initialized");
-//   } else {
-//     res_json.set("connected", true);
-//     res_json.set("ssid", reinterpret_cast<char*>(ap_info.ssid));
-//     res_json.set("rssi", ap_info.rssi);
-//     auto bssid_str = get_bssid_string(ap_info.bssid);
-//     res_json.set("bssid", bssid_str.get_data());
-//   };
-//   auto res_str = res_json.stringify();
-//   httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
-//   return ESP_OK;
-// }
-
-// esp_err_t connect_to_wifi_handler(httpd_req_t* req) {
-//   set_header(req);
-//   httpd_req_t* async_req;
-//   httpd_req_async_handler_begin(req, &async_req);
-//   auto service_not_busy = wifi_con_handler_task->req_queue.send(async_req, 0);
-//   if (!service_not_busy) {
-//     JsonObject res_json;
-//     res_json.set("message", "another connection request is pending");
-//     auto res_str = res_json.stringify();
-//     httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
-//   }
-//   return ESP_OK;
-// }
-
-// esp_err_t disconnect_wifi_handler(httpd_req_t* req) {
-//   set_header(req);
-//   esp_wifi_disconnect();
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
 
 // esp_err_t start_log(httpd_req_t* req) {
 //   set_header(req);
@@ -328,187 +266,8 @@
 // //   return ESP_OK;
 // // }
 
-// esp_err_t set_automatic_control_params(httpd_req_t* req) {
-//   set_header(req);
-//   char* req_body = new char[req->content_len];
-//   httpd_req_recv(req, req_body, req->content_len);
-//   JsonObject resp_json;
-//   auto req_json_result = JsonObject::parse(req_body);
-//   delete[] req_body;
 
-//   if (std::holds_alternative<JsonError>(req_json_result)) {
-//     resp_json.set("message", "parse error");
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
 
-//   auto req_json = std::get<JsonObject>(req_json_result);
-//   auto left_json_result = req_json.get_object("left", &resp_json);
-//   auto right_json_result = req_json.get_object("right", &resp_json);
-
-//   if (std::holds_alternative<JsonError>(left_json_result) ||
-//       std::holds_alternative<JsonError>(right_json_result)) {
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-
-//   auto left_json = std::get<JsonObject>(left_json_result);
-//   auto right_json = std::get<JsonObject>(right_json_result);
-
-//   auto left_timeout_result = left_json.get_number("timeout", &resp_json);
-//   auto left_torque_result = left_json.get_number("torque", &resp_json);
-//   auto left_velocity_threshold_result = left_json.get_number("velocityThreshold", &resp_json);
-//   auto right_timeout_result = right_json.get_number("timeout", &resp_json);
-//   auto right_torque_result = right_json.get_number("torque", &resp_json);
-//   auto right_velocity_threshold_result = right_json.get_number("velocityThreshold", &resp_json);
-
-//   if (std::holds_alternative<JsonError>(left_timeout_result) ||
-//       std::holds_alternative<JsonError>(left_torque_result) ||
-//       std::holds_alternative<JsonError>(left_velocity_threshold_result) ||
-//       std::holds_alternative<JsonError>(right_timeout_result) ||
-//       std::holds_alternative<JsonError>(right_torque_result) ||
-//       std::holds_alternative<JsonError>(right_velocity_threshold_result)) {
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-//   auto left_timeout = std::get<double>(left_timeout_result);
-//   auto left_torque = std::get<double>(left_torque_result);
-//   auto left_velocity_threshold = std::get<double>(left_velocity_threshold_result);
-//   auto right_timeout = std::get<double>(right_timeout_result);
-//   auto right_torque = std::get<double>(right_torque_result);
-//   auto right_velocity_threshold = std::get<double>(right_velocity_threshold_result);
-
-//   ESP_LOGI("PARAMS LEFT", "%f %f %f", left_timeout, left_torque, left_velocity_threshold);
-//   ESP_LOGI("PARAMS RIGHT", "%f %f %f", right_timeout, right_torque, right_velocity_threshold);
-
-//   control_task->automatic_controller.params.left.timeout = left_timeout;
-//   control_task->automatic_controller.params.left.torque = left_torque;
-//   control_task->automatic_controller.params.left.velocity_threshold = left_velocity_threshold;
-//   control_task->automatic_controller.params.right.timeout = right_timeout;
-//   control_task->automatic_controller.params.right.torque = right_torque;
-//   control_task->automatic_controller.params.right.velocity_threshold = right_velocity_threshold;
-
-//   httpd_resp_send(req, nullptr, 0);
-
-//   return ESP_OK;
-// }
-
-// esp_err_t set_semiautomatic_control_params(httpd_req_t* req) {
-//   set_header(req);
-//   char* req_body = new char[req->content_len];
-//   httpd_req_recv(req, req_body, req->content_len);
-//   JsonObject resp_json;
-//   auto req_json_result = JsonObject::parse(req_body);
-
-//   if (std::holds_alternative<JsonError>(req_json_result)) {
-//     resp_json.set("message", "parse error");
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-
-//   auto req_json = std::get<JsonObject>(req_json_result);
-
-//   auto weak_leg_result = req_json.get_string("weakLeg", &resp_json);
-//   auto start_assist_angle_result = req_json.get_number("startAssistAngle", &resp_json);
-//   auto stop_assist_angle_result = req_json.get_number("stopAssistAngle", &resp_json);
-//   auto left_json_result = req_json.get_object("left", &resp_json);
-//   auto right_json_result = req_json.get_object("right", &resp_json);
-
-//   if (std::holds_alternative<JsonError>(weak_leg_result) ||
-//       std::holds_alternative<JsonError>(start_assist_angle_result) ||
-//       std::holds_alternative<JsonError>(stop_assist_angle_result) ||
-//       std::holds_alternative<JsonError>(left_json_result) ||
-//       std::holds_alternative<JsonError>(left_json_result)) {
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-
-//   auto weak_leg =
-//       std::strcmp(std::get<char*>(weak_leg_result), "left") == 0 ? Leg::LEFT : Leg::RIGHT;
-//   auto start_assist_angle = std::get<double>(start_assist_angle_result);
-//   auto stop_assist_angle = std::get<double>(stop_assist_angle_result);
-//   auto left_json = std::get<JsonObject>(left_json_result);
-//   auto right_json = std::get<JsonObject>(right_json_result);
-//   auto left_torque_result = left_json.get_number("torque", &resp_json);
-//   auto left_timeout_result = left_json.get_number("timeout", &resp_json);
-//   auto left_delay_result = left_json.get_number("delay", &resp_json);
-//   auto right_torque_result = right_json.get_number("torque", &resp_json);
-//   auto right_timeout_result = right_json.get_number("timeout", &resp_json);
-//   auto right_delay_result = right_json.get_number("delay", &resp_json);
-
-//   if (std::holds_alternative<JsonError>(left_torque_result) ||
-//       std::holds_alternative<JsonError>(left_delay_result) ||
-//       std::holds_alternative<JsonError>(left_timeout_result) ||
-//       std::holds_alternative<JsonError>(right_torque_result) ||
-//       std::holds_alternative<JsonError>(right_delay_result) ||
-//       std::holds_alternative<JsonError>(right_timeout_result)) {
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-
-//   auto left_torque = std::get<double>(left_torque_result);
-//   auto left_timeout = std::get<double>(left_timeout_result);
-//   auto left_delay = std::get<double>(left_delay_result);
-//   auto right_torque = std::get<double>(right_torque_result);
-//   auto right_timeout = std::get<double>(right_timeout_result);
-//   auto right_delay = std::get<double>(right_delay_result);
-
-//   control_task->semiautomatic_controller.params.left.torque = left_torque;
-//   control_task->semiautomatic_controller.params.left.timeout = left_timeout;
-//   control_task->semiautomatic_controller.params.left.delay = left_delay;
-//   control_task->semiautomatic_controller.params.right.torque = right_torque;
-//   control_task->semiautomatic_controller.params.right.timeout = right_timeout;
-//   control_task->semiautomatic_controller.params.right.delay = right_delay;
-//   control_task->semiautomatic_controller.params.weak_leg = weak_leg;
-//   control_task->semiautomatic_controller.params.start_assist_angle = start_assist_angle;
-//   control_task->semiautomatic_controller.params.stop_assist_angle = stop_assist_angle;
-
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
-
-// esp_err_t set_smart_control_params(httpd_req_t* req) {
-//   set_header(req);
-//   char* req_body = new char[req->content_len];
-//   httpd_req_recv(req, req_body, req->content_len);
-//   JsonObject resp_json;
-//   auto req_json_result = JsonObject::parse(req_body);
-//   delete[] req_body;
-
-//   if (std::holds_alternative<JsonError>(req_json_result)) {
-//     resp_json.set("message", "parse error");
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-
-//   auto req_json = std::get<JsonObject>(req_json_result);
-
-//   auto left_json_result = req_json.get_object("left", &resp_json);
-//   auto right_json_result = req_json.get_object("right", &resp_json);
-
-//   if (std::holds_alternative<JsonError>(left_json_result) ||
-//       std::holds_alternative<JsonError>(right_json_result)) {
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-
-//   auto left_json = std::get<JsonObject>(left_json_result);
-//   auto right_json = std::get<JsonObject>(right_json_result);
-
-//   auto left_torque_result = left_json.get_number("torque");
-//   auto right_torque_result = right_json.get_number("torque");
-
-//   if (std::holds_alternative<JsonError>(left_torque_result) ||
-//       std::holds_alternative<JsonError>(right_torque_result)) {
-//     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-//   }
-//   auto left_torque = std::get<double>(left_torque_result);
-//   auto right_torque = std::get<double>(right_torque_result);
-//   control_task->smart_controller.params.left.torque = left_torque;
-//   control_task->smart_controller.params.right.torque = right_torque;
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
-
-// esp_err_t motor_zero_pos(httpd_req_t* req) {
-//   set_header(req);
-//   left_motor->zero_pos();
-//   right_motor->zero_pos();
-//   httpd_resp_send(req, nullptr, 0);
-//   return ESP_OK;
-// }
 
 // esp_err_t register_dynamic_endpoints() {
 //   this->register_http_uri("/api/null", HTTP_GET, null_request_handler);
@@ -516,36 +275,12 @@
 //   // this->register_http_uri("/api/update/status", HTTP_GET, get_ota_status);
 //   // this->register_http_uri("/api/update/check", HTTP_GET,
 //   // check_for_update_handler);
-//   this->register_http_uri("/api/restart", HTTP_GET, restart_handler);
-//   this->register_http_uri("/api/states", HTTP_GET, get_state_handler);
-//   this->register_http_uri("/api/wifi/scan", HTTP_GET, scan_wifi_handler);
-//   this->register_http_uri("/api/wifi", HTTP_GET, get_connected_wifi);
-//   this->register_http_uri("/api/wifi/connect", HTTP_POST, connect_to_wifi_handler);
-//   this->register_http_uri("/api/wifi/disconnect", HTTP_GET, disconnect_wifi_handler);
+
 //   this->register_http_uri("/api/motors/zero_pos", HTTP_GET, motor_zero_pos);
 //   this->register_http_uri("/api/log/stop", HTTP_GET, stop_log);
 //   this->register_http_uri("/api/log/start", HTTP_GET, start_log);
 
-//   // this->register_http_uri_with_option("/api/date-time", HTTP_PUT, set_rtc);
-//   this->register_http_uri_with_option("/api/automatic/params",
-//                                       HTTP_PUT,
-//                                       set_automatic_control_params);
-//   this->register_http_uri_with_option("/api/semiautomatic/params",
-//                                       HTTP_PUT,
-//                                       set_semiautomatic_control_params);
-//   this->register_http_uri_with_option("/api/smart/params", HTTP_PUT, set_smart_control_params);
-//   this->register_ws_uri("/api/stream/imu",
-//                         ws_imu_stream_handler,
-//                         ws_imu_stream_post_handshake_handler);
-//   this->register_ws_uri("/api/stream/motor",
-//                         ws_motor_stream_handler,
-//                         ws_motor_stream_post_handshake_handler);
-//   this->register_ws_uri("/api/stream/tasks",
-//                         ws_task_stream_handler,
-//                         ws_task_stream_post_handshake_handler);
-//   this->register_ws_uri("/api/stream/ota",
-//                         ws_ota_stream_handler,
-//                         ws_ota_stream_post_handshake_handler);
+
 //   return ESP_OK;
 // }
 
