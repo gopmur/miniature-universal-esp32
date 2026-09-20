@@ -47,6 +47,7 @@
 #include "tasks/http/module.hpp"
 #include "tasks/http/modules/control.hpp"
 #include "tasks/http/modules/root.hpp"
+#include "tasks/http/modules/stream.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/logger.hpp"
 #include "tasks/monitor.hpp"
@@ -69,8 +70,9 @@ MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
 
+HttpStreamModule http_stream_module("stream");
 HttpControlModule http_control_module("control");
-HttpRootModule http_root_module("api", {&http_control_module});
+HttpRootModule http_root_module("api", {&http_control_module, &http_stream_module});
 HttpServer http_server(&http_root_module);
 
 class App {

@@ -42,3 +42,10 @@ esp_err_t HttpStreamModule::ws_ota_post_handshake(httpd_req_t* req) {
   ws_task->start_sending(client_fd, WsStream::OTA_PROGRESS);
   return ESP_OK;
 }
+
+void HttpStreamModule::register_direct_uris() {
+  register_ws_uri("imu", ws_imu, ws_imu_post_handshake);
+  register_ws_uri("motor", ws_motor, ws_motor_post_handshake);
+  register_ws_uri("tasks", ws_tasks, ws_tasks_post_handshake);
+  register_ws_uri("ota", ws_ota, ws_ota_post_handshake);
+}
