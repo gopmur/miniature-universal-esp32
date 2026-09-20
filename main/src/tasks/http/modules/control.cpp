@@ -1,7 +1,6 @@
-#pragma once
-
 #include "tasks/control.hpp"
 #include "esp_err.h"
+#include "http_parser.h"
 #include "tasks/http/modules/control.hpp"
 #include "tasks/motor.hpp"
 
@@ -199,6 +198,17 @@ esp_err_t HttpControlModule::ws_manual_torque(httpd_req_t* req) {
 
   free(ws_frame.payload);
   return ESP_OK;
+}
+
+void HttpControlModule::register_direct_uris() {
+  register_uri("/params", HTTP_GET, get_params);
+  register_uri_with_option("/start", HTTP_PUT, put_start);
+  register_uri_with_option("/stop", HTTP_PUT, put_stop);
+  register_uri_with_option("/set-mode/manual", HTTP_PUT, put_set_mode_manual);
+  register_uri_with_option("/set-mode/automatic", HTTP_PUT, put_set_mode_automatic);
+  register_uri_with_option("/set-mode/semiautomatic", HTTP_PUT, put_set_mode_semiautomatic);
+  register_uri_with_option("/set-mode/smart", HTTP_PUT, put_set_mode_smart);
+  register_ws_uri("/manual/torque", ws_manual_torque, ws_manual_torque_post_handshake);
 }
 
 HttpControlModule::HttpControlModule(const char* name, std::vector<HttpModule*> modules)

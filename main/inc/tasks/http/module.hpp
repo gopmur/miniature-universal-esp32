@@ -22,7 +22,7 @@ class HttpModule {
                        esp_err_t (*handler)(httpd_req_t* req),
                        esp_err_t (*post_handshake_handler)(httpd_req_t* req));
 
-  void register_http_uri_with_option(const char* uri_address,
+  void register_uri_with_option(const char* uri_address,
                                      httpd_method_t method,
                                      esp_err_t (*handler)(httpd_req_t* req));
 

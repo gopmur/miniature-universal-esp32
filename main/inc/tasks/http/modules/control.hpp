@@ -18,6 +18,7 @@ class HttpControlModule : public HttpModule {
   static esp_err_t put_set_mode_smart(httpd_req_t* req);
   static esp_err_t ws_manual_torque(httpd_req_t* req);
   static esp_err_t ws_manual_torque_post_handshake(httpd_req_t* req);
+  void register_direct_uris();
 
   public:
   HttpControlModule(const char* name, std::vector<HttpModule*> modules);

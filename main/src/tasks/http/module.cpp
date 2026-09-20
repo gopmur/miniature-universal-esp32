@@ -57,7 +57,7 @@ void HttpModule::register_ws_uri(const char* uri_address,
   ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
 }
 
-void HttpModule::register_http_uri_with_option(const char* uri_address,
+void HttpModule::register_uri_with_option(const char* uri_address,
                                                httpd_method_t method,
                                                esp_err_t (*handler)(httpd_req_t* req)) {
   httpd_uri uri = {

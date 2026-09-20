@@ -45,6 +45,8 @@
 #include "tasks/dns.hpp"
 #include "tasks/http.hpp"
 #include "tasks/http/module.hpp"
+#include "tasks/http/modules/control.hpp"
+#include "tasks/http/modules/root.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/logger.hpp"
 #include "tasks/monitor.hpp"
@@ -67,35 +69,8 @@ MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
 
-class HttpRootModule : public HttpModule {
-  private:
-  static esp_err_t null_handler(httpd_req_t* req) {
-    httpd_resp_send(req, nullptr, 0);
-    return ESP_OK;
-  }
-
-  public:
-  void register_direct_uris() { register_uri("/null", HTTP_GET, null_handler); }
-  HttpRootModule(const char* name, std::vector<HttpModule*> modules) : HttpModule(name, modules) {};
-  HttpRootModule(const char* name) : HttpModule(name) {};
-};
-
-class HttpHelloModule : public HttpModule {
-  private:
-  static esp_err_t hello_world_handler(httpd_req_t* req) {
-    httpd_resp_send(req, "Hello, World!", strlen("Hello, World!"));
-    return ESP_OK;
-  }
-
-  public:
-  void register_direct_uris() { register_uri("/world", HTTP_GET, hello_world_handler); }
-  HttpHelloModule(const char* name, std::vector<HttpModule*> modules)
-      : HttpModule(name, modules) {};
-  HttpHelloModule(const char* name) : HttpModule(name) {};
-};
-
-HttpHelloModule http_hello_module("hello");
-HttpRootModule http_root_module("api", {&http_hello_module});
+HttpControlModule http_control_module("control");
+HttpRootModule http_root_module("api", {&http_control_module});
 HttpServer http_server(&http_root_module);
 
 class App {

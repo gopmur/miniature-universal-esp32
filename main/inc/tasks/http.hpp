@@ -70,16 +70,7 @@
 //   static esp_err_t start_log(httpd_req_t* req);
 //   static esp_err_t stop_log(httpd_req_t* req);
 
-//   static esp_err_t ws_imu_stream_handler(httpd_req_t* req);
-//   static esp_err_t ws_imu_stream_post_handshake_handler(httpd_req_t* req);
-//   static esp_err_t ws_motor_stream_handler(httpd_req_t* req);
-//   static esp_err_t ws_motor_stream_post_handshake_handler(httpd_req_t* req);
-//   static esp_err_t ws_task_stream_handler(httpd_req_t* req);
-//   static esp_err_t ws_task_stream_post_handshake_handler(httpd_req_t* req);
-//   static esp_err_t ws_ota_stream_handler(httpd_req_t* req);
-//   static esp_err_t ws_ota_stream_post_handshake_handler(httpd_req_t* req);
-//   static esp_err_t ws_manual_torque_handler(httpd_req_t* req);
-//   static esp_err_t ws_manual_torque_post_handshake_handler(httpd_req_t* req);
+
 
 //   esp_err_t register_dynamic_endpoints();
 
