@@ -4,7 +4,6 @@
 
 #include "custom_drivers/motor.hpp"
 #include "esp_http_server.h"
-#include "esp_log.h"
 #include "esp_timer.h"
 #include "helper/json.hpp"
 #include "jaythread/ipc/mutex.hpp"
@@ -85,13 +84,13 @@ void WebSocketTask::main() {
 
   while (true) {
     Sync::wait_for_notification();
-    ESP_LOGI(tag.c_str(), "woke up");
+    LOGI("woke up");
     while (true) {
       connection_mutex.take();
       auto no_connections = connections.empty();
       connection_mutex.give();
       if (no_connections) {
-        ESP_LOGI(tag.c_str(), "no connections available. going to sleep");
+        LOGI("no connections available. going to sleep");
         break;
       }
 
@@ -129,9 +128,7 @@ void WebSocketTask::main() {
             break;
           }
           default:
-            ESP_LOGE(tag.c_str(),
-                     "unhandled outgoing stream %d",
-                     static_cast<uint32_t>(connection.stream));
+            LOGE("unhandled outgoing stream %d", static_cast<uint32_t>(connection.stream));
             break;
         }
         if (ret != ESP_OK) {

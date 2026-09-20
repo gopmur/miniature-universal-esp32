@@ -3,6 +3,7 @@
 #include "esp_http_server.h"
 #include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
+#include "loggable.hpp"
 
 enum WifiConnectionRequestResult {
   OK,
@@ -12,6 +13,8 @@ enum WifiConnectionRequestResult {
 };
 
 class WifiConHandlerTask : public Thread {
+  MAKE_LOGGABLE("wifi_con_handler_task");
+
   private:
   void main();
 

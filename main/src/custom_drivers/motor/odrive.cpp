@@ -123,10 +123,7 @@ void ODriveMotorDriver::consume(CanPacket packet) {
     case ODriveMotorCommand::HEARTBEAT:
       break;
     default:
-      ESP_LOGW(tag.c_str(),
-               "unhandled command received 0x%02x value: %f",
-               command,
-               *(float*)(packet.data.data()));
+      LOGW("unhandled command received 0x%02x value: %f", command, *(float*)(packet.data.data()));
       break;
   }
 }
@@ -136,27 +133,27 @@ float ODriveMotorDriver::get_position() {
 }
 
 void ODriveMotorDriver::init() {
-  ESP_LOGI(tag.c_str(), "initializing");
+  LOGI("initializing");
   disable();
   Sync::sleep(10);
   enable();
   Sync::sleep(10);
   set_torque(0);
   Sync::sleep(10);
-  ESP_LOGI(tag.c_str(), "waiting for position feedback");
+  LOGI("waiting for position feedback");
   position_valid_sem.clear();
   position_valid_sem.take();
   Sync::sleep(2000);
   if (feedback.position == 0) {
-    ESP_LOGW(tag.c_str(),
-             "position feedback is 0, this may be the result of not waiting long enough for "
-             "position feedback");
+    LOGW(
+        "position feedback is 0, this may be the result of not waiting long enough for "
+        "position feedback");
   } else {
-    ESP_LOGI(tag.c_str(), "position feedback is %f for zero posing", feedback.position);
+    LOGI("position feedback is %f for zero posing", feedback.position);
   }
   zero_pos();
   disable();
   Sync::sleep(10);
-  ESP_LOGI(tag.c_str(), "zero pos completed");
-  ESP_LOGI(tag.c_str(), "initialization completed");
+  LOGI("zero pos completed");
+  LOGI("initialization completed");
 }

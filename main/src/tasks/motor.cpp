@@ -1,5 +1,4 @@
 #include "tasks/motor.hpp"
-#include "esp_log.h"
 #include "jaythread/sync.hpp"
 
 MotorTask::MotorTask(AbstractMotorDriver* left_motor, AbstractMotorDriver* right_motor)

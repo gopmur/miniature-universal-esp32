@@ -1,14 +1,11 @@
 #pragma once
 
-#include <array>
-#include <cstddef>
 #include <vector>
 #include "config.hpp"
 #include "helper/json.hpp"
 #include "jaythread/ipc/mutex.hpp"
-#include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
-#include "sdkconfig.h"
+#include "loggable.hpp"
 
 enum class WsStream {
   ESP_TASK_DATA,
@@ -26,8 +23,9 @@ struct WebSocketConnections {
 };
 
 class WebSocketTask : public Thread {
+  MAKE_LOGGABLE("websocket_task");
+
   private:
-  std::string tag = "ws task";
   std::vector<WebSocketConnections> connections;
   Mutex connection_mutex;
   void fill_task_status_json(JsonObject* task_status_json);

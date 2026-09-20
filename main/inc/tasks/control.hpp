@@ -7,6 +7,7 @@
 #include "controller/smart.hpp"
 #include "controller/zero.hpp"
 #include "jaythread/thread.hpp"
+#include "loggable.hpp"
 
 enum class ControlMode : uint8_t {
   MANUAL,
@@ -22,6 +23,8 @@ struct Data3D {
 };
 
 class ControlTask : public Thread {
+  MAKE_LOGGABLE("control_task");
+
   public:
   bool running = false;
   ControlMode control_mode = ControlMode::MANUAL;
@@ -33,7 +36,6 @@ class ControlTask : public Thread {
   SmartController smart_controller;
 
   private:
-  std::string tag = "control task";
   void reset();
   void main();
 };

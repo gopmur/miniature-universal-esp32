@@ -1,10 +1,12 @@
 #pragma once
 
 #include "jaythread/thread.hpp"
+#include "loggable.hpp"
 
 class LoggerTask : public Thread {
+  MAKE_LOGGABLE("logger_task");
+
   private:
-  std::string tag = "logger";
   volatile bool is_logging = false;
   void main();
 

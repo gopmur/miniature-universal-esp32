@@ -1,16 +1,16 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
 #include "custom_drivers/can_device_reader.hpp"
-#include "esp_twai_types.h"
-#include "hal/twai_types.h"
 #include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
+#include "loggable.hpp"
 
 class CanRecvTask : public Thread {
+  MAKE_LOGGABLE("can_recv_task");
+
   private:
   std::unordered_map<uint32_t, AbstractCanDeviceReader*> driver_map;
   std::vector<uint32_t> masks = {UINT32_MAX};

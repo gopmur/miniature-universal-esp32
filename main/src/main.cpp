@@ -76,10 +76,11 @@ HttpRootModule http_root_module("api", {&http_control_module, &http_stream_modul
 HttpServer http_server(&http_root_module);
 
 class App {
+  MAKE_LOGGABLE("app");
+
   private:
   esp_err_t res;
-  // const char* tag = "main";
-
+  // const char* tag =
   void setup_flash() {
     res = nvs_flash_init();
     if (res == ESP_ERR_NVS_NO_FREE_PAGES || res == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -275,7 +276,7 @@ class App {
     ret =
         spi_bus_initialize(static_cast<spi_host_device_t>(host.slot), &bus_cfg, SDSPI_DEFAULT_DMA);
     if (ret != ESP_OK) {
-      ESP_LOGE("main", "failed to initialize bus.");
+      LOGE("failed to initialize bus.");
       return;
     }
 
@@ -283,24 +284,24 @@ class App {
     slot_config.gpio_cs = static_cast<gpio_num_t>(5);
     slot_config.host_id = static_cast<spi_host_device_t>(host.slot);
 
-    ESP_LOGI("main", "Mounting filesystem");
+    LOGI("Mounting filesystem");
     ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 
     if (ret != ESP_OK) {
       if (ret == ESP_FAIL) {
-        ESP_LOGE("main",
-                 "Failed to mount filesystem. "
-                 "If you want the card to be formatted, set the "
-                 "CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+        LOGE(
+            "Failed to mount filesystem. "
+            "If you want the card to be formatted, set the "
+            "CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
       } else {
-        ESP_LOGE("main",
-                 "Failed to initialize the card (%s). "
-                 "Make sure SD card lines have pull-up resistors in place.",
-                 esp_err_to_name(ret));
+        LOGE(
+            "Failed to initialize the card (%s). "
+            "Make sure SD card lines have pull-up resistors in place.",
+            esp_err_to_name(ret));
       }
       return;
     }
-    ESP_LOGI("main", "Filesystem mounted");
+    LOGI("Filesystem mounted");
 
     sdmmc_card_print_info(stdout, card);
   }
@@ -333,7 +334,6 @@ class App {
   }
 
   void setup() {
-    esp_log_level_set("*", ESP_LOG_DEBUG);
     setup_gpio();
     setup_flash();
     setup_netif();

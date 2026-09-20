@@ -11,6 +11,8 @@ class ODriveMotorFeedbackReader : public AbstractCanDeviceReader {
 };
 
 class ODriveMotorDriver : public AbstractMotorDriver {
+  MAKE_LOGGABLE("odrive");
+
   private:
   float position_offset = 0;
   int get_packet_id(ODriveMotorCommand command);

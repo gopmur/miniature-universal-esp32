@@ -4,6 +4,8 @@
 #include "jaythread/thread.hpp"
 
 class MotorTask : public Thread {
+  MAKE_LOGGABLE("motor_task");
+
   public:
   MotorTask(AbstractMotorDriver* left_motor, AbstractMotorDriver* right_motor);
   void set_left_torque(float torque);

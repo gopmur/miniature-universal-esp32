@@ -4,7 +4,6 @@
 #include <variant>
 #include "esp_err.h"
 #include "esp_http_server.h"
-#include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/json.hpp"
@@ -17,7 +16,7 @@ void WifiConHandlerTask::main() {
       continue;
     }
     auto req = req_result.value();
-    ESP_LOGI("WIFI", "WIFI CONNECTION HANDLER STARTED");
+    LOGI("WIFI CONNECTION HANDLER STARTED");
 
     char* req_body = static_cast<char*>(malloc(req->content_len + 1));
 

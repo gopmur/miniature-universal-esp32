@@ -45,7 +45,7 @@ void ControlTask::main() {
           break;
         default:
           output = zero_controller.run(input);
-          ESP_LOGW(tag.c_str(), "unhandled control mod %d", static_cast<uint32_t>(control_mode));
+          LOGW("unhandled control mod %d", static_cast<uint32_t>(control_mode));
       }
     } else {
       output = zero_controller.run(input);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "jaythread/thread.hpp"
+#include "loggable.hpp"
 
 struct ImuVector3D {
   float x;
@@ -15,10 +16,11 @@ struct ImuData {
 };
 
 class ImuTask : public Thread {
+  MAKE_LOGGABLE("imu_task");
+  
   public:
   ImuData data;
 
   private:
-  std::string tag = "imu task";
   void main();
 };

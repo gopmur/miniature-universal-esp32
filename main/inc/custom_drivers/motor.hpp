@@ -5,6 +5,7 @@
 #include "custom_drivers/motor/packet.hpp"
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
+#include "loggable.hpp"
 
 struct MotorFeedback {
   float torque = 0;
@@ -19,12 +20,13 @@ enum class MotorDirection {
 };
 
 class AbstractMotorDriver : public AbstractCanDeviceReader {
+  MAKE_LOGGABLE("motor_driver");
+
   protected:
   MotorFeedback feedback;
   int id;
   twai_node_handle_t twai;
   float max_torque = 0;
-  std::string tag = "motor";
   MotorDirection direction;
   float torque_constant = 0;
 

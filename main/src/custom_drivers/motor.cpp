@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <cmath>
-#include <format>
-#include "esp_log.h"
-#include "esp_log_level.h"
 #include "esp_twai.h"
 #include "hal/twai_types.h"
 
@@ -18,11 +15,8 @@ AbstractMotorDriver::AbstractMotorDriver(int id,
       max_torque(max_torque),
       direction(direction),
       torque_constant(torque_constant) {
-  tag = std::format("motor {:#02x}", id);
   if (max_torque < 0) {
-    ESP_LOGE(tag.c_str(),
-             "max_torque is set to %f, max_torque can only be a positive value",
-             max_torque);
+    LOGE("max_torque is set to %f, max_torque can only be a positive value", max_torque);
     abort();
   }
 }
@@ -46,10 +40,7 @@ void AbstractMotorDriver::set_torque(float torque) {
   torque = apply_direction(torque);
   int torque_sign = torque >= 0 ? 1 : -1;
   if (fabs(torque) > max_torque) {
-    ESP_LOGW(tag.c_str(),
-             "applied torque is %f which is passed the secured limit %f",
-             torque,
-             max_torque);
+    LOGW("applied torque is %f which is passed the secured limit %f", torque, max_torque);
     torque = max_torque * torque_sign;
   }
   MotorPacket packet = make_torque_packet(torque);
@@ -63,13 +54,13 @@ void AbstractMotorDriver::zero_pos() {
 
 void AbstractMotorDriver::enable() {
   MotorPacket packet = make_enable_packet();
-  ESP_LOGI(tag.c_str(), "enabled");
+  LOGI("enabled");
   send_packet(packet);
 }
 
 void AbstractMotorDriver::disable() {
   MotorPacket packet = make_disable_packet();
-  ESP_LOGI(tag.c_str(), "disabled");
+  LOGI("disabled");
   send_packet(packet);
 }
 

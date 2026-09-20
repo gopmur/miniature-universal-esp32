@@ -1,7 +1,5 @@
 #include "tasks/imu.hpp"
 #include <cmath>
-#include "assert.h"
-#include "esp_log.h"
 #include "icm20948.h"
 #include "icm20948_i2c.h"
 #include "jaythread/sync.hpp"
@@ -15,16 +13,16 @@ void ImuTask::main() {
 
   icm20948_init_i2c(&icm, &icm_config);
   while (icm20948_check_id(&icm) != ICM_20948_STAT_OK) {
-    ESP_LOGE(tag.c_str(), "check id failed");
+    LOGE("check id failed");
     Sync::sleep(1000);
   }
-  ESP_LOGI(tag.c_str(), "check id passed");
+  LOGI("check id passed");
   icm20948_status_e stat = ICM_20948_STAT_ERR;
   uint8_t whoami = 0x00;
   whoami = 0x00;
   stat = icm20948_get_who_am_i(&icm, &whoami);
   while ((stat != ICM_20948_STAT_OK) || (whoami != ICM_20948_WHOAMI)) {
-    ESP_LOGE(tag.c_str(), "whoami does not match (0x %d). Halting...", whoami);
+    LOGE("whoami does not match (0x %d). Halting...", whoami);
     Sync::sleep(1000);
   }
   icm20948_sw_reset(&icm);
@@ -63,11 +61,10 @@ void ImuTask::main() {
   success &= (icm20948_reset_fifo(&icm) == ICM_20948_STAT_OK);
 
   if (success) {
-    ESP_LOGI(__FILENAME__, "DMP enabled!");
+    LOGI("DMP enabled!");
   } else {
-    ESP_LOGE(__FILENAME__, "Enable DMP failed!");
-    while (1)
-      ;
+    LOGE("Enable DMP failed!");
+    return;
   }
   while (true) {
     icm_20948_DMP_data_t icm_data;

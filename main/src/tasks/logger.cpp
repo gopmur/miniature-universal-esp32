@@ -1,7 +1,6 @@
 #include "tasks/logger.hpp"
 #include <cstdio>
 #include "custom_drivers/motor.hpp"
-#include "esp_log.h"
 #include "jaythread/sync.hpp"
 #include "tasks/imu.hpp"
 
@@ -21,7 +20,7 @@ void LoggerTask::stop_log() {
 void LoggerTask::main() {
   Sync::wait_for_notification_and_clear();
   while (true) {
-    ESP_LOGI(tag.c_str(), "log started");
+    LOGI("log started");
     auto log_file = fopen("/sd/log.csv", "w");
     fprintf(log_file,
             "left_motor_position,left_motor_velocity,right_motor_position,right_motor_position,"
@@ -38,9 +37,9 @@ void LoggerTask::main() {
               imu_task->data.gyro.z);
       Sync::sleep(10);
     }
-    ESP_LOGI(tag.c_str(), "log stopped");
+    LOGI("log stopped");
     fclose(log_file);
-    ESP_LOGI(tag.c_str(), "log data written");
+    LOGI("log data written");
     Sync::wait_for_notification_and_clear();
   }
 }
