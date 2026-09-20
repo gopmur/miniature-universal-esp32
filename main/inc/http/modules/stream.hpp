@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tasks/http/module.hpp"
+#include "http/module.hpp"
 
 class HttpStreamModule : public HttpModule {
   MAKE_LOGGABLE("http_stream_module");

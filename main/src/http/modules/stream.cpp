@@ -1,4 +1,4 @@
-#include "tasks/http/modules/stream.hpp"
+#include "http/modules/stream.hpp"
 #include "tasks/ws.hpp"
 
 extern WebSocketTask* ws_task;

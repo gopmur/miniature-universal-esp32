@@ -1,4 +1,4 @@
-#include "tasks/http/modules/wifi/scan_wifis.hpp"
+#include "http/modules/wifi/scan_wifis.hpp"
 #include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"

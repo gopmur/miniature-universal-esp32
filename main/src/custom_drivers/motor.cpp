@@ -16,7 +16,7 @@ AbstractMotorDriver::AbstractMotorDriver(int id,
       direction(direction),
       torque_constant(torque_constant) {
   if (max_torque < 0) {
-    LOGE("max_torque is set to %f, max_torque can only be a positive value", max_torque);
+    LOGE("0x%02x max_torque is set to %f, max_torque can only be a positive value", id, max_torque);
     abort();
   }
 }
@@ -40,7 +40,7 @@ void AbstractMotorDriver::set_torque(float torque) {
   torque = apply_direction(torque);
   int torque_sign = torque >= 0 ? 1 : -1;
   if (fabs(torque) > max_torque) {
-    LOGW("applied torque is %f which is passed the secured limit %f", torque, max_torque);
+    LOGW("0x%02x applied torque is %f which is passed the secured limit %f", id, torque, max_torque);
     torque = max_torque * torque_sign;
   }
   MotorPacket packet = make_torque_packet(torque);
@@ -54,13 +54,13 @@ void AbstractMotorDriver::zero_pos() {
 
 void AbstractMotorDriver::enable() {
   MotorPacket packet = make_enable_packet();
-  LOGI("enabled");
+  LOGI("0x%02x enabled", id);
   send_packet(packet);
 }
 
 void AbstractMotorDriver::disable() {
   MotorPacket packet = make_disable_packet();
-  LOGI("disabled");
+  LOGI("0x%02x disabled", id);
   send_packet(packet);
 }
 

@@ -2,7 +2,7 @@
 #include <cstring>
 #include "esp_err.h"
 #include "http_parser.h"
-#include "tasks/http/modules/control.hpp"
+#include "http/modules/control.hpp"
 #include "tasks/motor.hpp"
 
 extern ControlTask* control_task;

@@ -4,7 +4,7 @@
 #include <cstring>
 #include <variant>
 
-#include "tasks/http.hpp"
+#include "http.hpp"
 
 #include "config.hpp"
 #include "custom_drivers/motor.hpp"
@@ -20,8 +20,8 @@
 
 #include "jaythread/sync.hpp"
 #include "tasks/control.hpp"
-#include "tasks/http/helper.hpp"
-#include "tasks/http/module.hpp"
+#include "http/helper.hpp"
+#include "http/module.hpp"
 #include "tasks/logger.hpp"
 #include "tasks/motor.hpp"
 #include "tasks/wifi_con_handler.hpp"

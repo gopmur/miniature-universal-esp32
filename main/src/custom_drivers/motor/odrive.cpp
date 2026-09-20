@@ -123,7 +123,7 @@ void ODriveMotorDriver::consume(CanPacket packet) {
     case ODriveMotorCommand::HEARTBEAT:
       break;
     default:
-      LOGW("unhandled command received 0x%02x value: %f", command, *(float*)(packet.data.data()));
+      LOGW("0x%02x unhandled command received 0x%02x value: %f", id, command, *(float*)(packet.data.data()));
       break;
   }
 }
@@ -133,7 +133,7 @@ float ODriveMotorDriver::get_position() {
 }
 
 void ODriveMotorDriver::init() {
-  LOGI("initializing");
+  LOGI("0x%02x initializing", id);
   disable();
   Sync::sleep(10);
   enable();
@@ -154,6 +154,6 @@ void ODriveMotorDriver::init() {
   zero_pos();
   disable();
   Sync::sleep(10);
-  LOGI("zero pos completed");
-  LOGI("initialization completed");
+  LOGI("0x%02x zero pos completed", id);
+  LOGI("0x%02x initialization completed", id);
 }

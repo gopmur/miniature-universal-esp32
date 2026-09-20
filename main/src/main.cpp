@@ -1,6 +1,8 @@
 #include <string.h>
 
 #include <freertos/FreeRTOS.h>
+#include <sys/unistd.h>
+#include <cstdio>
 
 // #include "callbacks/wifi_event_handler.hpp"
 #include "callbacks/twai.hpp"
@@ -26,10 +28,18 @@
 #include "hal/i2c_types.h"
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
+#include "http/modules/log.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
 
 #include "config.hpp"
+#include "http.hpp"
+#include "http/modules/control.hpp"
+#include "http/modules/motor.hpp"
+#include "http/modules/root.hpp"
+#include "http/modules/stream.hpp"
+#include "http/modules/system.hpp"
+#include "http/modules/wifi.hpp"
 #include "icm20948.h"
 #include "icm20948_i2c.h"
 #include "sdkconfig.h"
@@ -38,13 +48,6 @@
 #include "tasks/can_recv.hpp"
 #include "tasks/control.hpp"
 #include "tasks/dns.hpp"
-#include "tasks/http.hpp"
-#include "tasks/http/modules/control.hpp"
-#include "tasks/http/modules/motor.hpp"
-#include "tasks/http/modules/root.hpp"
-#include "tasks/http/modules/stream.hpp"
-#include "tasks/http/modules/system.hpp"
-#include "tasks/http/modules/wifi.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/logger.hpp"
 #include "tasks/monitor.hpp"
@@ -67,15 +70,21 @@ MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
 
+HttpLogModule http_log_module("log");
 HttpMotorModule http_motor_module("motor");
 HttpWifiModule http_wifi_module("wifi");
 HttpSystemModule http_system_module("system", {&http_wifi_module});
 HttpStreamModule http_stream_module("stream");
 HttpControlModule http_control_module("control");
-HttpRootModule http_root_module(
-    "api",
-    {&http_control_module, &http_stream_module, &http_system_module, &http_motor_module});
+HttpRootModule http_root_module("api",
+                                {&http_control_module,
+                                 &http_stream_module,
+                                 &http_system_module,
+                                 &http_motor_module,
+                                 &http_log_module});
 HttpServer http_server(&http_root_module);
+
+FILE* log_file = nullptr;
 
 class App {
   MAKE_LOGGABLE("app");
@@ -252,6 +261,26 @@ class App {
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
   }
 
+  static int log_vprintf(const char* fmt, va_list args) {
+    static Mutex mutex;
+    mutex.take();
+    va_list copy;
+    va_copy(copy, args);
+
+    int ret = vprintf(fmt, args);
+
+    
+    if (log_file) {
+      vfprintf(log_file, fmt, copy);
+      fflush(log_file);
+      fsync(fileno(log_file));
+    }
+
+    va_end(copy);
+    mutex.give();
+    return ret;
+  }
+
   void setup_sd() {
     esp_err_t ret;
 
@@ -303,9 +332,11 @@ class App {
       }
       return;
     }
-    LOGI("Filesystem mounted");
+    LOGI("filesystem mounted");
 
     sdmmc_card_print_info(stdout, card);
+    log_file = fopen("/sd/sys.log", "w");
+    esp_log_set_vprintf(log_vprintf);
   }
 
   void start_tasks() {
@@ -336,6 +367,7 @@ class App {
   }
 
   void setup() {
+    setup_sd();
     setup_gpio();
     setup_flash();
     setup_netif();
@@ -343,7 +375,6 @@ class App {
     setup_i2c();
     setup_twai();
     setup_motors();
-    setup_sd();
 
     start_tasks();
 

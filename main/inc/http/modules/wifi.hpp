@@ -1,8 +1,8 @@
 #pragma once
 
 #include "helper/ds/static_string.hpp"
-#include "tasks/http/module.hpp"
-#include "tasks/http/modules/wifi/scan_wifis.hpp"
+#include "http/module.hpp"
+#include "http/modules/wifi/scan_wifis.hpp"
 
 class HttpWifiModule : public HttpModule {
   MAKE_LOGGABLE("http_module");

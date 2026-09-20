@@ -2,8 +2,8 @@
 
 #include "helper/json.hpp"
 #include "tasks/control.hpp"
-#include "tasks/http/helper.hpp"
-#include "tasks/http/module.hpp"
+#include "http/helper.hpp"
+#include "http/module.hpp"
 
 class HttpControlModule : public HttpModule {
   private:

@@ -21,13 +21,13 @@ void LoggerTask::main() {
   Sync::wait_for_notification_and_clear();
   while (true) {
     LOGI("log started");
-    auto log_file = fopen("/sd/log.csv", "w");
+    auto log_file = fopen("/sd/my_log.csv", "w");
     fprintf(log_file,
             "left_motor_position,left_motor_velocity,right_motor_position,right_motor_position,"
-            "imu_gyro_x,imu_gyro_y,imu_gyro_z");
+            "imu_gyro_x,imu_gyro_y,imu_gyro_z\n");
     while (is_logging) {
       fprintf(log_file,
-              "%f,%f,%f,%f,%f,%f,%f",
+              "%f,%f,%f,%f,%f,%f,%f\n",
               left_motor->get_position(),
               left_motor->get_velocity(),
               right_motor->get_position(),
