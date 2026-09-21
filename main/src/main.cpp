@@ -29,9 +29,9 @@
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
 #include "http/modules/log.hpp"
+#include "jaythread/ipc/mutex.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
-
 
 #include "http.hpp"
 #include "http/modules/control.hpp"
@@ -85,6 +85,7 @@ HttpRootModule http_root_module("api",
 HttpServer http_server(&http_root_module);
 
 FILE* log_file = nullptr;
+Mutex log_file_mutex(true);
 
 class App {
   MAKE_LOGGABLE("app");
@@ -129,13 +130,13 @@ class App {
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,
-                                                        wifi_event_handler,
+                                                        WifiEventCallback::wifi_event_handler,
                                                         NULL,
                                                         NULL));
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
                                                         IP_EVENT_STA_GOT_IP,
-                                                        wifi_event_handler,
+                                                        WifiEventCallback::wifi_event_handler,
                                                         NULL,
                                                         NULL));
 
@@ -262,23 +263,26 @@ class App {
   }
 
   static int log_vprintf(const char* fmt, va_list args) {
-    static Mutex mutex;
-    mutex.take();
     va_list copy;
     va_copy(copy, args);
 
     int ret = vprintf(fmt, args);
-
     
+    log_file_mutex.take();
     if (log_file) {
       vfprintf(log_file, fmt, copy);
       fflush(log_file);
       fsync(fileno(log_file));
     }
+    log_file_mutex.give();
 
     va_end(copy);
-    mutex.give();
     return ret;
+  }
+
+  void setup_tz() {
+    setenv("TZ", "<+0330>-3:30", 1);
+    tzset();
   }
 
   void setup_sd() {
@@ -368,6 +372,7 @@ class App {
 
   void setup() {
     setup_sd();
+    setup_tz();
     setup_gpio();
     setup_flash();
     setup_netif();

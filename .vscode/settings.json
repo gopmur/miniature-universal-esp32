@@ -28,6 +28,7 @@
     "SCLK",
     "sdmmc",
     "SDSPI",
+    "sntp",
     "SRCS",
     "Ssp",
     "twai",

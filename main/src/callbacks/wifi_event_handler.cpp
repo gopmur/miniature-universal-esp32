@@ -1,16 +1,18 @@
 #include "callbacks/wifi_event_handler.hpp"
+#include "callbacks/sntp.hpp"
 #include "esp_log.h"
+#include "esp_netif_sntp.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "tasks/wifi_con_handler.hpp"
+#include "tasks/ws.hpp"
 
 extern WifiConHandlerTask* wifi_con_handler_task;
 
-void wifi_event_handler(void* arg,
-                        esp_event_base_t event_base,
-                        int32_t event_id,
-                        void* event_data) {
-
+void WifiEventCallback::wifi_event_handler(void* arg,
+                                           esp_event_base_t event_base,
+                                           int32_t event_id,
+                                           void* event_data) {
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
     wifi_event_sta_disconnected_t* disconn = (wifi_event_sta_disconnected_t*)event_data;
     switch (disconn->reason) {
@@ -23,7 +25,7 @@ void wifi_event_handler(void* arg,
 
       case WIFI_REASON_NO_AP_FOUND:
         wifi_con_handler_task->connection_result_queue.send(WifiConnectionRequestResult::WRONG_SSID,
-                                                           0);
+                                                            0);
         break;
 
       case WIFI_REASON_ASSOC_LEAVE:
@@ -36,6 +38,10 @@ void wifi_event_handler(void* arg,
   }
 
   else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+    LOGI("starting sntp");
+    esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("129.70.132.36");
+    config.sync_cb = SntpCallback::sync_done;
+    esp_netif_sntp_init(&config);
     wifi_con_handler_task->connection_result_queue.send(WifiConnectionRequestResult::OK, 0);
   }
 }
