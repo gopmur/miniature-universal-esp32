@@ -87,9 +87,6 @@ HttpRootModule http_root_module("api",
                                  &http_fs_module});
 HttpServer http_server(&http_root_module);
 
-FILE* log_file = nullptr;
-Mutex log_file_mutex(true);
-
 class App {
   MAKE_LOGGABLE("app");
 
