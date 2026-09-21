@@ -32,7 +32,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "config.hpp"
+
 #include "http.hpp"
 #include "http/modules/control.hpp"
 #include "http/modules/motor.hpp"

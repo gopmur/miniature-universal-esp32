@@ -6,7 +6,7 @@
 
 #include "http.hpp"
 
-#include "config.hpp"
+
 #include "custom_drivers/motor.hpp"
 #include "esp_check.h"
 #include "esp_err.h"

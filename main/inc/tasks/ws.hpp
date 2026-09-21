@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include "config.hpp"
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "jaythread/thread.hpp"
