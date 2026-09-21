@@ -5,6 +5,7 @@
 class HttpSystemModule : public HttpModule {
   private:
   static esp_err_t get_restart(httpd_req_t* req);
+  static esp_err_t get_factory_reset(httpd_req_t* req);
   void register_direct_uris();
 
   public:

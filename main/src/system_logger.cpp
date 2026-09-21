@@ -1,5 +1,6 @@
 #include "system_logger.hpp"
 #include <sys/unistd.h>
+#include <cstdio>
 #include <ctime>
 #include <format>
 #include <string>
@@ -16,13 +17,23 @@ int SystemLogger::log_vprintf(const char* fmt, va_list args) {
   log_file_mutex.take();
   if (log_file) {
     vfprintf(log_file, fmt, copy);
-    fflush(log_file);
     fsync(fileno(log_file));
+    fflush(log_file);
   }
   log_file_mutex.give();
 
   va_end(copy);
   return ret;
+}
+
+void SystemLogger::close_log_file() {
+  log_file_mutex.take();
+  int status = fclose(log_file);
+  if (status != 0) {
+    LOGE("failed to close log file");
+  }
+  log_file = nullptr;
+  log_file_mutex.give();
 }
 
 void SystemLogger::init() {

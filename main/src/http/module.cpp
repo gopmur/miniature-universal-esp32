@@ -143,6 +143,5 @@ esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json) {
 
 esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
   auto json_string = json.stringify();
-  httpd_resp_send_err(req, status, json_string.c_str());
-  return ESP_OK;
+  return httpd_resp_send_err(req, status, json_string.c_str());
 }

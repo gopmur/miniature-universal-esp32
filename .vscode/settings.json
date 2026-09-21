@@ -27,6 +27,7 @@
     "quadwp",
     "rssi",
     "SCLK",
+    "sdcard",
     "sdmmc",
     "SDSPI",
     "sntp",

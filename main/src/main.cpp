@@ -57,6 +57,7 @@
 #include "tasks/ws.hpp"
 
 twai_node_handle_t twai;
+sdmmc_card_t* card;
 
 AbstractMotorDriver* left_motor;
 AbstractMotorDriver* right_motor;
@@ -92,7 +93,6 @@ class App {
 
   private:
   esp_err_t res;
-  // const char* tag =
   void setup_flash() {
     res = nvs_flash_init();
     if (res == ESP_ERR_NVS_NO_FREE_PAGES || res == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -275,7 +275,7 @@ class App {
         .max_files = 5,
         .allocation_unit_size = 16 * 1024,
     };
-    sdmmc_card_t* card;
+    
     const char mount_point[] = "/sd";
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();

@@ -24,5 +24,6 @@ class SystemLogger {
 
   public:
   static void update_log_file_name();
+  static void close_log_file();
   static void init();
 };
