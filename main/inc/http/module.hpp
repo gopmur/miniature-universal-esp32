@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include "esp_http_server.h"
-#include "helper/json.hpp"
+#include "jayson.hpp"
 #include "loggable.hpp"
 
 class HttpModule {

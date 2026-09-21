@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "config.hpp"
-#include "helper/json.hpp"
+#include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "jaythread/thread.hpp"
 #include "loggable.hpp"

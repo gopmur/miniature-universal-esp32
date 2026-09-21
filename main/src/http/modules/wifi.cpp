@@ -3,7 +3,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
 #include "helper/formats.hpp"
-#include "helper/json.hpp"
+#include "jayson.hpp"
 #include "tasks/wifi_con_handler.hpp"
 
 extern WifiConHandlerTask* wifi_con_handler_task;
