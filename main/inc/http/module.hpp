@@ -5,7 +5,7 @@
 #include <vector>
 #include "esp_http_server.h"
 #include "jayson.hpp"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 class HttpModule {
   MAKE_LOGGABLE("http_module");

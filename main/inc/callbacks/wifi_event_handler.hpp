@@ -1,7 +1,7 @@
 #pragma once
 
 #include "esp_event_base.h"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 class WifiEventCallback {
   MAKE_LOGGABLE("wifi");

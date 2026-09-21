@@ -4,7 +4,7 @@
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "jaythread/thread.hpp"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 enum class WsStream {
   ESP_TASK_DATA,

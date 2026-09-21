@@ -28,6 +28,7 @@
 #include "hal/i2c_types.h"
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
+#include "http/modules/fs.hpp"
 #include "http/modules/log.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "nvs.h"
@@ -70,6 +71,7 @@ MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
 
+HttpFsModule http_fs_module("fs");
 HttpLogModule http_log_module("log");
 HttpMotorModule http_motor_module("motor");
 HttpWifiModule http_wifi_module("wifi");
@@ -81,7 +83,8 @@ HttpRootModule http_root_module("api",
                                  &http_stream_module,
                                  &http_system_module,
                                  &http_motor_module,
-                                 &http_log_module});
+                                 &http_log_module,
+                                 &http_fs_module});
 HttpServer http_server(&http_root_module);
 
 FILE* log_file = nullptr;
@@ -262,24 +265,6 @@ class App {
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
   }
 
-  static int log_vprintf(const char* fmt, va_list args) {
-    va_list copy;
-    va_copy(copy, args);
-
-    int ret = vprintf(fmt, args);
-    
-    log_file_mutex.take();
-    if (log_file) {
-      vfprintf(log_file, fmt, copy);
-      fflush(log_file);
-      fsync(fileno(log_file));
-    }
-    log_file_mutex.give();
-
-    va_end(copy);
-    return ret;
-  }
-
   void setup_tz() {
     setenv("TZ", "<+0330>-3:30", 1);
     tzset();
@@ -339,8 +324,7 @@ class App {
     LOGI("filesystem mounted");
 
     sdmmc_card_print_info(stdout, card);
-    log_file = fopen("/sd/sys.log", "w");
-    esp_log_set_vprintf(log_vprintf);
+    SystemLogger::init();
   }
 
   void start_tasks() {

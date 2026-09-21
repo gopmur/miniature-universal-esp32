@@ -1,7 +1,7 @@
 #pragma once
 
 #include "jaythread/thread.hpp"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 class LoggerTask : public Thread {
   MAKE_LOGGABLE("logger_task");

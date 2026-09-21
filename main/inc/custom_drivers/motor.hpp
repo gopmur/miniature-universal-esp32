@@ -5,7 +5,7 @@
 #include "custom_drivers/motor/packet.hpp"
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 struct MotorFeedback {
   float torque = 0;

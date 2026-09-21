@@ -7,7 +7,7 @@
 #include "controller/smart.hpp"
 #include "controller/zero.hpp"
 #include "jaythread/thread.hpp"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 enum class ControlMode : uint8_t {
   MANUAL,

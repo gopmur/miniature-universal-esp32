@@ -6,7 +6,7 @@
 #include "custom_drivers/can_device_reader.hpp"
 #include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 class CanRecvTask : public Thread {
   MAKE_LOGGABLE("can_recv_task");

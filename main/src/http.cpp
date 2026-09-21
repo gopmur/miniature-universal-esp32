@@ -2,30 +2,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <variant>
 
 #include "http.hpp"
 
-
-#include "custom_drivers/motor.hpp"
-#include "esp_check.h"
 #include "esp_err.h"
 #include "esp_http_server.h"
-#include "esp_log.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "jayson.hpp"
 #include "http_assets.hpp"
-#include "http_parser.h"
 
-#include "jaythread/sync.hpp"
-#include "tasks/control.hpp"
-#include "http/helper.hpp"
 #include "http/module.hpp"
-#include "tasks/logger.hpp"
-#include "tasks/motor.hpp"
-#include "tasks/wifi_con_handler.hpp"
-#include "tasks/ws.hpp"
+
 // #include "threads/scan_wifis.hpp"
 
 // extern WebSocketTask* ws_task;

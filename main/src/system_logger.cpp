@@ -1,0 +1,72 @@
+#include "system_logger.hpp"
+#include <sys/unistd.h>
+#include <ctime>
+#include <format>
+#include <string>
+
+Mutex SystemLogger::log_file_mutex;
+FILE* SystemLogger::log_file;
+
+int SystemLogger::log_vprintf(const char* fmt, va_list args) {
+  va_list copy;
+  va_copy(copy, args);
+
+  int ret = vprintf(fmt, args);
+
+  log_file_mutex.take();
+  if (log_file) {
+    vfprintf(log_file, fmt, copy);
+    fflush(log_file);
+    fsync(fileno(log_file));
+  }
+  log_file_mutex.give();
+
+  va_end(copy);
+  return ret;
+}
+
+void SystemLogger::init() {
+  log_file = fopen("/sd/sys.log", "w");
+  esp_log_set_vprintf(log_vprintf);
+};
+
+void SystemLogger::update_log_file_name() {
+  time_t now;
+  struct tm timeinfo;
+  time(&now);
+  localtime_r(&now, &timeinfo);
+  LOGI("updating the log file's name");
+  std::string log_file_name = std::format("/sd/{}-{}-{}-{}-{}-{}.log",
+                                          timeinfo.tm_year + 1900,
+                                          timeinfo.tm_mon + 1,
+                                          timeinfo.tm_mday,
+                                          timeinfo.tm_hour,
+                                          timeinfo.tm_min,
+                                          timeinfo.tm_sec);
+  log_file_mutex.take();
+  int status = fclose(log_file);
+  log_file = nullptr;
+  if (status != 0) {
+    LOGE("closing log file failed while trying to change its name");
+    goto cleanup;
+  }
+  LOGI("old log file closed. trying to rename it");
+  status = rename("/sd/sys.log", log_file_name.c_str());
+  if (status != 0) {
+    LOGE("log file renaming failed trying to reopen old file");
+    log_file = fopen("/sd/sys.log", "a");
+    if (log_file == nullptr) {
+      LOGE("log file reopening failed");
+      goto cleanup;
+    }
+  }
+  LOGI("log file renaming was successful. trying to reopen it");
+  log_file = fopen(log_file_name.c_str(), "a");
+  if (log_file == nullptr) {
+    LOGE("could not open new log file");
+    goto cleanup;
+  }
+  LOGI("log file reopen was successful");
+cleanup:
+  log_file_mutex.give();
+};

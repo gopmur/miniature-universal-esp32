@@ -1,7 +1,7 @@
 #pragma once
 
 #include "jaythread/thread.hpp"
-#include "loggable.hpp"
+#include "system_logger.hpp"
 
 struct ImuVector3D {
   float x;

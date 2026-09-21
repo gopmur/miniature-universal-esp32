@@ -2,7 +2,6 @@
 
 #include "jayson.hpp"
 #include "tasks/control.hpp"
-#include "http/helper.hpp"
 #include "http/module.hpp"
 
 class HttpControlModule : public HttpModule {
