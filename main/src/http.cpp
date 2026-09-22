@@ -11,6 +11,7 @@
 #include "http_assets.hpp"
 
 #include "http/module.hpp"
+#include "sdkconfig.h"
 #include "system_logger.hpp"
 #include "tasks/ws.hpp"
 
@@ -273,19 +274,23 @@ void HttpServer::on_close(httpd_handle_t server, int sockfd) {
 }
 
 void HttpServer::start() {
+#ifdef CONFIG_HEXA_HTTP_USE_HTTPS
   httpd_ssl_config_t https_config = HTTPD_SSL_CONFIG_DEFAULT();
   https_config.httpd.keep_alive_enable = true;
   https_config.httpd.max_open_sockets = 3;
-
   https_config.httpd.max_uri_handlers = 128;
-
   https_config.servercert = server_cert_pem_start;
   https_config.servercert_len = strlen((char*)server_cert_pem_start) + 1;
-
   https_config.prvtkey_pem = server_key_pem_start;
   https_config.prvtkey_len = strlen((char*)server_key_pem_start) + 1;
-
   ESP_ERROR_CHECK(httpd_ssl_start(&server_instance, &https_config));
+#else
+  httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
+  http_config.keep_alive_enable = true;
+  http_config.max_open_sockets = 3;
+  http_config.max_uri_handlers = 128;
+  ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
+#endif
 
   http_server_register_assets(server_instance);
 

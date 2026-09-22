@@ -1,5 +1,13 @@
 menu "HEXA"
 
+menu "HTTP"
+
+config HEXA_HTTP_USE_HTTPS
+  bool "Use HTTPS"
+  default true
+  
+endmenu
+
 menu "Motors"
 
 config HEXA_MOTOR_RIGHT_ID

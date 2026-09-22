@@ -2779,7 +2779,7 @@ CONFIG_MBEDTLS_CMAC_C=y
 #
 # Asymmetric Ciphers
 #
-# CONFIG_MBEDTLS_RSA_C is not set
+CONFIG_MBEDTLS_RSA_C=y
 # default:
 CONFIG_MBEDTLS_ECP_C=y
 
@@ -2871,7 +2871,6 @@ CONFIG_MBEDTLS_HARDWARE_AES=y
 CONFIG_MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER=y
 # default:
 # CONFIG_MBEDTLS_ATCA_HW_ECDSA_SIGN is not set
-# default:
 # CONFIG_MBEDTLS_ATCA_HW_ECDSA_VERIFY is not set
 # end of Hardware Acceleration
 
@@ -2895,6 +2894,8 @@ CONFIG_MBEDTLS_BASE64_C=y
 CONFIG_MBEDTLS_PKCS5_C=y
 # default:
 CONFIG_MBEDTLS_PKCS7_C=y
+# default:
+CONFIG_MBEDTLS_PKCS1_V15=y
 # default:
 CONFIG_MBEDTLS_PKCS1_V21=y
 # end of Encoding/Decoding
@@ -3231,6 +3232,13 @@ CONFIG_WL_SECTOR_SIZE=4096
 #
 # HEXA
 #
+
+#
+# HTTP
+#
+# default:
+# CONFIG_HEXA_HTTP_USE_HTTPS is not set
+# end of HTTP
 
 #
 # Motors
