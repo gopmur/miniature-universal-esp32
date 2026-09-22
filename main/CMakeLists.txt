@@ -8,9 +8,8 @@ configure_file(
 
 file(GLOB_RECURSE SOURCE_CPP_FILES "src/*.cpp")
 file(GLOB_RECURSE SOURCE_C_FILES "src/*.c")
-file(GLOB_RECURSE ASSET_FILES
+file(GLOB_RECURSE HTTP_ASSET_FILES
   "${CMAKE_SOURCE_DIR}/generated/assets/*.gz"
-  "${CMAKE_SOURCE_DIR}/main/certs/*.pem"
 )
 
 message("C Source files:")
@@ -27,7 +26,10 @@ idf_component_register(
   ${SOURCE_C_FILES}
   ${SOURCE_CPP_FILES}
   EMBED_FILES
-  ${ASSET_FILES}
+  ${HTTP_ASSET_FILES}
+  EMBED_TXTFILES
+  "${CMAKE_SOURCE_DIR}/main/certs/ecc_private.key"
+  "${CMAKE_SOURCE_DIR}/main/certs/ecc_cert.crt"
   INCLUDE_DIRS
   "inc"
   "${CMAKE_SOURCE_DIR}/generated/inc"

@@ -2,9 +2,9 @@
 
 #include "esp_err.h"
 #include "esp_http_server.h"
-#include "jayson.hpp"
-#include "http_assets.hpp"
 #include "http/module.hpp"
+#include "http_assets.hpp"
+#include "jayson.hpp"
 #include "system_logger.hpp"
 
 // class HttpServer {
@@ -71,8 +71,6 @@
 //   static esp_err_t start_log(httpd_req_t* req);
 //   static esp_err_t stop_log(httpd_req_t* req);
 
-
-
 //   esp_err_t register_dynamic_endpoints();
 
 //   public:
@@ -81,13 +79,17 @@
 //   void start();
 // };
 
+extern const uint8_t server_cert_pem_start[] asm("_binary_ecc_cert_crt_start");
+extern const uint8_t server_cert_pem_end[] asm("_binary_ecc_cert_crt_end");
+extern const uint8_t server_key_pem_start[] asm("_binary_ecc_private_key_start");
+extern const uint8_t server_key_pem_end[] asm("_binary_ecc_private_key_end");
 
 class HttpServer {
   MAKE_LOGGABLE("http_server");
 
   private:
   HttpModule* root_module;
-  static void on_close(httpd_handle_t server, int sockfd); 
+  static void on_close(httpd_handle_t server, int sockfd);
 
   public:
   httpd_handle_t server_instance;

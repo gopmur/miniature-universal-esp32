@@ -110,8 +110,8 @@ void HttpModule::allow_cors(httpd_req_t* req) {
   httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
 }
 
-void HttpModule::set_close_connection(httpd_req_t* req) {
-  httpd_resp_set_hdr(req, "Connection", "close");
+void HttpModule::set_keep_alive(httpd_req_t* req) {
+  httpd_resp_set_hdr(req, "Connection", "keep-alive"); 
 }
 
 void HttpModule::set_type_json(httpd_req_t* req) {
@@ -120,7 +120,7 @@ void HttpModule::set_type_json(httpd_req_t* req) {
 
 void HttpModule::set_header(httpd_req_t* req) {
   allow_cors(req);
-  set_close_connection(req);
+  set_keep_alive(req);
   set_type_json(req);
 }
 

@@ -32,7 +32,7 @@ class HttpModule {
                                 esp_err_t (*handler)(httpd_req_t* req));
 
   static void allow_cors(httpd_req_t* req);
-  static void set_close_connection(httpd_req_t* req);
+  static void set_keep_alive(httpd_req_t* req);
   static void set_type_json(httpd_req_t* req);
   static void set_header(httpd_req_t* req);
   static bool check_uri(const char* uri);
