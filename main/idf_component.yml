@@ -1,4 +1,4 @@
 dependencies:
   gopmur/icm20948: ^1.0.1
-  gopmur/jaythread: ^1.2.1
+  gopmur/jaythread: ^1.2.2
   gopmur/jayson: ^1.0.0

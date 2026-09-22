@@ -31,12 +31,12 @@ dependencies:
       type: service
     version: 1.0.0
   gopmur/jaythread:
-    component_hash: 262e987070860afe6de2b24262068da04bcf3bbfeb0ea54e50d9550ec906352c
+    component_hash: c7168ee8a5379b39483d8a4a925f19984cd75c19128cdb9acfbd53e2c67a87ec
     dependencies: []
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 1.2.1
+    version: 1.2.2
   idf:
     source:
       type: idf
@@ -45,6 +45,6 @@ direct_dependencies:
 - gopmur/icm20948
 - gopmur/jayson
 - gopmur/jaythread
-manifest_hash: 76083fb8ccdd0bc3878111561b3f6c445ba47c18bef0d98fe349fb6657598c3e
+manifest_hash: 895f6d509d92c892571b6df681993b37703740491a90664d16416d7ce68c622f
 target: esp32
 version: 3.0.0
