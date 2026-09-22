@@ -10,6 +10,8 @@ class HttpLegacyModule : public HttpModule {
   private:
   static void send_resp(httpd_req_t* req, JsonObject json);
   static esp_err_t handle_ping(httpd_req_t* req);
+  static esp_err_t handle_enable(httpd_req_t* req);
+  static esp_err_t handle_disable(httpd_req_t* req);
 
   static esp_err_t ws(httpd_req_t* req);
   static esp_err_t ws_post_handshake(httpd_req_t* req);

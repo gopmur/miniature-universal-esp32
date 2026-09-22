@@ -1,9 +1,17 @@
 #include "http/modules/legacy.hpp"
 #include <cstdio>
 #include <variant>
+#include "custom_drivers/motor.hpp"
 #include "esp_http_server.h"
 #include "jayson.hpp"
 #include "system_logger.hpp"
+#include "tasks/control.hpp"
+#include "tasks/motor.hpp"
+
+extern MotorTask* motor_task;
+extern AbstractMotorDriver* left_motor;
+extern AbstractMotorDriver* right_motor;
+extern ControlTask* control_task;
 
 esp_err_t HttpLegacyModule::ws(httpd_req_t* req) {
   LOGI("data received");
@@ -38,13 +46,41 @@ esp_err_t HttpLegacyModule::ws(httpd_req_t* req) {
   }
   auto action = std::string(std::get<char*>(action_result));
   if (action == "ping") {
+    handle_ping(req);
+  } else if (action == "disable") {
+    handle_disable(req);
+  } else if (action == "enable") {
+    handle_enable(req);
   }
   return ESP_OK;
 }
 
 esp_err_t HttpLegacyModule::handle_ping(httpd_req_t* req) {
   JsonObject resp_json;
-  resp_json.set("ping", "ok");
+  resp_json.set("action", "ping");
+  resp_json.set("status", "ok");
+  return ESP_OK;
+}
+
+esp_err_t HttpLegacyModule::handle_enable(httpd_req_t* req) {
+  JsonObject resp_json;
+  motor_task->enable();
+  left_motor->zero_pos();
+  right_motor->zero_pos();
+  control_task->running = true;
+  resp_json.set("action", "enable");
+  resp_json.set("status", "success");
+  send_resp(req, resp_json);
+  return ESP_OK;
+}
+
+esp_err_t HttpLegacyModule::handle_disable(httpd_req_t* req) {
+  JsonObject resp_json;
+  control_task->running = false;
+  motor_task->disable();
+  resp_json.set("action", "disable");
+  resp_json.set("status", "success");
+  send_resp(req, resp_json);
   return ESP_OK;
 }
 
