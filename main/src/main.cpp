@@ -46,6 +46,7 @@
 #include "sdkconfig.h"
 #include "sdmmc_cmd.h"
 #include "soc/gpio_num.h"
+#include "system_logger.hpp"
 #include "tasks/can_recv.hpp"
 #include "tasks/control.hpp"
 #include "tasks/dns.hpp"
@@ -64,7 +65,7 @@ AbstractMotorDriver* right_motor;
 
 CanRecvTask* can_recv_task;
 ImuTask* imu_task;
-WebSocketTask* ws_task;
+WebSocketTask ws_task;
 WifiConHandlerTask* wifi_con_handler_task;
 DnsTask* dns_task;
 ControlTask* control_task;
@@ -275,7 +276,7 @@ class App {
         .max_files = 5,
         .allocation_unit_size = 16 * 1024,
     };
-    
+
     const char mount_point[] = "/sd";
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
@@ -329,7 +330,6 @@ class App {
 
     wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
-    ws_task = new WebSocketTask();
     control_task = new ControlTask();
     imu_task = new ImuTask();
     logger_task = new LoggerTask();
@@ -341,7 +341,7 @@ class App {
                                  CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
                                  CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
     dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
-    ws_task->start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
     control_task->start("control",
                         CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
                         CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
@@ -370,7 +370,13 @@ class App {
   }
 
   public:
-  void run() { setup(); }
+  void run() {
+    setup();
+    while (true) {
+      LOGI("testing");
+      Sync::sleep(1000);
+    }
+  }
 };
 
 extern "C" void app_main() {

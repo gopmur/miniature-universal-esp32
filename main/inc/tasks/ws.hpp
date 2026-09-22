@@ -1,19 +1,20 @@
 #pragma once
 
+#include <string>
+#include <utility>
 #include <vector>
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
+#include "jaythread/ipc/queue.hpp"
 #include "jaythread/thread.hpp"
 #include "system_logger.hpp"
 
 enum class WsStream {
-  ESP_TASK_DATA,
-  STM_TASK_DATA,
-  IMU_DATA,
-  MOTOR_DATA,
-  OTA_PROGRESS,
-
-  COUNT,
+  TASK,
+  IMU,
+  MOTOR,
+  OTA,
+  SYS_LOG,
 };
 
 struct WebSocketConnections {
@@ -32,12 +33,14 @@ class WebSocketTask : public Thread {
   void fill_imu_data_json(JsonObject* imu_data_json);
   void fill_motor_data_json(JsonObject* motor_data_json);
   void add_time_stamp(JsonObject* json);
-  void stop_sending(int fd);
   esp_err_t send_to_connection(int fd, std::string& data);
   esp_err_t send_to_connection(int fd, JsonObject* json);
 
   public:
   void main();
   WebSocketTask();
-  void start_sending(int fd, WsStream stream);
+  std::vector<WebSocketConnections> get_connections();
+  void remove_connection(int fd);
+  void add_connection(int fd, WsStream stream);
+  Queue<std::pair<int, std::string*>, 8> sys_log_queue;
 };

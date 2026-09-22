@@ -1,14 +1,14 @@
 #include "tasks/ws.hpp"
 #include <vector>
 
-
 #include "custom_drivers/motor.hpp"
 #include "esp_http_server.h"
 #include "esp_timer.h"
+#include "http.hpp"
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "jaythread/sync.hpp"
-#include "http.hpp"
+#include "system_logger.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/monitor.hpp"
 
@@ -93,38 +93,38 @@ void WebSocketTask::main() {
         LOGI("no connections available. going to sleep");
         break;
       }
-
       task_status_json = JsonObject();
       imu_data_json = JsonObject();
       motor_data_json = JsonObject();
       esp_heap = JsonObject();
       ota_progress = JsonObject();
-
-      connection_mutex.take();
-      auto connections_copy = this->connections;
-      connection_mutex.give();
-      esp_err_t ret;
-      for (auto connection : connections_copy) {
+      auto connections = get_connections();
+      esp_err_t ret = ESP_FAIL;
+      for (auto connection : connections) {
         switch (connection.stream) {
-          case WsStream::IMU_DATA: {
+          case WsStream::IMU: {
             if (imu_data_json.is_empty()) {
               fill_imu_data_json(&imu_data_json);
             }
             ret = send_to_connection(connection.fd, &imu_data_json);
             break;
           }
-          case WsStream::MOTOR_DATA: {
+          case WsStream::MOTOR: {
             if (motor_data_json.is_empty()) {
               fill_motor_data_json(&motor_data_json);
             }
             ret = send_to_connection(connection.fd, &motor_data_json);
             break;
           }
-          case WsStream::ESP_TASK_DATA: {
+          case WsStream::TASK: {
             if (task_status_json.is_empty()) {
               fill_task_status_json(&task_status_json);
             }
             ret = send_to_connection(connection.fd, &task_status_json);
+            break;
+          }
+          case WsStream::SYS_LOG: {
+            ret = ESP_OK;
             break;
           }
           default:
@@ -132,15 +132,31 @@ void WebSocketTask::main() {
             break;
         }
         if (ret != ESP_OK) {
-          stop_sending(connection.fd);
+          remove_connection(connection.fd);
         }
       }
+      std::optional<std::pair<int, std::string*>> sys_log_result;
+      while (true) {
+        sys_log_result = sys_log_queue.receive(0);
+        if (!sys_log_result.has_value()) {
+          break;
+        }
+        auto sys_log = sys_log_result.value();
+        auto fd = std::get<0>(sys_log);
+        auto sys_log_str = std::get<1>(sys_log);
+        ret = send_to_connection(fd, *sys_log_str);
+        if (ret != ESP_OK) {
+          remove_connection(fd);
+        }
+        delete sys_log_str;
+      };
       Sync::sleep(10);
     }
   }
 }
 
-void WebSocketTask::start_sending(int fd, WsStream stream) {
+void WebSocketTask::add_connection(int fd, WsStream stream) {
+  LOGI("connection opened %d", fd);
   connection_mutex.take();
   for (auto& connection : connections) {
     if (connection.fd == fd) {
@@ -162,7 +178,8 @@ cleanup:
   connection_mutex.give();
 }
 
-void WebSocketTask::stop_sending(int fd) {
+void WebSocketTask::remove_connection(int fd) {
+  LOGI("connection closed %d", fd);
   connection_mutex.take();
   int connection_index_to_remove = -1;
   for (int i = 0; i < connections.size(); i++) {
@@ -176,4 +193,11 @@ void WebSocketTask::stop_sending(int fd) {
     connections.erase(connections.begin() + connection_index_to_remove);
   }
   connection_mutex.give();
+}
+
+std::vector<WebSocketConnections> WebSocketTask::get_connections() {
+  connection_mutex.take();
+  auto connections_copy = this->connections;
+  connection_mutex.give();
+  return connections_copy;
 }

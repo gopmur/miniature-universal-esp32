@@ -1,28 +1,51 @@
 #include "system_logger.hpp"
 #include <sys/unistd.h>
+#include <atomic>
 #include <cstdio>
 #include <ctime>
 #include <format>
 #include <string>
+#include <utility>
+#include "esp_http_server.h"
+#include "http.hpp"
+#include "tasks/ws.hpp"
 
-Mutex SystemLogger::log_file_mutex;
+extern WebSocketTask ws_task;
+extern HttpServer http_server;
+
+Mutex SystemLogger::log_file_mutex(true);
 FILE* SystemLogger::log_file;
 
 int SystemLogger::log_vprintf(const char* fmt, va_list args) {
-  va_list copy;
-  va_copy(copy, args);
+  va_list file_args;
+  va_list ws_args;
 
-  int ret = vprintf(fmt, args);
-
+  va_copy(file_args, args);
   log_file_mutex.take();
   if (log_file) {
-    vfprintf(log_file, fmt, copy);
+    vfprintf(log_file, fmt, file_args);
     fsync(fileno(log_file));
     fflush(log_file);
   }
   log_file_mutex.give();
+  va_end(file_args);
 
-  va_end(copy);
+  auto ws_connections = ws_task.get_connections();
+
+  for (auto connection : ws_connections) {
+    va_copy(ws_args, args);
+    size_t len = vsnprintf(nullptr, 0, fmt, args);
+    if (connection.stream == WsStream::SYS_LOG) {
+      auto buffer = new std::string;
+      buffer->resize(len);
+      vsprintf(buffer->data(), fmt, ws_args);
+      ws_task.sys_log_queue.send(std::make_pair(connection.fd, buffer));
+    }
+    va_end(ws_args);
+  }
+
+  int ret = vprintf(fmt, args);
+
   return ret;
 }
 

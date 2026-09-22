@@ -5,6 +5,7 @@
 #include "jayson.hpp"
 #include "http_assets.hpp"
 #include "http/module.hpp"
+#include "system_logger.hpp"
 
 // class HttpServer {
 //   private:
@@ -82,8 +83,11 @@
 
 
 class HttpServer {
+  MAKE_LOGGABLE("http_server");
+
   private:
   HttpModule* root_module;
+  static void on_close(httpd_handle_t server, int sockfd); 
 
   public:
   httpd_handle_t server_instance;

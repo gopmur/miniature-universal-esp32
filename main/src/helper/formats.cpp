@@ -42,3 +42,19 @@ const char* get_entry_type_string(uint8_t entry_type) {
   }
   return "unsupported";
 }
+
+const char* get_ws_stream_string(WsStream stream) {
+  switch (stream) {
+    case WsStream::TASK:
+      return "tasks";
+    case WsStream::IMU:
+      return "imu";
+    case WsStream::MOTOR:
+      return "motor";
+    case WsStream::OTA:
+      return "ota";
+    case WsStream::SYS_LOG:
+      return "sys_log";
+  }
+  return "unknown";
+}

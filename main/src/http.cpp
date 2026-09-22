@@ -10,6 +10,8 @@
 #include "http_assets.hpp"
 
 #include "http/module.hpp"
+#include "system_logger.hpp"
+#include "tasks/ws.hpp"
 
 // #include "threads/scan_wifis.hpp"
 
@@ -21,14 +23,11 @@
 // extern AbstractMotorDriver* right_motor;
 // ScanWifisThread scan_wifis_thread;
 
-
-
 // esp_err_t null_request_handler(httpd_req_t* req) {
 //   set_header(req);
 //   httpd_resp_send(req, nullptr, 0);
 //   return ESP_OK;
 // }
-
 
 // esp_err_t start_log(httpd_req_t* req) {
 //   set_header(req);
@@ -176,8 +175,6 @@
 // //   return ESP_OK;
 // // }
 
-
-
 // // // ! this needs to be async
 // // esp_err_t check_for_update_handler(httpd_req_t* req) {
 // //   set_header(req);
@@ -251,9 +248,6 @@
 // //   return ESP_OK;
 // // }
 
-
-
-
 // esp_err_t register_dynamic_endpoints() {
 //   this->register_http_uri("/api/null", HTTP_GET, null_request_handler);
 //   // this->register_http_uri("/api/version", HTTP_GET, get_version_handler);
@@ -265,14 +259,21 @@
 //   this->register_http_uri("/api/log/stop", HTTP_GET, stop_log);
 //   this->register_http_uri("/api/log/start", HTTP_GET, start_log);
 
-
 //   return ESP_OK;
 // }
 
-HttpServer::HttpServer(HttpModule* root_module) : root_module(root_module){};
+extern WebSocketTask ws_task;
+
+HttpServer::HttpServer(HttpModule* root_module) : root_module(root_module) {};
+
+void HttpServer::on_close(httpd_handle_t server, int sockfd) {
+  LOGI("tcp connection closed");
+  ws_task.remove_connection(sockfd);
+}
 
 void HttpServer::start() {
   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
+  // http_config.close_fn = on_close;
   http_config.max_uri_handlers = 128;
   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
   http_server_register_assets(server_instance);
