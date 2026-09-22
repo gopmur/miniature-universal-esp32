@@ -29,6 +29,7 @@
 #include "hal/spi_types.h"
 #include "hal/uart_types.h"
 #include "http/modules/fs.hpp"
+#include "http/modules/legacy.hpp"
 #include "http/modules/log.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "nvs.h"
@@ -73,6 +74,7 @@ MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
 
+HttpLegacyModule http_legacy_module("legacy");
 HttpFsModule http_fs_module("fs");
 HttpLogModule http_log_module("log");
 HttpMotorModule http_motor_module("motor");
@@ -86,7 +88,8 @@ HttpRootModule http_root_module("api",
                                  &http_system_module,
                                  &http_motor_module,
                                  &http_log_module,
-                                 &http_fs_module});
+                                 &http_fs_module,
+                                 &http_legacy_module});
 HttpServer http_server(&http_root_module);
 
 class App {

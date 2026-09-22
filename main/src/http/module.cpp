@@ -27,6 +27,9 @@ void HttpModule::register_uri(const char* uri_address,
   if (!check_uri(uri_address)) {
     return;
   }
+  if (strlen(uri_address) == 1) {
+    uri_address = "";
+  }
   auto full_uri_address = new std::string(base_uri + name + uri_address);
   httpd_uri uri = {
       .uri = full_uri_address->c_str(),
@@ -47,6 +50,9 @@ void HttpModule::register_ws_uri(const char* uri_address,
                                  esp_err_t (*post_handshake_handler)(httpd_req_t* req)) {
   if (!check_uri(uri_address)) {
     return;
+  }
+  if (strlen(uri_address) == 1) {
+    uri_address = "";
   }
   auto full_uri_address = new std::string(base_uri + name + uri_address);
   httpd_uri_t uri = {
@@ -69,6 +75,9 @@ void HttpModule::register_uri_with_option(const char* uri_address,
                                           esp_err_t (*handler)(httpd_req_t* req)) {
   if (!check_uri(uri_address)) {
     return;
+  }
+  if (strlen(uri_address) == 1) {
+    uri_address = "";
   }
   auto full_uri_address = new std::string(base_uri + name + uri_address);
   httpd_uri uri = {
@@ -111,7 +120,7 @@ void HttpModule::allow_cors(httpd_req_t* req) {
 }
 
 void HttpModule::set_keep_alive(httpd_req_t* req) {
-  httpd_resp_set_hdr(req, "Connection", "keep-alive"); 
+  httpd_resp_set_hdr(req, "Connection", "keep-alive");
 }
 
 void HttpModule::set_type_json(httpd_req_t* req) {
