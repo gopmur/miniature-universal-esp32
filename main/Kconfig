@@ -1,5 +1,36 @@
 menu "HEXA"
 
+menu "IMU"
+config HEXA_IMU_SDA_PIN
+  int "SDA pin"
+  default 21
+
+config HEXA_IMU_SCL_PIN
+  int "SCL pin"
+  default 22
+
+endmenu
+
+menu "SD Card"
+
+config HEXA_SD_CARD_CS_PIN
+  int "CS ping"
+  default 5
+
+config HEXA_SD_CARD_MOSI_PIN
+  int "MOSI pin"
+  default 23
+
+config HEXA_SD_CARD_MISO_PIN
+  int "MISO pin"
+  default 19
+
+config HEXA_SD_CARD_SCLK_PIN
+  int "SCLK pin" 
+  default 18
+
+endmenu
+
 menu "HTTP"
 
 config HEXA_HTTP_USE_HTTPS

@@ -4,7 +4,6 @@
 #include <sys/unistd.h>
 #include <cstdio>
 
-// #include "callbacks/wifi_event_handler.hpp"
 #include "callbacks/twai.hpp"
 #include "callbacks/wifi_event_handler.hpp"
 #include "custom_drivers/motor.hpp"
@@ -152,10 +151,10 @@ class App {
   void setup_i2c() {
     i2c_config_t i2c_config = {
         .mode = I2C_MODE_MASTER,
-        .sda_io_num = (gpio_num_t)21,
-        .scl_io_num = (gpio_num_t)22,
-        .sda_pullup_en = GPIO_PULLUP_DISABLE,
-        .scl_pullup_en = GPIO_PULLUP_DISABLE,
+        .sda_io_num = (gpio_num_t)CONFIG_HEXA_IMU_SDA_PIN,
+        .scl_io_num = (gpio_num_t)CONFIG_HEXA_IMU_SCL_PIN,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master =
             {
                 .clk_speed = 400000,
@@ -286,9 +285,9 @@ class App {
     host.unaligned_multi_block_rw_max_chunk_size = 8;
 
     spi_bus_config_t bus_cfg = {
-        .mosi_io_num = 23,
-        .miso_io_num = 19,
-        .sclk_io_num = 18,
+        .mosi_io_num = CONFIG_HEXA_SD_CARD_MOSI_PIN,
+        .miso_io_num = CONFIG_HEXA_SD_CARD_MISO_PIN,
+        .sclk_io_num = CONFIG_HEXA_SD_CARD_SCLK_PIN,
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
@@ -302,7 +301,7 @@ class App {
     }
 
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    slot_config.gpio_cs = static_cast<gpio_num_t>(5);
+    slot_config.gpio_cs = static_cast<gpio_num_t>(CONFIG_HEXA_SD_CARD_CS_PIN);
     slot_config.host_id = static_cast<spi_host_device_t>(host.slot);
 
     LOGI("Mounting filesystem");
@@ -334,8 +333,8 @@ class App {
     wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
     control_task = new ControlTask();
-    imu_task = new ImuTask();
-    logger_task = new LoggerTask();
+    // imu_task = new ImuTask();
+    // logger_task = new LoggerTask();
     monitor_task = new MonitorTask();
 
     motor_task->start("motor", 2, 4096);
@@ -348,20 +347,20 @@ class App {
     control_task->start("control",
                         CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
                         CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
-    logger_task->start("logger", 2, 4096);
+    // logger_task->start("logger", 2, 4096);
 
-    imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    // imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
     monitor_task->start("monitor", 2, 4096);
   }
 
   void setup() {
-    setup_sd();
+    // setup_sd();
     setup_tz();
     setup_gpio();
     setup_flash();
     setup_netif();
     setup_wifi();
-    setup_i2c();
+    // setup_i2c();
     setup_twai();
     setup_motors();
 
