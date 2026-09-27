@@ -55,6 +55,8 @@ const char* get_ws_stream_string(WsStream stream) {
       return "ota";
     case WsStream::SYS_LOG:
       return "sys_log";
+    case WsStream::LEGACY:
+      return "legacy";
   }
   return "unknown";
 }

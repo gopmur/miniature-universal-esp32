@@ -75,6 +75,27 @@ esp_err_t WebSocketTask::send_to_connection(int fd, JsonObject* json) {
   return send_to_connection(fd, json_str);
 }
 
+esp_err_t WebSocketTask::send_to_legacy_connection(int fd) {
+  LegacyDataPacket packet;
+  packet.status = 1;
+  packet.action = 2;
+  packet.rp = right_motor->get_position();
+  packet.lp = left_motor->get_position();
+  packet.rt = 0;
+  packet.lt = 0;
+  packet.r_tmp = 0;
+  packet.l_tmp = 0;
+  packet.b_tmp = 0;
+  httpd_ws_frame_t ws_packet = {
+      .final = true,
+      .fragmented = false,
+      .type = HTTPD_WS_TYPE_BINARY,
+      .payload = reinterpret_cast<uint8_t*>(&packet),
+      .len = sizeof(packet),
+  };
+  return httpd_ws_send_data(http_server.server_instance, fd, &ws_packet);
+}
+
 void WebSocketTask::main() {
   JsonObject task_status_json;
   JsonObject imu_data_json;
@@ -125,6 +146,10 @@ void WebSocketTask::main() {
           }
           case WsStream::SYS_LOG: {
             ret = ESP_OK;
+            break;
+          }
+          case WsStream::LEGACY: {
+            ret = send_to_legacy_connection(connection.fd);
             break;
           }
           default:

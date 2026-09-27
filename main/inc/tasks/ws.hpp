@@ -15,11 +15,24 @@ enum class WsStream {
   MOTOR,
   OTA,
   SYS_LOG,
+  LEGACY,
 };
 
 struct WebSocketConnections {
   int fd;
   WsStream stream;
+};
+
+struct __attribute__((packed)) LegacyDataPacket {
+  uint8_t status;
+  uint8_t action;
+  float rp;
+  float lp;
+  float rt;
+  float lt;
+  float r_tmp;
+  float l_tmp;
+  float b_tmp;
 };
 
 class WebSocketTask : public Thread {
@@ -33,6 +46,7 @@ class WebSocketTask : public Thread {
   void fill_imu_data_json(JsonObject* imu_data_json);
   void fill_motor_data_json(JsonObject* motor_data_json);
   void add_time_stamp(JsonObject* json);
+  esp_err_t send_to_legacy_connection(int fd);
   esp_err_t send_to_connection(int fd, std::string& data);
   esp_err_t send_to_connection(int fd, JsonObject* json);
 

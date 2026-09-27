@@ -8,11 +8,13 @@
 #include "system_logger.hpp"
 #include "tasks/control.hpp"
 #include "tasks/motor.hpp"
+#include "tasks/ws.hpp"
 
 extern MotorTask* motor_task;
 extern AbstractMotorDriver* left_motor;
 extern AbstractMotorDriver* right_motor;
 extern ControlTask* control_task;
+extern WebSocketTask ws_task;
 
 esp_err_t HttpLegacyModule::ws(httpd_req_t* req) {
   LOGI("data received");
@@ -212,7 +214,7 @@ esp_err_t HttpLegacyModule::handle_assist_semiautomatic(httpd_req_t* req, JsonOb
       right_torque = 0;
       control_task->semiautomatic_controller.params.weak_leg = Leg::LEFT;
       break;
-      case LegacyLeg::RIGHT:
+    case LegacyLeg::RIGHT:
       left_torque = 0;
       control_task->semiautomatic_controller.params.weak_leg = Leg::RIGHT;
       break;
@@ -312,6 +314,8 @@ void HttpLegacyModule::send_resp(httpd_req_t* req, JsonObject json) {
 
 esp_err_t HttpLegacyModule::ws_post_handshake(httpd_req_t* req) {
   LOGI("connected");
+  int fd = httpd_req_to_sockfd(req);
+  ws_task.add_connection(fd, WsStream::LEGACY);
   return ESP_OK;
 }
 
