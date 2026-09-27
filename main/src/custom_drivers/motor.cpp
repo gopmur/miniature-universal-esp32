@@ -70,8 +70,8 @@ void AbstractMotorDriver::send_packet(MotorPacket packet) {
   twai_frame.buffer = packet.data.data();
   twai_frame.buffer_len =
       std::min(static_cast<uint32_t>(packet.header.dlc), static_cast<uint32_t>(packet.data.size()));
-  // ESP_ERROR_CHECK(twai_node_transmit(twai, &twai_frame, 10));
-  // ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(twai, 10));
+  ESP_ERROR_CHECK(twai_node_transmit(twai, &twai_frame, -1));
+  ESP_ERROR_CHECK(twai_node_transmit_wait_all_done(twai, -1));
 }
 
 void AbstractMotorDriver::poll_encoder() {

@@ -41,6 +41,9 @@ endmenu
 
 menu "Motors"
 
+config HEXA_MOTOR_POWER_ENABLE_PIN
+  int "Power enable pin"
+
 config HEXA_MOTOR_RIGHT_ID
   int "Right CAN ID"
   default 2

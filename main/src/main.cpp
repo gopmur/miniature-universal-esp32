@@ -220,16 +220,17 @@ class App {
   }
 
   void setup_gpio() {
-    gpio_config_t power_switch = {
-        .pin_bit_mask = (1ULL << GPIO_NUM_12),
+    gpio_config_t motor_power_switch = {
+        .pin_bit_mask = (1ULL << CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
 
-    gpio_config(&power_switch);
-    gpio_set_level(GPIO_NUM_12, 1);
+    gpio_config(&motor_power_switch);
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), 1);
+    LOGI("motors turned on");
   }
 
   void init_console() {
@@ -333,8 +334,8 @@ class App {
     wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
     control_task = new ControlTask();
-    // imu_task = new ImuTask();
-    // logger_task = new LoggerTask();
+    imu_task = new ImuTask();
+    logger_task = new LoggerTask();
     monitor_task = new MonitorTask();
 
     motor_task->start("motor", 2, 4096);
@@ -350,11 +351,11 @@ class App {
     // logger_task->start("logger", 2, 4096);
 
     // imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
-    monitor_task->start("monitor", 2, 4096);
+    // monitor_task->start("monitor", 2, 4096);
   }
 
   void setup() {
-    // setup_sd();
+    setup_sd();
     setup_tz();
     setup_gpio();
     setup_flash();
