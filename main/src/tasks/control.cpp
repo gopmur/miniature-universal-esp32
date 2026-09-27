@@ -3,7 +3,9 @@
 #include "controller.hpp"
 #include "custom_drivers/motor.hpp"
 #include "esp_log.h"
+#include "helper/formats.hpp"
 #include "jaythread/sync.hpp"
+#include "system_logger.hpp"
 #include "tasks/motor.hpp"
 
 extern MotorTask* motor_task;
@@ -24,6 +26,7 @@ void ControlTask::main() {
     if (prev_control_mod != control_mode) {
       reset();
       prev_control_mod = control_mode;
+      LOGI("entered mode %s", get_control_mode_string(control_mode));
     }
     input.left_motor.position = left_motor->get_position();
     input.right_motor.position = right_motor->get_position();

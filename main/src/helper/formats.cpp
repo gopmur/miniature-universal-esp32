@@ -58,3 +58,17 @@ const char* get_ws_stream_string(WsStream stream) {
   }
   return "unknown";
 }
+
+const char* get_control_mode_string(ControlMode control_mode) {
+  switch (control_mode) {
+    case ControlMode::MANUAL:
+      return "manual";
+    case ControlMode::AUTO:
+      return "automatic";
+    case ControlMode::SEMI_AUTO:
+      return "semiautomatic";
+    case ControlMode::SMART:
+      return "smart";
+  }
+  return "unkown";
+}
