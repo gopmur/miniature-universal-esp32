@@ -9,6 +9,7 @@
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
 #include "jaythread/sync.hpp"
+#include "system_logger.hpp"
 
 ODriveMotorDriver::ODriveMotorDriver(int id,
                                      twai_node_handle_t twai,
@@ -96,12 +97,14 @@ void ODriveMotorDriver::send_set_axis_state_command(ODriveMotorAxisState axis_st
 }
 
 void ODriveMotorDriver::enable() {
+  LOGI("enabling 0x%02x", id);
   send_set_torque_mode_command();
   Sync::sleep(10);
   send_set_axis_state_command(ODriveMotorAxisState::CLOSED_LOOP_CONTROL);
 }
 
 void ODriveMotorDriver::disable() {
+  LOGI("disabling 0x%02x", id);
   send_set_axis_state_command(ODriveMotorAxisState::IDLE);
 }
 
@@ -123,7 +126,10 @@ void ODriveMotorDriver::consume(CanPacket packet) {
     case ODriveMotorCommand::HEARTBEAT:
       break;
     default:
-      LOGW("0x%02x unhandled command received 0x%02x value: %f", id, command, *(float*)(packet.data.data()));
+      LOGW("0x%02x unhandled command received 0x%02x value: %f",
+           id,
+           command,
+           *(float*)(packet.data.data()));
       break;
   }
 }

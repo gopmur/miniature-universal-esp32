@@ -113,6 +113,7 @@ class App {
   }
 
   void setup_wifi() {
+    esp_wifi_set_band_mode(WIFI_BAND_MODE_5G_ONLY);
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_config));
 
@@ -214,9 +215,9 @@ class App {
 
   void setup_motors() {
     left_motor =
-        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.8, MotorDirection::BACKWARD, 0.08);
+        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.2, MotorDirection::BACKWARD, 0.02);
     right_motor =
-        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.4, MotorDirection::FORWARD, 0.04);
+        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.1, MotorDirection::FORWARD, 0.01);
   }
 
   void setup_gpio() {
@@ -350,8 +351,8 @@ class App {
                         CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
     // logger_task->start("logger", 2, 4096);
 
-    // imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
-    // monitor_task->start("monitor", 2, 4096);
+    imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    monitor_task->start("monitor", 2, 4096);
   }
 
   void setup() {
@@ -361,7 +362,7 @@ class App {
     setup_flash();
     setup_netif();
     setup_wifi();
-    // setup_i2c();
+    setup_i2c();
     setup_twai();
     setup_motors();
 
@@ -375,10 +376,6 @@ class App {
   public:
   void run() {
     setup();
-    while (true) {
-      LOGI("testing");
-      Sync::sleep(1000);
-    }
   }
 };
 
