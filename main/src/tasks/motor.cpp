@@ -58,8 +58,18 @@ void MotorTask::main() {
   right_motor->init();
   disable();
   while (true) {
-    right_motor->set_torque(right_torque);
-    left_motor->set_torque(left_torque);
+    auto right_motor_status = right_motor->get_status();
+    auto left_motor_status = right_motor->get_status();
+    if (left_motor_status == MotorStatus::OK) {
+      left_motor->set_torque(left_torque);
+    } else {
+      left_motor->set_torque(0);
+    }
+    if (right_motor_status == MotorStatus::OK) {
+      right_motor->set_torque(right_torque);
+    } else {
+      right_motor->set_torque(0);
+    }
     Sync::sleep(10);
   }
 }

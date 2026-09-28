@@ -35,6 +35,7 @@ class MotorTimeoutTimer : public Timer {
 enum class MotorStatus {
   OK,
   TIMEDOUT,
+  UNINITIALIZED,
 };
 
 class AbstractMotorDriver : public AbstractCanDeviceReader {
@@ -42,7 +43,7 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
 
   friend class MotorTimeoutTimer;
   private:
-  MotorStatus status;
+  MotorStatus status = MotorStatus::UNINITIALIZED;
   Mutex status_mutex;
 
   protected:

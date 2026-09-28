@@ -123,7 +123,6 @@ void ODriveMotorDriver::consume(CanPacket packet) {
       break;
     }
     case ODriveMotorCommand::HEARTBEAT:
-
       break;
     default:
       LOGW("0x%02x unhandled command received 0x%02x value: %f",

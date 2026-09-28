@@ -41,6 +41,10 @@ endmenu
 
 menu "Motors"
 
+config HEXA_MOTOR_TIMEOUT_MS
+  int "Timeout delay ms"
+  default 50
+
 config HEXA_MOTOR_POWER_ENABLE_PIN
   int "Power enable pin"
 

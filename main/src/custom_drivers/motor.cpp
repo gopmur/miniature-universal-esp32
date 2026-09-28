@@ -7,6 +7,7 @@
 #include "esp_err.h"
 #include "esp_twai.h"
 #include "hal/twai_types.h"
+#include "sdkconfig.h"
 #include "system_logger.hpp"
 
 void MotorTimeoutTimer::main() {
@@ -20,8 +21,8 @@ void MotorTimeoutTimer::main() {
 
 void MotorTimeoutTimer::init(AbstractMotorDriver* motor) {
   auto timer_name = std::format("{:#02x}_motor_tim", motor->id);
-  this->motor = motor; 
-  Timer::init(timer_name.c_str(), 1000, false);
+  this->motor = motor;
+  Timer::init(timer_name.c_str(), CONFIG_HEXA_MOTOR_TIMEOUT_MS, false);
 }
 
 AbstractMotorDriver::AbstractMotorDriver(int id,
@@ -87,7 +88,10 @@ void AbstractMotorDriver::disable() {
 }
 
 void AbstractMotorDriver::send_packet(MotorPacket packet) {
-  timeout_timer.start(1000);
+  if (status == MotorStatus::UNINITIALIZED) {
+    return;
+  }
+  timeout_timer.start(100);
   twai_frame_t twai_frame;
   twai_frame.header = packet.header;
   twai_frame.buffer = packet.data.data();
@@ -148,9 +152,13 @@ void AbstractMotorDriver::consume_torque(float torque) {
 
 void AbstractMotorDriver::init() {
   timeout_timer.init(this);
+  status = MotorStatus::OK;
 }
 
 void AbstractMotorDriver::consume(CanPacket packet) {
+  if (status == MotorStatus::UNINITIALIZED) {
+    return;
+  }
   timeout_timer.stop_block();
   status_mutex.take();
   if (status != MotorStatus::OK) {
