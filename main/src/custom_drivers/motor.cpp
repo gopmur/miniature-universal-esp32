@@ -3,10 +3,15 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include "esp_err.h"
 #include "esp_twai.h"
 #include "hal/twai_types.h"
 #include "system_logger.hpp"
+
+void MotorTimeoutTimer::main() {
+  LOGE("motor timeout");
+}
 
 AbstractMotorDriver::AbstractMotorDriver(int id,
                                          twai_node_handle_t twai,
@@ -71,7 +76,7 @@ void AbstractMotorDriver::disable() {
 }
 
 void AbstractMotorDriver::send_packet(MotorPacket packet) {
-  pending = true;
+  timeout_timer.start(1000);
   twai_frame_t twai_frame;
   twai_frame.header = packet.header;
   twai_frame.buffer = packet.data.data();
@@ -128,4 +133,14 @@ void AbstractMotorDriver::consume_velocity(float velocity) {
 
 void AbstractMotorDriver::consume_torque(float torque) {
   feedback.torque = apply_direction(torque);
+}
+
+void AbstractMotorDriver::init() {
+  LOGI("init called");
+  auto timer_name = std::format("{:#02x}_motor_tim", id);
+  timeout_timer.init(timer_name.c_str(), 1000, false);
+}
+
+void AbstractMotorDriver::consume(CanPacket packet) {
+  timeout_timer.stop_block();
 }

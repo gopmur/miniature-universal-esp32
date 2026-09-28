@@ -113,6 +113,7 @@ void ODriveMotorDriver::zero_pos() {
 }
 
 void ODriveMotorDriver::consume(CanPacket packet) {
+  AbstractMotorDriver::consume(packet);
   pending = false;
   auto command = packet.header.id & ((1 << 5) - 1);
   switch (static_cast<ODriveMotorCommand>(command)) {
@@ -141,6 +142,8 @@ float ODriveMotorDriver::get_position() {
 }
 
 void ODriveMotorDriver::init() {
+  LOGI("init called");
+  AbstractMotorDriver::init();
   LOGI("0x%02x initializing", id);
   disable();
   Sync::sleep(10);

@@ -7,6 +7,7 @@
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
 #include "helper/ds/period.hpp"
+#include "jaythread/timer.hpp"
 #include "system_logger.hpp"
 
 struct MotorFeedback {
@@ -21,10 +22,18 @@ enum class MotorDirection {
   BACKWARD,
 };
 
+class MotorTimeoutTimer : public Timer {
+  MAKE_LOGGABLE("motor_timeout_timer");
+
+  public:
+  void main();
+};
+
 class AbstractMotorDriver : public AbstractCanDeviceReader {
   MAKE_LOGGABLE("motor_driver");
 
   protected:
+  MotorTimeoutTimer timeout_timer;
   MotorFeedback feedback;
   int id;
   twai_node_handle_t twai;
@@ -61,5 +70,6 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   virtual float get_position();
   virtual float get_velocity();
   virtual float get_temperature();
-  virtual void init() = 0;
+  virtual void init();
+  virtual void consume(CanPacket packet);
 };
