@@ -1,11 +1,9 @@
 #include "custom_drivers/motor/odrive.hpp"
 #include <cmath>
 #include <cstring>
-#include <format>
 #include "custom_drivers/can_device_reader/can_packet.hpp"
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive/command.hpp"
-#include "esp_log.h"
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
 #include "jaythread/sync.hpp"
@@ -114,7 +112,6 @@ void ODriveMotorDriver::zero_pos() {
 
 void ODriveMotorDriver::consume(CanPacket packet) {
   AbstractMotorDriver::consume(packet);
-  pending = false;
   auto command = packet.header.id & ((1 << 5) - 1);
   switch (static_cast<ODriveMotorCommand>(command)) {
     case ODriveMotorCommand::GET_ENCODER_ESTIMATES: {
@@ -142,7 +139,6 @@ float ODriveMotorDriver::get_position() {
 }
 
 void ODriveMotorDriver::init() {
-  LOGI("init called");
   AbstractMotorDriver::init();
   LOGI("0x%02x initializing", id);
   disable();

@@ -10,7 +10,18 @@
 #include "system_logger.hpp"
 
 void MotorTimeoutTimer::main() {
-  LOGE("motor timeout");
+  motor->status_mutex.take();
+  if (motor->status != MotorStatus::TIMEDOUT) {
+    LOGE("motor 0x%02x timed out", motor->id);
+  }
+  motor->status = MotorStatus::TIMEDOUT;
+  motor->status_mutex.give();
+}
+
+void MotorTimeoutTimer::init(AbstractMotorDriver* motor) {
+  auto timer_name = std::format("{:#02x}_motor_tim", motor->id);
+  this->motor = motor; 
+  Timer::init(timer_name.c_str(), 1000, false);
 }
 
 AbstractMotorDriver::AbstractMotorDriver(int id,
@@ -136,11 +147,19 @@ void AbstractMotorDriver::consume_torque(float torque) {
 }
 
 void AbstractMotorDriver::init() {
-  LOGI("init called");
-  auto timer_name = std::format("{:#02x}_motor_tim", id);
-  timeout_timer.init(timer_name.c_str(), 1000, false);
+  timeout_timer.init(this);
 }
 
 void AbstractMotorDriver::consume(CanPacket packet) {
   timeout_timer.stop_block();
+  status_mutex.take();
+  if (status != MotorStatus::OK) {
+    LOGI("motor 0x%02x changed status to ok", id);
+  }
+  status = MotorStatus::OK;
+  status_mutex.give();
+}
+
+MotorStatus AbstractMotorDriver::get_status() {
+  return status;
 }
