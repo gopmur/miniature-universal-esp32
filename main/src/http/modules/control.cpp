@@ -1,8 +1,10 @@
 #include "tasks/control.hpp"
 #include <cstring>
 #include "esp_err.h"
-#include "http_parser.h"
+#include "esp_http_server.h"
 #include "http/modules/control.hpp"
+#include "http_parser.h"
+#include "system_logger.hpp"
 #include "tasks/motor.hpp"
 
 extern ControlTask* control_task;
@@ -201,6 +203,45 @@ esp_err_t HttpControlModule::ws_manual_torque(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t HttpControlModule::put_manual_params(httpd_req_t* req) {
+  set_header(req);
+  auto req_json_result = parse_json(req);
+  JsonObject resp_json;
+
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    resp_json.set("message", "parse error");
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto req_json = std::get<JsonObject>(req_json_result);
+
+  auto left_json_result = req_json.get_object("left", &resp_json);
+  auto right_json_result = req_json.get_object("right", &resp_json);
+
+  if (std::holds_alternative<JsonError>(left_json_result) ||
+      std::holds_alternative<JsonError>(right_json_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto left_json = std::get<JsonObject>(left_json_result);
+  auto right_json = std::get<JsonObject>(right_json_result);
+
+  auto left_torque_result = left_json.get_number("torque", &resp_json);
+  auto right_torque_result = right_json.get_number("torque", &resp_json);
+
+  if (std::holds_alternative<JsonError>(left_torque_result) ||
+      std::holds_alternative<JsonError>(right_torque_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+  auto left_torque = std::get<double>(left_torque_result);
+  auto right_torque = std::get<double>(right_torque_result);
+  LOGI("%d %d", left_torque, right_torque);
+  control_task->manual_controller.params.left.torque = left_torque;
+  control_task->manual_controller.params.right.torque = right_torque;
+  httpd_resp_send(req, nullptr, 0);
+  return ESP_OK;
+}
+
 esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req) {
   set_header(req);
   char* req_body = new char[req->content_len];
@@ -360,8 +401,8 @@ esp_err_t HttpControlModule::put_smart_params(httpd_req_t* req) {
   auto left_json = std::get<JsonObject>(left_json_result);
   auto right_json = std::get<JsonObject>(right_json_result);
 
-  auto left_torque_result = left_json.get_number("torque");
-  auto right_torque_result = right_json.get_number("torque");
+  auto left_torque_result = left_json.get_number("torque", &resp_json);
+  auto right_torque_result = right_json.get_number("torque", &resp_json);
 
   if (std::holds_alternative<JsonError>(left_torque_result) ||
       std::holds_alternative<JsonError>(right_torque_result)) {
@@ -383,6 +424,7 @@ void HttpControlModule::register_direct_uris() {
   register_uri_with_option("/set-mode/automatic", HTTP_PUT, put_set_mode_automatic);
   register_uri_with_option("/set-mode/semiautomatic", HTTP_PUT, put_set_mode_semiautomatic);
   register_uri_with_option("/set-mode/smart", HTTP_PUT, put_set_mode_smart);
+  register_uri_with_option("/manual/params", HTTP_PUT, put_manual_params);
   register_uri_with_option("/automatic/params", HTTP_PUT, put_automatic_params);
   register_uri_with_option("/semiautomatic/params", HTTP_PUT, put_semiautomatic_params);
   register_uri_with_option("/smart/params", HTTP_PUT, put_smart_params);

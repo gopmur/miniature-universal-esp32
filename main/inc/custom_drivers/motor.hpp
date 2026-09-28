@@ -1,10 +1,12 @@
 #pragma once
 
+#include <atomic>
 #include <string>
 #include "custom_drivers/can_device_reader.hpp"
 #include "custom_drivers/motor/packet.hpp"
 #include "esp_twai_types.h"
 #include "hal/twai_types.h"
+#include "helper/ds/period.hpp"
 #include "system_logger.hpp"
 
 struct MotorFeedback {
@@ -43,6 +45,8 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   void consume_torque(float torque);
 
   public:
+  Mutex pending_counter_mutex;
+  std::atomic<bool> pending = false;
   AbstractMotorDriver(int id,
                       twai_node_handle_t twai,
                       float max_torque,

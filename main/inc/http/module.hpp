@@ -38,6 +38,7 @@ class HttpModule {
   static bool check_uri(const char* uri);
   static esp_err_t send_json(httpd_req_t* req, JsonObject& json);
   static esp_err_t send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status);
+  static std::variant<JsonObject, JsonError> parse_json(httpd_req_t* req);
 
   public:
   void register_uris(httpd_handle_t server_instance);

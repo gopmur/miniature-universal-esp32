@@ -154,3 +154,11 @@ esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json, httpd_err_co
   auto json_string = json.stringify();
   return httpd_resp_send_err(req, status, json_string.c_str());
 }
+
+std::variant<JsonObject, JsonError> HttpModule::parse_json(httpd_req_t* req) {
+  char* req_body = new char[req->content_len];
+  httpd_req_recv(req, req_body, req->content_len);
+  auto req_json_result = JsonObject::parse(req_body);
+  delete[] req_body;
+  return req_json_result;
+}

@@ -113,6 +113,7 @@ void ODriveMotorDriver::zero_pos() {
 }
 
 void ODriveMotorDriver::consume(CanPacket packet) {
+  pending = false;
   auto command = packet.header.id & ((1 << 5) - 1);
   switch (static_cast<ODriveMotorCommand>(command)) {
     case ODriveMotorCommand::GET_ENCODER_ESTIMATES: {
@@ -124,6 +125,7 @@ void ODriveMotorDriver::consume(CanPacket packet) {
       break;
     }
     case ODriveMotorCommand::HEARTBEAT:
+
       break;
     default:
       LOGW("0x%02x unhandled command received 0x%02x value: %f",
