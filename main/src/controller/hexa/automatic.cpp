@@ -1,8 +1,7 @@
-#include "controller/automatic.hpp"
-#include "controller.hpp"
+#include "controller/hexa/automatic.hpp"
 
-ControllerOutput AutomaticController::run(ControllerInput input) {
-  ControllerOutput output;
+HexaControllerOutput HexaAutomaticController::run(HexaControllerInput input) {
+  HexaControllerOutput output;
   float torque_profile_right_value = 0;
   float torque_profile_left_value = 0;
   if (right_timer > params.right.timeout) {
@@ -47,7 +46,7 @@ ControllerOutput AutomaticController::run(ControllerInput input) {
   return output;
 }
 
-void AutomaticController::reset() {
+void HexaAutomaticController::reset() {
   right_timer = 0;
   left_timer = 0;
   ro = false;

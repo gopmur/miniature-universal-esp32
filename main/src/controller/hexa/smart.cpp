@@ -1,7 +1,7 @@
-#include "controller/smart.hpp"
+#include "controller/hexa/smart.hpp"
 #include "controller.hpp"
 
-float SmartController::calculate_output(const std::vector<float>& x) {
+float HexaSmartController::calculate_output(const std::vector<float>& x) {
   float velocity = x[1];
   float last = x[2];
 
@@ -22,8 +22,8 @@ float SmartController::calculate_output(const std::vector<float>& x) {
   }
 }
 
-ControllerOutput SmartController::run(ControllerInput input) {
-  ControllerOutput output;
+HexaControllerOutput HexaSmartController::run(HexaControllerInput input) {
+  HexaControllerOutput output;
   float r_delta_angle = input.right_motor.position - input.left_motor.position;
   float l_delta_angle = input.left_motor.position - input.right_motor.position;
 
@@ -79,7 +79,7 @@ ControllerOutput SmartController::run(ControllerInput input) {
   return output;
 }
 
-void SmartController::reset() {
+void HexaSmartController::reset() {
   previous_left_state = 0;
   previous_right_state = 0;
   fuzzy_timer_r = 1000;

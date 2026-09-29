@@ -1,9 +1,9 @@
-#include "controller/semi_automatic.hpp"
+#include "controller/hexa/semi_automatic.hpp"
 #include <cstdlib>
 #include "controller.hpp"
 
-ControllerOutput SemiautomaticController::run(ControllerInput input) {
-  ControllerOutput output;
+HexaControllerOutput HexaSemiautomaticController::run(HexaControllerInput input) {
+  HexaControllerOutput output;
   output.left_motor.torque = 0;
   output.right_motor.torque = 0;
   if (params.weak_leg == Leg::RIGHT) {
@@ -50,7 +50,7 @@ ControllerOutput SemiautomaticController::run(ControllerInput input) {
   return output;
 }
 
-void SemiautomaticController::reset() {
+void HexaSemiautomaticController::reset() {
   epsilon = 0.02864837;
   d_t = 0;
   r_t = 0;

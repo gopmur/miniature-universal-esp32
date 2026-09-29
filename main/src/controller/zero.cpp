@@ -3,7 +3,6 @@
 
 ControllerOutput ZeroController::run(ControllerInput input) {
   ControllerOutput output;
-  output.left_motor.torque = 0;
-  output.right_motor.torque = 0;
+  output.torques.fill(0);
   return output;
 }

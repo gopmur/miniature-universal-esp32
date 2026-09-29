@@ -63,13 +63,13 @@ const char* get_ws_stream_string(WsStream stream) {
 
 const char* get_control_mode_string(ControlMode control_mode) {
   switch (control_mode) {
-    case ControlMode::MANUAL:
+    case ControlMode::HEXA_MANUAL:
       return "manual";
-    case ControlMode::AUTO:
+    case ControlMode::HEXA_AUTOMATIC:
       return "automatic";
-    case ControlMode::SEMI_AUTO:
+    case ControlMode::HEXA_SEMIAUTOMATIC:
       return "semiautomatic";
-    case ControlMode::SMART:
+    case ControlMode::HEXA_SMART:
       return "smart";
   }
   return "unkown";

@@ -82,7 +82,7 @@ void MotorTask::disable(size_t motor_index) {
     return;
   }
   motor->set_torque(0);
-  motor->enable();
+  motor->disable();
   motor->set_torque(0);
 }
 

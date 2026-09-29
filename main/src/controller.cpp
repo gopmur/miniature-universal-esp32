@@ -1,4 +1,3 @@
-
 #include "controller.hpp"
 #include <cmath>
 

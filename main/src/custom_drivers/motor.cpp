@@ -91,12 +91,17 @@ void AbstractMotorDriver::send_packet(MotorPacket packet) {
   if (status == MotorStatus::UNINITIALIZED) {
     return;
   }
+  if (packet.header.dlc > 8) {
+    LOGE("dlc %d is bigger than 8 while sending for id 0x%02x",
+         packet.header.dlc,
+         packet.header.id);
+    return;
+  }
   timeout_timer.start(100);
   twai_frame_t twai_frame;
   twai_frame.header = packet.header;
   twai_frame.buffer = packet.data.data();
-  twai_frame.buffer_len =
-      std::min(static_cast<uint32_t>(packet.header.dlc), static_cast<uint32_t>(packet.data.size()));
+  twai_frame.buffer_len = packet.header.dlc;
   auto status = twai_node_transmit(twai, &twai_frame, 1);
   if (status == ESP_ERR_TIMEOUT) {
     LOGW("timeout occurred while queueing id 0x%02x", packet.header.id);

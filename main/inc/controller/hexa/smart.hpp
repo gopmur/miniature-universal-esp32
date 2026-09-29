@@ -1,18 +1,18 @@
 #pragma once
 
 #include <vector>
-#include "controller.hpp"
+#include "controller/hexa.hpp"
 
-struct SmartControlParamsLeg {
+struct HexaSmartControlParamsLeg {
   float torque = 5;
 };
 
-struct SmartControlParams {
-  SmartControlParamsLeg left;
-  SmartControlParamsLeg right;
+struct HexaSmartControlParams {
+  HexaSmartControlParamsLeg left;
+  HexaSmartControlParamsLeg right;
 };
 
-class SmartController : public Controller {
+class HexaSmartController : public HexaController {
   private:
   int right_delay_timer = 200;
   int left_delay_timer = 200;
@@ -25,9 +25,10 @@ class SmartController : public Controller {
   bool right_activated = false;
   bool left_activated = false;
   float calculate_output(const std::vector<float>& x);
+  HexaControllerOutput run(HexaControllerInput input);
 
   public:
-  SmartControlParams params;
-  ControllerOutput run(ControllerInput input);
+  HexaSmartControlParams params;
   void reset();
+  using HexaController::run;
 };

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include "custom_drivers/motor.hpp"
+#include "sdkconfig.h"
 enum class Leg {
   LEFT,
   RIGHT,
@@ -12,8 +15,7 @@ struct ControllerMotorInput {
 };
 
 struct ControllerInput {
-  ControllerMotorInput left_motor;
-  ControllerMotorInput right_motor;
+  std::array<MotorFeedback, CONFIG_HEXA_MOTOR_COUNT> motor_feedbacks;
 };
 
 struct ControllerMotorOutput {
@@ -21,8 +23,7 @@ struct ControllerMotorOutput {
 };
 
 struct ControllerOutput {
-  ControllerMotorOutput left_motor;
-  ControllerMotorOutput right_motor;
+  std::array<float, CONFIG_HEXA_MOTOR_COUNT> torques;
 };
 
 class Controller {
