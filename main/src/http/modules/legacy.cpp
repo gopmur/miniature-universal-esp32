@@ -11,8 +11,6 @@
 #include "tasks/ws.hpp"
 
 extern MotorTask* motor_task;
-extern AbstractMotorDriver* left_motor;
-extern AbstractMotorDriver* right_motor;
 extern ControlTask* control_task;
 extern WebSocketTask ws_task;
 
@@ -280,9 +278,8 @@ esp_err_t HttpLegacyModule::handle_ping(httpd_req_t* req) {
 
 esp_err_t HttpLegacyModule::handle_enable(httpd_req_t* req) {
   JsonObject resp_json;
-  motor_task->enable();
-  left_motor->zero_pos();
-  right_motor->zero_pos();
+  motor_task->enable_all();
+  motor_task->zero_pos_all();
   control_task->running = true;
   resp_json.set("action", "enable");
   resp_json.set("status", "success");
@@ -293,7 +290,7 @@ esp_err_t HttpLegacyModule::handle_enable(httpd_req_t* req) {
 esp_err_t HttpLegacyModule::handle_disable(httpd_req_t* req) {
   JsonObject resp_json;
   control_task->running = false;
-  motor_task->disable();
+  motor_task->disable_all();
   resp_json.set("action", "disable");
   resp_json.set("status", "success");
   send_resp(req, resp_json);

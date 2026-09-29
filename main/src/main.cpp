@@ -60,8 +60,6 @@
 twai_node_handle_t twai;
 sdmmc_card_t* card;
 
-AbstractMotorDriver* left_motor;
-AbstractMotorDriver* right_motor;
 
 CanRecvTask* can_recv_task;
 ImuTask* imu_task;
@@ -213,12 +211,7 @@ class App {
     ESP_ERROR_CHECK(twai_node_enable(twai));
   }
 
-  void setup_motors() {
-    left_motor =
-        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_LEFT_ID, twai, 0.2, MotorDirection::BACKWARD, 0.02);
-    right_motor =
-        new ODriveMotorDriver(CONFIG_HEXA_MOTOR_RIGHT_ID, twai, 0.1, MotorDirection::FORWARD, 0.01);
-  }
+  
 
   void setup_gpio() {
     gpio_config_t motor_power_switch = {
@@ -330,8 +323,7 @@ class App {
   }
 
   void start_tasks() {
-    motor_task = new MotorTask(left_motor, right_motor);
-
+    motor_task = new MotorTask();
     wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
     control_task = new ControlTask();
@@ -364,13 +356,11 @@ class App {
     setup_wifi();
     setup_i2c();
     setup_twai();
-    setup_motors();
 
     start_tasks();
 
     http_server.start();
-    can_recv_task->bind(CONFIG_HEXA_MOTOR_LEFT_ID << 5, ~((1 << 5) - 1), left_motor);
-    can_recv_task->bind(CONFIG_HEXA_MOTOR_RIGHT_ID << 5, ~((1 << 5) - 1), right_motor);
+
   }
 
   public:

@@ -17,7 +17,7 @@ ODriveMotorDriver::ODriveMotorDriver(int id,
     : AbstractMotorDriver(id, twai, max_torque, direction, torque_constant) {}
 
 int ODriveMotorDriver::get_packet_id(ODriveMotorCommand command) {
-  return (id << 5) | static_cast<int>(command);
+  return (get_id() << 5) | static_cast<int>(command);
 }
 
 twai_frame_header_t ODriveMotorDriver::make_header(ODriveMotorCommand command) {
@@ -95,14 +95,14 @@ void ODriveMotorDriver::send_set_axis_state_command(ODriveMotorAxisState axis_st
 }
 
 void ODriveMotorDriver::enable() {
-  LOGI("enabling 0x%02x", id);
+  LOGI("enabling 0x%02x", get_id());
   send_set_torque_mode_command();
   Sync::sleep(10);
   send_set_axis_state_command(ODriveMotorAxisState::CLOSED_LOOP_CONTROL);
 }
 
 void ODriveMotorDriver::disable() {
-  LOGI("disabling 0x%02x", id);
+  LOGI("disabling 0x%02x", get_id());
   send_set_axis_state_command(ODriveMotorAxisState::IDLE);
 }
 
@@ -126,7 +126,7 @@ void ODriveMotorDriver::consume(CanPacket packet) {
       break;
     default:
       LOGW("0x%02x unhandled command received 0x%02x value: %f",
-           id,
+           get_id(),
            command,
            *(float*)(packet.data.data()));
       break;
@@ -139,7 +139,7 @@ float ODriveMotorDriver::get_position() {
 
 void ODriveMotorDriver::init() {
   AbstractMotorDriver::init();
-  LOGI("0x%02x initializing", id);
+  LOGI("0x%02x initializing", get_id());
   disable();
   Sync::sleep(10);
   enable();
@@ -160,6 +160,6 @@ void ODriveMotorDriver::init() {
   zero_pos();
   disable();
   Sync::sleep(10);
-  LOGI("0x%02x zero pos completed", id);
-  LOGI("0x%02x initialization completed", id);
+  LOGI("0x%02x zero pos completed", get_id());
+  LOGI("0x%02x initialization completed", get_id());
 }

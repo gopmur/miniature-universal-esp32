@@ -1,0 +1,8 @@
+
+menu "HTTP"
+
+config HEXA_HTTP_USE_HTTPS
+  bool "Use HTTPS"
+  default true
+  
+endmenu

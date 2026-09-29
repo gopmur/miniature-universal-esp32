@@ -3,10 +3,10 @@
 #include "custom_drivers/motor.hpp"
 #include "jaythread/sync.hpp"
 #include "tasks/imu.hpp"
+#include "tasks/motor.hpp"
 
-extern AbstractMotorDriver* left_motor;
-extern AbstractMotorDriver* right_motor;
 extern ImuTask* imu_task;
+extern MotorTask* motor_task;
 
 void LoggerTask::start_new_log() {
   is_logging = true;
@@ -17,24 +17,38 @@ void LoggerTask::stop_log() {
   is_logging = false;
 }
 
+void LoggerTask::write_header() {
+  for (int i = 0; i < motor_task->motor_count; i++) {
+    fprintf(log_file, "motor_%d_position,", i);
+  }
+  for (int i = 0; i < motor_task->motor_count; i++) {
+    fprintf(log_file, "motor_%d_velocity,", i);
+  }
+  fprintf(log_file, "imu_gyro_x,imu_gyro_y,imu_gyro_z\n");
+}
+
+void LoggerTask::write_data() {
+  for (int i = 0; i < motor_task->motor_count; i++) {
+    fprintf(log_file, "%f,", motor_task->get_position(i));
+  }
+  for (int i = 0; i < motor_task->motor_count; i++) {
+    fprintf(log_file, "%f,", motor_task->get_velocity(i));
+  }
+  fprintf(log_file,
+          "%f,%f,%f\n",
+          imu_task->data.gyro.x,
+          imu_task->data.gyro.y,
+          imu_task->data.gyro.z);
+}
+
 void LoggerTask::main() {
   Sync::wait_for_notification_and_clear();
   while (true) {
     LOGI("log started");
-    auto log_file = fopen("/sd/my_log.csv", "w");
-    fprintf(log_file,
-            "left_motor_position,left_motor_velocity,right_motor_position,right_motor_position,"
-            "imu_gyro_x,imu_gyro_y,imu_gyro_z\n");
+    log_file = fopen("/sd/my_log.csv", "w");
+    write_header();
     while (is_logging) {
-      fprintf(log_file,
-              "%f,%f,%f,%f,%f,%f,%f\n",
-              left_motor->get_position(),
-              left_motor->get_velocity(),
-              right_motor->get_position(),
-              right_motor->get_velocity(),
-              imu_task->data.gyro.x,
-              imu_task->data.gyro.y,
-              imu_task->data.gyro.z);
+      write_header();
       Sync::sleep(10);
     }
     LOGI("log stopped");

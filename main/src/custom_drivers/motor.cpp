@@ -168,6 +168,10 @@ void AbstractMotorDriver::consume(CanPacket packet) {
   status_mutex.give();
 }
 
+int AbstractMotorDriver::get_id() {
+  return id;
+}
+
 MotorStatus AbstractMotorDriver::get_status() {
   return status;
 }

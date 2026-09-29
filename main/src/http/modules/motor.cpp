@@ -1,13 +1,12 @@
 #include "http/modules/motor.hpp"
 #include "custom_drivers/motor.hpp"
+#include "tasks/motor.hpp"
 
-extern AbstractMotorDriver* left_motor;
-extern AbstractMotorDriver* right_motor;
+extern MotorTask* motor_task;
 
 esp_err_t HttpMotorModule::get_zero_pos(httpd_req_t* req) {
   set_header(req);
-  left_motor->zero_pos();
-  right_motor->zero_pos();
+  motor_task->zero_pos_all();;
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;
 }

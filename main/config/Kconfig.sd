@@ -1,0 +1,19 @@
+menu "SD Card"
+
+config HEXA_SD_CARD_CS_PIN
+  int "CS ping"
+  default 5
+
+config HEXA_SD_CARD_MOSI_PIN
+  int "MOSI pin"
+  default 23
+
+config HEXA_SD_CARD_MISO_PIN
+  int "MISO pin"
+  default 19
+
+config HEXA_SD_CARD_SCLK_PIN
+  int "SCLK pin" 
+  default 18
+
+endmenu

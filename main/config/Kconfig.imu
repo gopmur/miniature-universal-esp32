@@ -1,0 +1,11 @@
+menu "IMU"
+
+config HEXA_IMU_SDA_PIN
+  int "SDA pin"
+  default 21
+
+config HEXA_IMU_SCL_PIN
+  int "SCL pin"
+  default 22
+
+endmenu

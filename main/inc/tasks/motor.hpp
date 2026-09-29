@@ -1,27 +1,30 @@
 #pragma once
 
+#include <array>
 #include "custom_drivers/motor.hpp"
 #include "jaythread/thread.hpp"
+#include "sdkconfig.h"
 
 class MotorTask : public Thread {
   MAKE_LOGGABLE("motor_task");
 
   public:
-  MotorTask(AbstractMotorDriver* left_motor, AbstractMotorDriver* right_motor);
-  void set_left_torque(float torque);
-  void set_right_torque(float torque);
-  void set_torque(float left_torque, float right_torque);
-  void enable_left();
-  void enable_right();
-  void disable_left();
-  void disable_right();
-  void enable();
-  void disable();
+  static constexpr size_t motor_count = CONFIG_HEXA_MOTOR_COUNT;
+  MotorTask();
+  void set_torque(size_t motor_index, float torque);
+  void enable(size_t motor_index);
+  void disable(size_t motor_index);
+  void enable_all();
+  void disable_all();
+  void init_all();
+  void init(size_t motor_index);
+  void zero_pos_all();
+  void zero_pos(size_t motor_index);
+  float get_position(size_t motor_index);
+  float get_velocity(size_t motor_index);
 
   private:
-  float left_torque = 0;
-  float right_torque = 0;
-  AbstractMotorDriver* left_motor;
-  AbstractMotorDriver* right_motor;
+  std::array<float, CONFIG_HEXA_MOTOR_COUNT> torques;
+  std::array<AbstractMotorDriver*, CONFIG_HEXA_MOTOR_COUNT> motors;
   void main();
 };

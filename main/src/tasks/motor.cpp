@@ -1,74 +1,163 @@
 #include "tasks/motor.hpp"
+#include "boost/preprocessor/comparison/less.hpp"
+#include "boost/preprocessor/control/if.hpp"
+#include "boost/preprocessor/repetition/repeat.hpp"
+#include "custom_drivers/motor.hpp"
+#include "custom_drivers/motor/odrive.hpp"
 #include "jaythread/sync.hpp"
+#include "system_logger.hpp"
+#include "tasks/can_recv.hpp"
 
-MotorTask::MotorTask(AbstractMotorDriver* left_motor, AbstractMotorDriver* right_motor)
-    : left_motor(left_motor), right_motor(right_motor) {}
+extern twai_node_handle_t twai;
+extern CanRecvTask* can_recv_task;
 
-void MotorTask::set_left_torque(float torque) {
-  left_torque = torque;
-}
-void MotorTask::set_right_torque(float torque) {
-  right_torque = torque;
-}
-void MotorTask::set_torque(float left_torque, float right_torque) {
-  set_left_torque(left_torque);
-  set_right_torque(right_torque);
-}
+#define MOTOR_ODRIVE(n)                                                       \
+  motors[n] = new ODriveMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), \
+                                    twai,                                     \
+                                    0.2,                                      \
+                                    MotorDirection::FORWARD,                  \
+                                    0.02);                                    \
+  can_recv_task->bind(motors[n]->get_id() << 5, ~((1 << 5) - 1), motors[n]);
 
-void MotorTask::enable() {
-  enable_left();
-  enable_right();
-}
+#define NEW_MOTOR(z, n, data) \
+  BOOST_PP_IF(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_ODRIVE), MOTOR_ODRIVE(n), )
 
-void MotorTask::disable() {
-  disable_left();
-  disable_right();
+MotorTask::MotorTask() {
+  BOOST_PP_REPEAT(2, NEW_MOTOR, ~)
 }
 
-void MotorTask::enable_left() {
-  left_torque = 0;
-  left_motor->set_torque(0);
-  left_motor->enable();
-  left_motor->set_torque(0);
+void MotorTask::set_torque(size_t motor_index, float torque) {
+  if (motor_index >= motors.size()) {
+    LOGW("cannot set torque for motor %d. index out of bounds", motor_index);
+    return;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("cannot set torque for motor %d. doesn't exist", motor_index);
+    return;
+  }
+  motor->set_torque(torque);
 }
 
-void MotorTask::disable_left() {
-  left_torque = 0;
-  left_motor->set_torque(0);
-  left_motor->disable();
-  left_motor->set_torque(0);
+void MotorTask::enable_all() {
+  for (size_t i = 0; i < motors.size(); i++) {
+    enable(i);
+  }
 }
 
-void MotorTask::enable_right() {
-  right_torque = 0;
-  right_motor->set_torque(0);
-  right_motor->enable();
-  right_motor->set_torque(0);
+void MotorTask::disable_all() {
+  for (size_t i = 0; i < motors.size(); i++) {
+    disable(i);
+  }
 }
 
-void MotorTask::disable_right() {
-  right_torque = 0;
-  right_motor->set_torque(0);
-  right_motor->disable();
-  right_motor->set_torque(0);
+void MotorTask::enable(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("cannot enable motor %d. index out of bounds", motor_index);
+    return;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("cannot enable motor %d. doesn't exist", motor_index);
+    return;
+  }
+  motor->set_torque(0);
+  motor->enable();
+  motor->set_torque(0);
+}
+
+void MotorTask::disable(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("cannot disable motor %d. index out of bounds", motor_index);
+    return;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("cannot disable motor %d. doesn't exist", motor_index);
+    return;
+  }
+  motor->set_torque(0);
+  motor->enable();
+  motor->set_torque(0);
+}
+
+void MotorTask::init(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("cannot initialize motor %d. index out of bounds", motor_index);
+    return;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("cannot initialize motor %d. doesn't exist", motor_index);
+    return;
+  }
+  motor->init();
+}
+
+void MotorTask::init_all() {
+  for (int i = 0; motors.size(); i++) {
+    init(i);
+  }
+}
+
+float MotorTask::get_velocity(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("failed to get velocity of motor %d. index out of bounds", motor_index);
+    return 0;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("failed to get velocity of motor %d. doesn't exist", motor_index);
+    return 0;
+  };
+  return motor->get_velocity();
+}
+
+float MotorTask::get_position(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("failed to get position of motor %d. index out of bounds", motor_index);
+    return 0;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("failed to get position of motor %d. doesn't exist", motor_index);
+    return 0;
+  };
+  return motor->get_position();
+}
+
+void MotorTask::zero_pos_all() {
+  for (int i = 0; i < motors.size(); i++) {
+    zero_pos(i);
+  }
+}
+
+void MotorTask::zero_pos(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("failed to set motor %d to zero pos. index out of bounds", motor_index);
+    return;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("failed to set motor %d to zero pos. doesn't exist", motor_index);
+    return;
+  }
+  motor->zero_pos();
 }
 
 void MotorTask::main() {
-  left_motor->init();
-  right_motor->init();
-  disable();
+  init_all();
+  disable_all();
   while (true) {
-    auto right_motor_status = right_motor->get_status();
-    auto left_motor_status = right_motor->get_status();
-    if (left_motor_status == MotorStatus::OK) {
-      left_motor->set_torque(left_torque);
-    } else {
-      left_motor->set_torque(0);
-    }
-    if (right_motor_status == MotorStatus::OK) {
-      right_motor->set_torque(right_torque);
-    } else {
-      right_motor->set_torque(0);
+    for (int i = 0; i < motors.size(); i++) {
+      auto motor = motors[i];
+      auto torque = torques[i];
+      auto status = motor->get_status();
+      if (status == MotorStatus::OK) {
+        motor->set_torque(torque);
+      } else {
+        motor->set_torque(0);
+      }
     }
     Sync::sleep(10);
   }

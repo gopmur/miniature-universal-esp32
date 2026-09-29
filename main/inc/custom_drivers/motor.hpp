@@ -45,11 +45,11 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   private:
   MotorStatus status = MotorStatus::UNINITIALIZED;
   Mutex status_mutex;
+  int id;
 
   protected:
   MotorTimeoutTimer timeout_timer;
   MotorFeedback feedback;
-  int id;
   twai_node_handle_t twai;
   float max_torque = 0;
   MotorDirection direction;
@@ -85,4 +85,5 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   virtual float get_temperature();
   virtual void init();
   virtual void consume(CanPacket packet);
+  int get_id();
 };

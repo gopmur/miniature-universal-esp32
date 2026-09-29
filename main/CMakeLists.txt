@@ -33,4 +33,5 @@ idf_component_register(
   INCLUDE_DIRS
   "inc"
   "${CMAKE_SOURCE_DIR}/generated/inc"
+  "${CMAKE_SOURCE_DIR}/main/lib/boost/include"
 )

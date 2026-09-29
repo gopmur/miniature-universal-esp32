@@ -125,7 +125,7 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
 esp_err_t HttpControlModule::put_start(httpd_req_t* req) {
   set_header(req);
   control_task->running = true;
-  motor_task->enable();
+  motor_task->enable_all();
   ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
   return ESP_OK;
 }
@@ -133,7 +133,7 @@ esp_err_t HttpControlModule::put_start(httpd_req_t* req) {
 esp_err_t HttpControlModule::put_stop(httpd_req_t* req) {
   set_header(req);
   control_task->running = false;
-  motor_task->disable();
+  motor_task->disable_all();
   ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
   return ESP_OK;
 }

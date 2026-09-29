@@ -1,0 +1,19 @@
+menu "WiFi"
+
+config HEXA_WIFI_SSID
+  string "SSID"
+  default "Mini Universal"
+
+config HEXA_WIFI_PASSWORD
+  string "Password"
+  default "12345678"
+
+config HEXA_WIFI_CHANNELS
+  int "Channels"
+  default 6
+
+config HEXA_WIFI_MAX_CONNECTIONS
+  int "Max Connections"
+  default 3
+
+endmenu

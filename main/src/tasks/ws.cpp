@@ -1,4 +1,5 @@
 #include "tasks/ws.hpp"
+#include <format>
 #include <vector>
 
 #include "custom_drivers/motor.hpp"
@@ -11,12 +12,12 @@
 #include "system_logger.hpp"
 #include "tasks/imu.hpp"
 #include "tasks/monitor.hpp"
+#include "tasks/motor.hpp"
 
 extern ImuTask* imu_task;
 extern HttpServer http_server;
-extern AbstractMotorDriver* left_motor;
-extern AbstractMotorDriver* right_motor;
 extern MonitorTask* monitor_task;
+extern MotorTask* motor_task;
 
 WebSocketTask::WebSocketTask() : connection_mutex(true) {};
 
@@ -33,8 +34,12 @@ void WebSocketTask::fill_imu_data_json(JsonObject* imu_data_json) {
 
 void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {
   add_time_stamp(motor_data_json);
-  motor_data_json->set("leftPosition", left_motor->get_position());
-  motor_data_json->set("rightPosition", right_motor->get_position());
+  for (int i = 0; i < motor_task->motor_count; i++) {
+    auto position_key = std::format("position{}", i);
+    auto velocity_key = std::format("velocity{}", i);
+    motor_data_json->set(position_key.c_str(), motor_task->get_position(i));
+    motor_data_json->set(velocity_key.c_str(), motor_task->get_velocity(i));
+  }
 }
 
 void WebSocketTask::fill_task_status_json(JsonObject* task_status_json) {
@@ -77,10 +82,12 @@ esp_err_t WebSocketTask::send_to_connection(int fd, JsonObject* json) {
 
 esp_err_t WebSocketTask::send_to_legacy_connection(int fd) {
   LegacyDataPacket packet;
+  auto left_motor_position = motor_task->get_position(0);
+  auto right_motor_position = motor_task->get_position(1);
   packet.status = 1;
   packet.action = 2;
-  packet.rp = right_motor->get_position();
-  packet.lp = left_motor->get_position();
+  packet.rp = right_motor_position;
+  packet.lp = left_motor_position;
   packet.rt = 0;
   packet.lt = 0;
   packet.r_tmp = 0;

@@ -9,8 +9,6 @@
 #include "tasks/motor.hpp"
 
 extern MotorTask* motor_task;
-extern AbstractMotorDriver* left_motor;
-extern AbstractMotorDriver* right_motor;
 
 void ControlTask::reset() {
   manual_controller.reset();
@@ -22,16 +20,18 @@ void ControlTask::reset() {
 void ControlTask::main() {
   ControllerInput input;
   ControllerOutput output;
+  const size_t left_motor_index = 0;
+  const size_t right_motor_index = 1;
   while (true) {
     if (prev_control_mod != control_mode) {
       reset();
       prev_control_mod = control_mode;
       LOGI("entered mode %s", get_control_mode_string(control_mode));
     }
-    input.left_motor.position = left_motor->get_position();
-    input.right_motor.position = right_motor->get_position();
-    input.left_motor.velocity = left_motor->get_velocity();
-    input.right_motor.velocity = right_motor->get_velocity();
+    input.left_motor.position = motor_task->get_position(left_motor_index);
+    input.right_motor.position = motor_task->get_position(right_motor_index);
+    input.left_motor.velocity = motor_task->get_velocity(left_motor_index);
+    input.right_motor.velocity = motor_task->get_velocity(right_motor_index);
     if (running) {
       switch (control_mode) {
         case ControlMode::MANUAL:

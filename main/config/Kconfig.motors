@@ -1,0 +1,264 @@
+menu "Motors"
+
+config HEXA_MOTOR_POWER_ENABLE_PIN
+  int "Power enable pin"
+
+config HEXA_MOTOR_TIMEOUT_MS
+  int "Timeout delay ms"
+  default 50
+
+config HEXA_MOTOR_COUNT
+  int "Number of motors"
+  range 1 8
+  default 8
+
+menu "Motor 0"
+  depends on HEXA_MOTOR_COUNT >= 1
+
+config HEXA_MOTOR_0_ID
+  int "ID"
+  range 0 2047
+  default 0
+  depends on !HEXA_MOTOR_0_DISABLED
+
+choice HEXA_MOTOR_0_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_0_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_0_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_0_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_0_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_0_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+menu "Motor 1"
+  depends on HEXA_MOTOR_COUNT >= 2
+
+config HEXA_MOTOR_1_ID
+  int "ID"
+  range 0 2047
+  default 1
+  depends on !HEXA_MOTOR_1_DISABLED
+
+choice HEXA_MOTOR_1_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_1_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_1_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_1_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_1_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_1_DISABLED
+  bool "Disable"
+  
+
+endchoice
+
+endmenu
+
+menu "Motor 2"
+  depends on HEXA_MOTOR_COUNT >= 3
+
+config HEXA_MOTOR_2_ID
+  int "ID"
+  range 0 2047
+  default 2
+  depends on !HEXA_MOTOR_2_DISABLED
+
+choice HEXA_MOTOR_2_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_2_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_2_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_2_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_2_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_2_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+menu "Motor 3"
+  depends on HEXA_MOTOR_COUNT >= 4
+
+config HEXA_MOTOR_3_ID
+  int "ID"
+  range 0 2047
+  default 3
+  depends on !HEXA_MOTOR_3_DISABLED
+
+choice HEXA_MOTOR_3_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_3_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_3_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_3_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_3_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_3_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+menu "Motor 4"
+  depends on HEXA_MOTOR_COUNT >= 5
+
+config HEXA_MOTOR_4_ID
+  int "ID"
+  range 0 2047
+  default 4
+  depends on !HEXA_MOTOR_4_DISABLED
+
+choice HEXA_MOTOR_4_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_4_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_4_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_4_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_4_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_4_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+menu "Motor 5"
+  depends on HEXA_MOTOR_COUNT >= 6
+
+config HEXA_MOTOR_5_ID
+  int "ID"
+  range 0 2047
+  default 5
+  depends on !HEXA_MOTOR_5_DISABLED
+
+choice HEXA_MOTOR_5_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_5_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_5_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_5_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_5_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_5_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+menu "Motor 6"
+  depends on HEXA_MOTOR_COUNT >= 7
+
+config HEXA_MOTOR_6_ID
+  int "ID"
+  range 0 2047
+  default 6
+  depends on !HEXA_MOTOR_6_DISABLED
+
+choice HEXA_MOTOR_6_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_6_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_6_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_6_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_6_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_6_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+menu "Motor 7"
+  depends on HEXA_MOTOR_COUNT >= 8
+
+config HEXA_MOTOR_7_ID
+  int "ID"
+  range 0 2047
+  default 7
+  depends on !HEXA_MOTOR_7_DISABLED
+
+choice HEXA_MOTOR_7_TYPE
+  prompt "Type"
+  default HEXA_MOTOR_7_DISABLED
+  help
+      Select motor type.
+
+config HEXA_MOTOR_7_TYPE_ODRIVE
+  bool "ODrive"
+
+config HEXA_MOTOR_7_TYPE_SMC
+  bool "SMC"
+
+config HEXA_MOTOR_7_TYPE_T_MOTOR
+  bool "T-Motor"
+
+config HEXA_MOTOR_7_DISABLED
+  bool "Disable"
+
+endchoice
+
+endmenu
+
+endmenu

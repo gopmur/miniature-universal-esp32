@@ -8,7 +8,10 @@ class LoggerTask : public Thread {
 
   private:
   volatile bool is_logging = false;
+  FILE* log_file = nullptr; 
   void main();
+  void write_header();
+  void write_data();
 
   public:
   void start_new_log();
