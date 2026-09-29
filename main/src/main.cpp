@@ -6,8 +6,6 @@
 
 #include "callbacks/twai.hpp"
 #include "callbacks/wifi_event_handler.hpp"
-#include "custom_drivers/motor.hpp"
-#include "custom_drivers/motor/odrive.hpp"
 #include "driver/gpio.h"
 #include "driver/i2c_types_legacy.h"
 #include "driver/sdspi_host.h"
@@ -30,7 +28,6 @@
 #include "http/modules/fs.hpp"
 #include "http/modules/legacy.hpp"
 #include "http/modules/log.hpp"
-#include "jaythread/ipc/mutex.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
 
