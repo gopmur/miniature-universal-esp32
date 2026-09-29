@@ -29,7 +29,7 @@ esp_err_t HttpModule::middleware(httpd_req_t* req) {
     auto message =
         std::format("content length is longer than {}", CONFIG_HEXA_HTTP_MAX_REQUEST_LEN);
     resp.set("message", message.c_str());
-    return ESP_OK;
+    return send_json(req, resp, HTTPD_413_CONTENT_TOO_LARGE);
   }
   auto handler = reinterpret_cast<esp_err_t (*)(httpd_req_t*)>(req->user_ctx);
   if (handler == nullptr) {
@@ -46,7 +46,7 @@ esp_err_t HttpModule::json_middleware(httpd_req_t* req) {
     auto message =
         std::format("content length is longer than {}", CONFIG_HEXA_HTTP_MAX_REQUEST_LEN);
     resp.set("message", message.c_str());
-    return ESP_OK;
+    return send_json(req, resp, HTTPD_413_CONTENT_TOO_LARGE);
   }
   auto handler = reinterpret_cast<esp_err_t (*)(httpd_req_t*, JsonObject*)>(req->user_ctx);
 

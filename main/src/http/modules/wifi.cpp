@@ -57,3 +57,4 @@ void HttpWifiModule::register_direct_uris() {
   register_uri_with_option("/connect", HTTP_PUT, put_connect);
   register_uri("/disconnect", HTTP_GET, get_disconnect);
 }
+
