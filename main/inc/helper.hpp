@@ -4,10 +4,16 @@
 #include <cstdint>
 #include "esp_err.h"
 
+#define __ARG_PLACEHOLDER_1 0,
+#define config_enabled(cfg) _config_enabled(cfg)
+#define _config_enabled(value) __config_enabled(__ARG_PLACEHOLDER_##value)
+#define __config_enabled(arg1_or_junk) ___config_enabled(arg1_or_junk 1, 0)
+#define ___config_enabled(__ignored, val, ...) val
 
-template<typename T>
+#define IS_ENABLED(option) config_enabled(option)
+
+template <typename T>
 concept Numeric = std::integral<T> || std::floating_point<T>;
-
 
 #define ESP_BREAK_ON_ERROR(x)           \
   ({                                    \

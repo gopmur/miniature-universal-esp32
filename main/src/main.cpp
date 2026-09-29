@@ -57,7 +57,6 @@
 twai_node_handle_t twai;
 sdmmc_card_t* card;
 
-
 CanRecvTask* can_recv_task;
 ImuTask* imu_task;
 WebSocketTask ws_task;
