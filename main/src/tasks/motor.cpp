@@ -10,16 +10,16 @@
 #include "system_logger.hpp"
 #include "tasks/can_recv.hpp"
 
-extern twai_node_handle_t twai;
-extern CanRecvTask* can_recv_task;
+extern CanRecvTask can_recv_task;
+extern Can can;
 
 #define MOTOR_ODRIVE(n)                                                                            \
   MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))           \
                                  ? MotorDirection::BACKWARD                                        \
                                  : MotorDirection::FORWARD;                                        \
   motors[n] =                                                                                      \
-      new ODriveMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), twai, 0.2, direction, 0.02); \
-  can_recv_task->bind(motors[n]->get_id() << 5, ~((1 << 5) - 1), motors[n]);
+      new ODriveMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0.2, direction, 0.02); \
+  can_recv_task.bind(motors[n]->get_id() << 5, ~((1 << 5) - 1), motors[n]);
 
 #define NEW_MOTOR(z, n, data)                                          \
   if (IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_ODRIVE))) { \

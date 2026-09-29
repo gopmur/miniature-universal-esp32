@@ -6,6 +6,7 @@
 
 #include "callbacks/twai.hpp"
 #include "callbacks/wifi_event_handler.hpp"
+#include "custom_drivers/can.hpp"
 #include "driver/gpio.h"
 #include "driver/i2c_types_legacy.h"
 #include "driver/sdspi_host.h"
@@ -57,7 +58,7 @@
 twai_node_handle_t twai;
 sdmmc_card_t* card;
 
-CanRecvTask* can_recv_task;
+CanRecvTask can_recv_task;
 ImuTask* imu_task;
 WebSocketTask ws_task;
 WifiConHandlerTask* wifi_con_handler_task;
@@ -66,6 +67,7 @@ ControlTask* control_task;
 MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
+Can can; 
 
 HttpLegacyModule http_legacy_module("legacy");
 HttpFsModule http_fs_module("fs");
@@ -162,49 +164,7 @@ class App {
   }
 
   void setup_twai() {
-    can_recv_task = new CanRecvTask();
-    twai_event_callbacks_t twai_callback = {
-        .on_tx_done = nullptr,
-        .on_rx_done = TwaiCallback::rx_done,
-        .on_state_change = nullptr,
-        .on_error = nullptr,
-    };
-    twai_onchip_node_config_t twai_config = {
-        .io_cfg =
-            {
-                .tx = static_cast<gpio_num_t>(CONFIG_HEXA_CAN_TX_PIN),
-                .rx = static_cast<gpio_num_t>(CONFIG_HEXA_CAN_RX_PIN),
-                .quanta_clk_out = static_cast<gpio_num_t>(-1),
-                .bus_off_indicator = static_cast<gpio_num_t>(-1),
-            },
-
-        .clk_src = TWAI_CLK_SRC_DEFAULT,
-        .bit_timing =
-            {
-                .bitrate = CONFIG_HEXA_CAN_BAUDRATE_KHZ * 1000,
-                .sp_permill = 750,
-                .ssp_permill = 500,
-            },
-        .data_timing =
-            {
-                .bitrate = CONFIG_HEXA_CAN_BAUDRATE_KHZ * 1000,
-                .sp_permill = 750,
-                .ssp_permill = 500,
-            },
-        .timestamp_resolution_hz = 0,
-        .fail_retry_cnt = -1,
-        .tx_queue_depth = CONFIG_HEXA_CAN_TX_QUEUE_LEN,
-        .intr_priority = 0,
-        .flags = {
-            .enable_self_test = 0,
-            .enable_loopback = 0,
-            .enable_listen_only = 0,
-            .no_receive_rtr = 0,
-            .sleep_allow_pd = 0,
-        }};
-    ESP_ERROR_CHECK(twai_new_node_onchip(&twai_config, &twai));
-    ESP_ERROR_CHECK(twai_node_register_event_callbacks(twai, &twai_callback, nullptr));
-    ESP_ERROR_CHECK(twai_node_enable(twai));
+    can.init();
   }
 
   void setup_gpio() {
@@ -326,7 +286,7 @@ class App {
     monitor_task = new MonitorTask();
 
     motor_task->start("motor", 2, 4096);
-    can_recv_task->start("can_recv", 2, 4096);
+    can_recv_task.start("can_recv", 2, 4096);
     wifi_con_handler_task->start("http_con",
                                  CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
                                  CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);

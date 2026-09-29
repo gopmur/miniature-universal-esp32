@@ -1,9 +1,8 @@
 #pragma once
 
+#include "custom_drivers/can.hpp"
 #include "custom_drivers/can_device_reader.hpp"
-#include "custom_drivers/motor/packet.hpp"
-#include "esp_twai_types.h"
-#include "hal/twai_types.h"
+
 #include "jaythread/timer.hpp"
 #include "system_logger.hpp"
 
@@ -36,6 +35,7 @@ enum class MotorStatus {
   OK,
   TIMEDOUT,
   UNINITIALIZED,
+  CAN_ERROR,
 };
 
 class AbstractMotorDriver : public AbstractCanDeviceReader {
@@ -50,18 +50,18 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   protected:
   MotorTimeoutTimer timeout_timer;
   MotorFeedback feedback;
-  twai_node_handle_t twai;
+  Can can;
   float max_torque = 0;
   MotorDirection direction;
   float torque_constant = 0;
 
   twai_frame_header_t make_header();
-  virtual MotorPacket make_torque_packet(float torque) = 0;
-  virtual MotorPacket make_read_encoder_packet() = 0;
-  virtual MotorPacket make_enable_packet() = 0;
-  virtual MotorPacket make_disable_packet() = 0;
-  virtual MotorPacket make_zero_pos_packet() = 0;
-  void send_packet(MotorPacket packet);
+  virtual CanPacket make_torque_packet(float torque) = 0;
+  virtual CanPacket make_read_encoder_packet() = 0;
+  virtual CanPacket make_enable_packet() = 0;
+  virtual CanPacket make_disable_packet() = 0;
+  virtual CanPacket make_zero_pos_packet() = 0;
+  void send_packet(CanPacket packet);
   float apply_direction(float value);
   void consume_position(float position);
   void consume_velocity(float velocity);
@@ -70,7 +70,7 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   public:
   MotorStatus get_status();
   AbstractMotorDriver(int id,
-                      twai_node_handle_t twai,
+                      Can can,
                       float max_torque,
                       MotorDirection direction,
                       float torque_constant);

@@ -26,12 +26,12 @@ void MotorTimeoutTimer::init(AbstractMotorDriver* motor) {
 }
 
 AbstractMotorDriver::AbstractMotorDriver(int id,
-                                         twai_node_handle_t twai,
+                                         Can can,
                                          float max_torque,
                                          MotorDirection direction,
                                          float torque_constant)
     : id(id),
-      twai(twai),
+      can(can),
       max_torque(max_torque),
       direction(direction),
       torque_constant(torque_constant) {
@@ -66,7 +66,7 @@ void AbstractMotorDriver::set_torque(float torque) {
          max_torque);
     torque = max_torque * torque_sign;
   }
-  MotorPacket packet = make_torque_packet(torque);
+  CanPacket packet = make_torque_packet(torque);
   send_packet(packet);
 }
 
@@ -76,18 +76,18 @@ void AbstractMotorDriver::zero_pos() {
 }
 
 void AbstractMotorDriver::enable() {
-  MotorPacket packet = make_enable_packet();
+  CanPacket packet = make_enable_packet();
   LOGI("0x%02x enabled", id);
   send_packet(packet);
 }
 
 void AbstractMotorDriver::disable() {
-  MotorPacket packet = make_disable_packet();
+  CanPacket packet = make_disable_packet();
   LOGI("0x%02x disabled", id);
   send_packet(packet);
 }
 
-void AbstractMotorDriver::send_packet(MotorPacket packet) {
+void AbstractMotorDriver::send_packet(CanPacket packet) {
   if (status == MotorStatus::UNINITIALIZED) {
     return;
   }
@@ -97,32 +97,16 @@ void AbstractMotorDriver::send_packet(MotorPacket packet) {
          packet.header.id);
     return;
   }
-  timeout_timer.start(100);
-  twai_frame_t twai_frame;
-  twai_frame.header = packet.header;
-  twai_frame.buffer = packet.data.data();
-  twai_frame.buffer_len = packet.header.dlc;
-  auto status = twai_node_transmit(twai, &twai_frame, 1);
-  if (status == ESP_ERR_TIMEOUT) {
-    LOGW("timeout occurred while queueing id 0x%02x", packet.header.id);
-  } else if (status != ESP_OK) {
-    LOGE("unhandled error occurred while queueing id 0x%02x. %s",
-         packet.header.id,
-         esp_err_to_name(status));
-  }
-  status = twai_node_transmit_wait_all_done(twai, 100);
-  if (status == ESP_ERR_TIMEOUT) {
-    LOGW("timeout occurred while transmiting id 0x%02x. check the physical connection",
-         packet.header.id);
-  } else if (status != ESP_OK) {
-    LOGE("unhandled error occurred while transmiting id 0x%02x. %s",
-         packet.header.id,
-         esp_err_to_name(status));
+  auto can_status = can.send_packet(packet);
+  if (can_status == ESP_OK) {
+    timeout_timer.start(100);
+  } else {
+    status = MotorStatus::CAN_ERROR;
   }
 }
 
 void AbstractMotorDriver::poll_encoder() {
-  MotorPacket packet = make_read_encoder_packet();
+  CanPacket packet = make_read_encoder_packet();
   send_packet(packet);
 }
 

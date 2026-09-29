@@ -1,7 +1,6 @@
 #pragma once
 
-#include "esp_twai_types.h"
-#include "custom_drivers/can_device_reader/can_packet.hpp"
+#include "custom_drivers/can/packet.hpp"
 
 class AbstractCanDeviceReader {
   public:
