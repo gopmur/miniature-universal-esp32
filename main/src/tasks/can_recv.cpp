@@ -21,6 +21,15 @@ void CanRecvTask::bind(uint32_t id, AbstractCanDeviceReader* reader) {
 }
 
 void CanRecvTask::bind(uint32_t id, uint32_t mask, AbstractCanDeviceReader* callback) {
-  masks.push_back(mask);
+  bool mask_exists = false;
+  for (auto stored_mask : masks) {
+    if (stored_mask == mask) {
+      mask_exists = true;
+      break;
+    }
+  }
+  if (!mask_exists) {
+    masks.push_back(mask);
+  }
   bind(id, callback);
 }

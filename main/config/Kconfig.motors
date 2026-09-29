@@ -16,9 +16,9 @@ menu "Motor 0"
   depends on HEXA_MOTOR_COUNT >= 1
 
 config HEXA_MOTOR_0_ID
-  int "ID"
-  range 0 2047
-  default 0
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_0_DISABLED
 
 choice HEXA_MOTOR_0_TYPE
@@ -41,15 +41,19 @@ config HEXA_MOTOR_0_DISABLED
 
 endchoice
 
+config HEXA_MOTOR_0_BACKWARDS
+  bool "Is backwards"
+  default false
+
 endmenu
 
 menu "Motor 1"
   depends on HEXA_MOTOR_COUNT >= 2
 
 config HEXA_MOTOR_1_ID
-  int "ID"
-  range 0 2047
-  default 1
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_1_DISABLED
 
 choice HEXA_MOTOR_1_TYPE
@@ -70,18 +74,20 @@ config HEXA_MOTOR_1_TYPE_T_MOTOR
 config HEXA_MOTOR_1_DISABLED
   bool "Disable"
   
-
 endchoice
 
+config HEXA_MOTOR_1_BACKWARDS
+  bool "Is backwards"
+  default false
 endmenu
 
 menu "Motor 2"
   depends on HEXA_MOTOR_COUNT >= 3
 
 config HEXA_MOTOR_2_ID
-  int "ID"
-  range 0 2047
-  default 2
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_2_DISABLED
 
 choice HEXA_MOTOR_2_TYPE
@@ -104,15 +110,19 @@ config HEXA_MOTOR_2_DISABLED
 
 endchoice
 
+config HEXA_MOTOR_2_BACKWARDS
+  bool "Is backwards"
+  default false
+
 endmenu
 
 menu "Motor 3"
   depends on HEXA_MOTOR_COUNT >= 4
 
 config HEXA_MOTOR_3_ID
-  int "ID"
-  range 0 2047
-  default 3
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_3_DISABLED
 
 choice HEXA_MOTOR_3_TYPE
@@ -135,15 +145,19 @@ config HEXA_MOTOR_3_DISABLED
 
 endchoice
 
+config HEXA_MOTOR_3_BACKWARDS
+  bool "Is backwards"
+  default false
+
 endmenu
 
 menu "Motor 4"
   depends on HEXA_MOTOR_COUNT >= 5
 
 config HEXA_MOTOR_4_ID
-  int "ID"
-  range 0 2047
-  default 4
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_4_DISABLED
 
 choice HEXA_MOTOR_4_TYPE
@@ -166,15 +180,19 @@ config HEXA_MOTOR_4_DISABLED
 
 endchoice
 
+config HEXA_MOTOR_4_BACKWARDS
+  bool "Is backwards"
+  default false
+
 endmenu
 
 menu "Motor 5"
   depends on HEXA_MOTOR_COUNT >= 6
 
 config HEXA_MOTOR_5_ID
-  int "ID"
-  range 0 2047
-  default 5
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_5_DISABLED
 
 choice HEXA_MOTOR_5_TYPE
@@ -197,15 +215,19 @@ config HEXA_MOTOR_5_DISABLED
 
 endchoice
 
+config HEXA_MOTOR_5_BACKWARDS
+  bool "Is backwards"
+  default false
+
 endmenu
 
 menu "Motor 6"
   depends on HEXA_MOTOR_COUNT >= 7
 
 config HEXA_MOTOR_6_ID
-  int "ID"
-  range 0 2047
-  default 6
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_6_DISABLED
 
 choice HEXA_MOTOR_6_TYPE
@@ -228,15 +250,19 @@ config HEXA_MOTOR_6_DISABLED
 
 endchoice
 
+config HEXA_MOTOR_6_BACKWARDS
+  bool "Is backwards"
+  default false
+
 endmenu
 
 menu "Motor 7"
   depends on HEXA_MOTOR_COUNT >= 8
 
 config HEXA_MOTOR_7_ID
-  int "ID"
-  range 0 2047
-  default 7
+  hex "ID"
+  range 0x0 0x7FF
+  default 0x0
   depends on !HEXA_MOTOR_7_DISABLED
 
 choice HEXA_MOTOR_7_TYPE
@@ -258,6 +284,10 @@ config HEXA_MOTOR_7_DISABLED
   bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_7_BACKWARDS
+  bool "Is backwards"
+  default false
 
 endmenu
 
