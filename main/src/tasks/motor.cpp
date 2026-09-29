@@ -23,7 +23,8 @@ extern CanRecvTask* can_recv_task;
   BOOST_PP_IF(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_ODRIVE), MOTOR_ODRIVE(n), )
 
 MotorTask::MotorTask() {
-  BOOST_PP_REPEAT(2, NEW_MOTOR, ~)
+  BOOST_PP_REPEAT(2, NEW_MOTOR, ~);
+  torques.fill(0);
 }
 
 void MotorTask::set_torque(size_t motor_index, float torque) {
@@ -95,7 +96,7 @@ void MotorTask::init(size_t motor_index) {
 }
 
 void MotorTask::init_all() {
-  for (int i = 0; motors.size(); i++) {
+  for (int i = 0; i < motors.size(); i++) {
     init(i);
   }
 }

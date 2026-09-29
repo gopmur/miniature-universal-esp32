@@ -345,7 +345,7 @@ class App {
   }
 
   void setup() {
-    setup_sd();
+    // setup_sd();
     setup_tz();
     setup_gpio();
     setup_flash();
