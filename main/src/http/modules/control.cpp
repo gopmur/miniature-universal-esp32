@@ -35,7 +35,6 @@ const char* HttpControlModule::get_leg_str(Leg leg) {
 }
 
 esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
-  set_header(req);
   JsonObject res_json;
   JsonObject control_params_json;
   JsonObject manual_control_params_json;
@@ -53,20 +52,25 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
 
   res_json.set("running", control_task->running);
   res_json.set("mode", get_control_mode_str(control_task->control_mode));
-  manual_control_params_left_json.set("torque", control_task->hexa_manual_controller.params.left.torque);
+  manual_control_params_left_json.set("torque",
+                                      control_task->hexa_manual_controller.params.left.torque);
   manual_control_params_right_json.set("torque",
                                        control_task->hexa_manual_controller.params.right.torque);
-  automatic_control_params_left_json.set("torque",
-                                         control_task->hexa_automatic_controller.params.left.torque);
-  automatic_control_params_left_json.set("timeout",
-                                         control_task->hexa_automatic_controller.params.left.timeout);
+  automatic_control_params_left_json.set(
+      "torque",
+      control_task->hexa_automatic_controller.params.left.torque);
+  automatic_control_params_left_json.set(
+      "timeout",
+      control_task->hexa_automatic_controller.params.left.timeout);
   automatic_control_params_left_json.set(
       "velocityThreshold",
       control_task->hexa_automatic_controller.params.left.velocity_threshold);
-  automatic_control_params_right_json.set("torque",
-                                          control_task->hexa_automatic_controller.params.right.torque);
-  automatic_control_params_right_json.set("timeout",
-                                          control_task->hexa_automatic_controller.params.right.timeout);
+  automatic_control_params_right_json.set(
+      "torque",
+      control_task->hexa_automatic_controller.params.right.torque);
+  automatic_control_params_right_json.set(
+      "timeout",
+      control_task->hexa_automatic_controller.params.right.timeout);
   automatic_control_params_right_json.set(
       "velocityThreshold",
       control_task->hexa_automatic_controller.params.right.velocity_threshold);
@@ -97,8 +101,10 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
   semiautomatic_control_params_json.set(
       "stopAssistAngle",
       control_task->hexa_semiautomatic_controller.params.stop_assist_angle);
-  smart_control_params_left_json.set("torque", control_task->hexa_smart_controller.params.left.torque);
-  smart_control_params_right_json.set("torque", control_task->hexa_smart_controller.params.right.torque);
+  smart_control_params_left_json.set("torque",
+                                     control_task->hexa_smart_controller.params.left.torque);
+  smart_control_params_right_json.set("torque",
+                                      control_task->hexa_smart_controller.params.right.torque);
 
   manual_control_params_json.set("right", &manual_control_params_right_json);
   manual_control_params_json.set("left", &manual_control_params_left_json);
@@ -115,54 +121,46 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
   res_json.set("controlParams", &control_params_json);
 
   auto json_str = res_json.stringify();
-  auto ret = httpd_resp_send(req, json_str.c_str(), HTTPD_RESP_USE_STRLEN);
-  // if (ret != ESP_OK) {
-  //   ESP_LOGE(HttpServer::LOG_TAG, "Get running response transmission failed");
-  // }
+  send_json(req, res_json);
+
   return ESP_OK;
 }
 
 esp_err_t HttpControlModule::put_start(httpd_req_t* req) {
-  set_header(req);
   control_task->running = true;
   motor_task->enable_all();
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_success_json(req);
   return ESP_OK;
 }
 
 esp_err_t HttpControlModule::put_stop(httpd_req_t* req) {
-  set_header(req);
   control_task->running = false;
   motor_task->disable_all();
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_success_json(req);
   return ESP_OK;
 }
 
 esp_err_t HttpControlModule::put_set_mode_manual(httpd_req_t* req) {
-  set_header(req);
   control_task->control_mode = ControlMode::HEXA_MANUAL;
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_success_json(req);
   return ESP_OK;
 }
 
 esp_err_t HttpControlModule::put_set_mode_automatic(httpd_req_t* req) {
-  set_header(req);
   control_task->control_mode = ControlMode::HEXA_AUTOMATIC;
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_success_json(req);
   return ESP_OK;
 }
 
 esp_err_t HttpControlModule::put_set_mode_semiautomatic(httpd_req_t* req) {
-  set_header(req);
   control_task->control_mode = ControlMode::HEXA_SEMIAUTOMATIC;
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_success_json(req);
   return ESP_OK;
 }
 
 esp_err_t HttpControlModule::put_set_mode_smart(httpd_req_t* req) {
-  set_header(req);
   control_task->control_mode = ControlMode::HEXA_SMART;
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_success_json(req);
   return ESP_OK;
 }
 
@@ -238,7 +236,7 @@ esp_err_t HttpControlModule::put_manual_params(httpd_req_t* req) {
   LOGI("%d %d", left_torque, right_torque);
   control_task->hexa_manual_controller.params.left.torque = left_torque;
   control_task->hexa_manual_controller.params.right.torque = right_torque;
-  httpd_resp_send(req, nullptr, 0);
+  send_success_json(req);
   return ESP_OK;
 }
 
@@ -297,7 +295,8 @@ esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req) {
   control_task->hexa_automatic_controller.params.left.velocity_threshold = left_velocity_threshold;
   control_task->hexa_automatic_controller.params.right.timeout = right_timeout;
   control_task->hexa_automatic_controller.params.right.torque = right_torque;
-  control_task->hexa_automatic_controller.params.right.velocity_threshold = right_velocity_threshold;
+  control_task->hexa_automatic_controller.params.right.velocity_threshold =
+      right_velocity_threshold;
 
   httpd_resp_send(req, nullptr, 0);
 

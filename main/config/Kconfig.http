@@ -1,8 +1,20 @@
-
 menu "HTTP"
 
 config HEXA_HTTP_USE_HTTPS
   bool "Use HTTPS"
   default true
-  
+
+config HEXA_HTTP_MAX_REQUEST_LEN
+  int "Max request length"
+  range 0 1024
+  default 512
+
+config HEXA_HTTP_ALLOW_CORS
+  bool "Allow CORS"
+  default n
+
+config HEXA_HTTP_KEEP_ALIVE
+  bool "Enable keep alive"
+  default y
+
 endmenu

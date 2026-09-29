@@ -3922,6 +3922,12 @@ CONFIG_HEXA_CAN_TX_QUEUE_LEN=8
 #
 # default:
 # CONFIG_HEXA_HTTP_USE_HTTPS is not set
+# default:
+CONFIG_HEXA_HTTP_MAX_REQUEST_LEN=512
+# default:
+# CONFIG_HEXA_HTTP_ALLOW_CORS is not set
+# default:
+CONFIG_HEXA_HTTP_KEEP_ALIVE=y
 # end of HTTP
 
 #

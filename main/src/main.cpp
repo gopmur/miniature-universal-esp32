@@ -207,8 +207,6 @@ class App {
     ESP_ERROR_CHECK(twai_node_enable(twai));
   }
 
-  
-
   void setup_gpio() {
     gpio_config_t motor_power_switch = {
         .pin_bit_mask = (1ULL << CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN),
