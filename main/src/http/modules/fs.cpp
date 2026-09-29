@@ -9,25 +9,17 @@
 
 HttpCatThread HttpFsModule::http_cat_thread;
 
-void HttpCatThread::main(httpd_req_t** req_p) {
-  auto req = *req_p;
-  auto req_data = new char[req->content_len];
-  httpd_req_recv(req, req_data, req->content_len);
+void HttpCatThread::main(HttpCatThreadArgs* args_p) {
+  auto req = args_p->req;
+  auto req_json = args_p->json;
   JsonObject resp_json;
-  auto req_json_result = JsonObject::parse(req_data);
   std::string absolute_path;
   FILE* file = nullptr;
   uint8_t* buffer = nullptr;
-  JsonObject req_json;
   std::variant<char*, JsonError> path_result;
   char* path = nullptr;
   const size_t buffer_size = 1 << 15;
-  if (std::holds_alternative<JsonError>(req_json_result)) {
-    resp_json.set("message", "parse error");
-    HttpFsModule::send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-    goto cleanup;
-  }
-  req_json = std::get<JsonObject>(req_json_result);
+
   path_result = req_json.get_string("path", &resp_json);
   if (std::holds_alternative<JsonError>(path_result)) {
     HttpFsModule::send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
@@ -70,18 +62,9 @@ cleanup:
   httpd_req_async_handler_complete(req);
 }
 
-esp_err_t HttpFsModule::put_ls(httpd_req_t* req) {
-  ;
-  auto data = new char[req->content_len];
-  httpd_req_recv(req, data, req->content_len);
+esp_err_t HttpFsModule::put_ls(httpd_req_t* req, JsonObject* req_json) {
   JsonObject resp_json;
-  auto req_json_result = JsonObject::parse(data);
-  if (std::holds_alternative<JsonError>(req_json_result)) {
-    resp_json.set("message", "parse error");
-    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-  }
-  auto req_json = std::get<JsonObject>(req_json_result);
-  auto path_result = req_json.get_string("path", &resp_json);
+  auto path_result = req_json->get_string("path", &resp_json);
   if (std::holds_alternative<JsonError>(path_result)) {
     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
   }
@@ -97,8 +80,7 @@ esp_err_t HttpFsModule::put_ls(httpd_req_t* req) {
   std::string absolute_path = std::string("/sd") + path;
   DIR* dir = opendir(absolute_path.c_str());
   if (dir == nullptr) {
-    resp_json.set("message", "does not exist");
-    return send_json(req, resp_json, HTTPD_404_NOT_FOUND);
+    return send_message_json(req, "does not exist", HTTPD_404_NOT_FOUND);
   }
   JsonArray files_json_array;
   while (auto entry = readdir(dir)) {
@@ -113,10 +95,14 @@ esp_err_t HttpFsModule::put_ls(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpFsModule::put_cat(httpd_req_t* req) {
+esp_err_t HttpFsModule::put_cat(httpd_req_t* req, JsonObject* req_json) {
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
-  http_cat_thread.start("http_cat", 2, 4096, async_req);
+  HttpCatThreadArgs thread_args = {
+      .req = async_req,
+      .json = *req_json,
+  };
+  http_cat_thread.start("http_cat", 2, 4096, thread_args);
   return ESP_OK;
 }
 

@@ -5,6 +5,8 @@
 #include "http/modules/wifi/scan_wifis.hpp"
 
 class HttpWifiModule : public HttpModule {
+  friend class ScanWifisThread;
+
   MAKE_LOGGABLE("http_module");
 
   private:

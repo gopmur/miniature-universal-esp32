@@ -11,18 +11,16 @@
 extern sdmmc_card_t* card;
 
 esp_err_t HttpSystemModule::get_factory_reset(httpd_req_t* req) {
-  ;
   JsonObject resp_json;
   auto status = nvs_flash_erase();
   if (status != ESP_OK) {
-    resp_json.set("message", "failed to erase flash");
-    return send_json(req, resp_json, HTTPD_500_INTERNAL_SERVER_ERROR);
+    return send_message_json(req, "failed to erase flash", HTTPD_500_INTERNAL_SERVER_ERROR);
   }
   SystemLogger::close_log_file();
   status = esp_vfs_fat_sdcard_format("/sd", card);
   if (status != ESP_OK) {
     resp_json.set("message", "failed to format sd card");
-    return send_json(req, resp_json, HTTPD_500_INTERNAL_SERVER_ERROR);
+    return send_message_json(req, "failed to format sd card", HTTPD_500_INTERNAL_SERVER_ERROR);
   }
   resp_json.set("message", "restarting in 1s");
   send_json(req, resp_json);
@@ -32,8 +30,7 @@ esp_err_t HttpSystemModule::get_factory_reset(httpd_req_t* req) {
 };
 
 esp_err_t HttpSystemModule::get_restart(httpd_req_t* req) {
-  ;
-  ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
+  send_message_json(req, "restarting in 1 seconds");
   Sync::sleep(1000);
   esp_restart();
   return ESP_OK;

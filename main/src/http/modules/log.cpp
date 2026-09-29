@@ -7,17 +7,13 @@ extern LoggerTask* logger_task;
 extern WebSocketTask ws_task;
 
 esp_err_t HttpLogModule::get_start(httpd_req_t* req) {
-  ;
   logger_task->start_new_log();
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpLogModule::get_stop(httpd_req_t* req) {
-  ;
   logger_task->stop_log();
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpLogModule::ws_system(httpd_req_t* req) {

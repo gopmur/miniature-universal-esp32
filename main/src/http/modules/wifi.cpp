@@ -10,7 +10,6 @@ extern WifiConHandlerTask* wifi_con_handler_task;
 ScanWifisThread HttpWifiModule::scan_wifis_thread;
 
 esp_err_t HttpWifiModule::get_scan(httpd_req_t* req) {
-  ;
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
   scan_wifis_thread.start("ws_service", 2, 4096, async_req);
@@ -18,7 +17,6 @@ esp_err_t HttpWifiModule::get_scan(httpd_req_t* req) {
 }
 
 esp_err_t HttpWifiModule::get(httpd_req_t* req) {
-  ;
   wifi_ap_record_t ap_info;
   auto result = esp_wifi_sta_get_ap_info(&ap_info);
   JsonObject res_json;
@@ -35,29 +33,22 @@ esp_err_t HttpWifiModule::get(httpd_req_t* req) {
     auto bssid_str = get_bssid_string(ap_info.bssid);
     res_json.set("bssid", bssid_str.get_data());
   };
-  auto res_str = res_json.stringify();
-  httpd_resp_send(req, res_str.c_str(), HTTPD_RESP_USE_STRLEN);
-  return ESP_OK;
+  return send_json(req, res_json);
 }
-
 esp_err_t HttpWifiModule::put_connect(httpd_req_t* req) {
-  ;
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
   auto service_not_busy = wifi_con_handler_task->req_queue.send(async_req, 0);
   if (!service_not_busy) {
-    JsonObject res_json;
-    res_json.set("message", "another connection request is pending");
-    auto res_str = res_json.stringify();
-    httpd_resp_send_err(async_req, HTTPD_500_INTERNAL_SERVER_ERROR, res_str.c_str());
+    return send_message_json(req,
+                             "another connection request is pending",
+                             HTTPD_500_INTERNAL_SERVER_ERROR);
   }
   return ESP_OK;
 }
 esp_err_t HttpWifiModule::get_disconnect(httpd_req_t* req) {
-  ;
   esp_wifi_disconnect();
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 void HttpWifiModule::register_direct_uris() {

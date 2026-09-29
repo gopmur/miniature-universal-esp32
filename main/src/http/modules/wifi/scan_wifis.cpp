@@ -2,6 +2,7 @@
 #include "esp_http_server.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
+#include "http/modules/wifi.hpp"
 #include "jayson.hpp"
 #include "helper/formats.hpp"
 
@@ -53,10 +54,7 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
     ap_json.set("open", ap_records[i].authmode == WIFI_AUTH_OPEN);
     root_json.append_object(&ap_json);
   }
-  auto res_str = root_json.stringify();
-  auto res_str_c = res_str.c_str();
-
-  httpd_resp_send(req, res_str_c, HTTPD_RESP_USE_STRLEN);
+  HttpWifiModule::send_json(req, root_json);
   free(ap_records);
   httpd_req_async_handler_complete(req);
 }

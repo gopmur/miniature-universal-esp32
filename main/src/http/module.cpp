@@ -259,14 +259,14 @@ bool HttpModule::check_content_len(httpd_req_t* req) {
   return req->content_len <= CONFIG_HEXA_HTTP_MAX_REQUEST_LEN;
 }
 
-esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json) {
+esp_err_t HttpModule::send_json(httpd_req_t* req, Json& json) {
   set_type_json(req);
   auto json_string = json.stringify();
   httpd_resp_send(req, json_string.c_str(), HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
 
-esp_err_t HttpModule::send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status) {
+esp_err_t HttpModule::send_json(httpd_req_t* req, Json& json, httpd_err_code_t status) {
   set_type_json(req);
   auto json_string = json.stringify();
   return httpd_resp_send_err(req, status, json_string.c_str());

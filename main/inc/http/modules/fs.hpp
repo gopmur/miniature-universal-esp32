@@ -4,9 +4,14 @@
 #include "jaythread/thread_with_args.hpp"
 #include "system_logger.hpp"
 
-class HttpCatThread : public ThreadWithArg<httpd_req_t*> {
+struct HttpCatThreadArgs {
+  httpd_req_t* req;
+  JsonObject json;
+};
+
+class HttpCatThread : public ThreadWithArg<HttpCatThreadArgs> {
   private:
-  void main(httpd_req_t** req_p);
+  void main(HttpCatThreadArgs* args_p);
 };
 
 class HttpFsModule : public HttpModule {
@@ -16,8 +21,8 @@ class HttpFsModule : public HttpModule {
 
   private:
   static HttpCatThread http_cat_thread;
-  static esp_err_t put_ls(httpd_req_t* req);
-  static esp_err_t put_cat(httpd_req_t* req);
+  static esp_err_t put_ls(httpd_req_t* req, JsonObject* req_json);
+  static esp_err_t put_cat(httpd_req_t* req, JsonObject* req_json);
   void register_direct_uris();
 
   public:
