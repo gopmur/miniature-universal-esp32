@@ -41,7 +41,7 @@ void MotorTask::set_torque(size_t motor_index, float torque) {
     LOGW("cannot set torque for motor %d. doesn't exist", motor_index);
     return;
   }
-  motor->set_torque(torque);
+  torques[motor_index] = torque;
 }
 
 void MotorTask::enable_all() {
