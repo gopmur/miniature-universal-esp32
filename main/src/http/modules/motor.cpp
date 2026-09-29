@@ -4,7 +4,7 @@
 extern MotorTask* motor_task;
 
 esp_err_t HttpMotorModule::get_zero_pos(httpd_req_t* req) {
-  set_header(req);
+  ;
   motor_task->zero_pos_all();;
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;

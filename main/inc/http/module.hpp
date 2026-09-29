@@ -45,7 +45,6 @@ class HttpModule {
   static void allow_cors(httpd_req_t* req);
   static void set_keep_alive(httpd_req_t* req);
   static void set_type_json(httpd_req_t* req);
-  static void set_header(httpd_req_t* req);
   static esp_err_t send_json(httpd_req_t* req, JsonObject& json);
   static esp_err_t send_json(httpd_req_t* req, JsonObject& json, httpd_err_code_t status);
   static esp_err_t send_message_json(httpd_req_t* req, const char* message);

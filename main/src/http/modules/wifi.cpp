@@ -10,7 +10,7 @@ extern WifiConHandlerTask* wifi_con_handler_task;
 ScanWifisThread HttpWifiModule::scan_wifis_thread;
 
 esp_err_t HttpWifiModule::get_scan(httpd_req_t* req) {
-  set_header(req);
+  ;
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
   scan_wifis_thread.start("ws_service", 2, 4096, async_req);
@@ -18,7 +18,7 @@ esp_err_t HttpWifiModule::get_scan(httpd_req_t* req) {
 }
 
 esp_err_t HttpWifiModule::get(httpd_req_t* req) {
-  set_header(req);
+  ;
   wifi_ap_record_t ap_info;
   auto result = esp_wifi_sta_get_ap_info(&ap_info);
   JsonObject res_json;
@@ -41,7 +41,7 @@ esp_err_t HttpWifiModule::get(httpd_req_t* req) {
 }
 
 esp_err_t HttpWifiModule::put_connect(httpd_req_t* req) {
-  set_header(req);
+  ;
   httpd_req_t* async_req;
   httpd_req_async_handler_begin(req, &async_req);
   auto service_not_busy = wifi_con_handler_task->req_queue.send(async_req, 0);
@@ -54,7 +54,7 @@ esp_err_t HttpWifiModule::put_connect(httpd_req_t* req) {
   return ESP_OK;
 }
 esp_err_t HttpWifiModule::get_disconnect(httpd_req_t* req) {
-  set_header(req);
+  ;
   esp_wifi_disconnect();
   httpd_resp_send(req, nullptr, 0);
   return ESP_OK;

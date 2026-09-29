@@ -121,47 +121,39 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
   res_json.set("controlParams", &control_params_json);
 
   auto json_str = res_json.stringify();
-  send_json(req, res_json);
-
-  return ESP_OK;
+  return send_json(req, res_json);
 }
 
 esp_err_t HttpControlModule::put_start(httpd_req_t* req) {
   control_task->running = true;
   motor_task->enable_all();
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_stop(httpd_req_t* req) {
   control_task->running = false;
   motor_task->disable_all();
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_set_mode_manual(httpd_req_t* req) {
   control_task->control_mode = ControlMode::HEXA_MANUAL;
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_set_mode_automatic(httpd_req_t* req) {
   control_task->control_mode = ControlMode::HEXA_AUTOMATIC;
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_set_mode_semiautomatic(httpd_req_t* req) {
   control_task->control_mode = ControlMode::HEXA_SEMIAUTOMATIC;
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_set_mode_smart(httpd_req_t* req) {
   control_task->control_mode = ControlMode::HEXA_SMART;
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::ws_manual_torque_post_handshake(httpd_req_t* req) {
@@ -227,8 +219,8 @@ esp_err_t HttpControlModule::put_manual_params(httpd_req_t* req, JsonObject* req
   LOGI("%d %d", left_torque, right_torque);
   control_task->hexa_manual_controller.params.left.torque = left_torque;
   control_task->hexa_manual_controller.params.right.torque = right_torque;
-  send_success_json(req);
-  return ESP_OK;
+  return send_success_json(req);
+
 }
 
 esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req, JsonObject* req_json) {
@@ -278,9 +270,7 @@ esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req, JsonObject* 
   control_task->hexa_automatic_controller.params.right.velocity_threshold =
       right_velocity_threshold;
 
-  httpd_resp_send(req, nullptr, 0);
-
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_semiautomatic_params(httpd_req_t* req, JsonObject* req_json) {
@@ -339,8 +329,7 @@ esp_err_t HttpControlModule::put_semiautomatic_params(httpd_req_t* req, JsonObje
   control_task->hexa_semiautomatic_controller.params.start_assist_angle = start_assist_angle;
   control_task->hexa_semiautomatic_controller.params.stop_assist_angle = stop_assist_angle;
 
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 esp_err_t HttpControlModule::put_smart_params(httpd_req_t* req, JsonObject* req_json) {
@@ -369,8 +358,7 @@ esp_err_t HttpControlModule::put_smart_params(httpd_req_t* req, JsonObject* req_
   auto right_torque = std::get<double>(right_torque_result);
   control_task->hexa_smart_controller.params.left.torque = left_torque;
   control_task->hexa_smart_controller.params.right.torque = right_torque;
-  httpd_resp_send(req, nullptr, 0);
-  return ESP_OK;
+  return send_success_json(req);
 }
 
 void HttpControlModule::register_direct_uris() {

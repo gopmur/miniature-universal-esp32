@@ -11,7 +11,7 @@
 extern sdmmc_card_t* card;
 
 esp_err_t HttpSystemModule::get_factory_reset(httpd_req_t* req) {
-  set_header(req);
+  ;
   JsonObject resp_json;
   auto status = nvs_flash_erase();
   if (status != ESP_OK) {
@@ -32,7 +32,7 @@ esp_err_t HttpSystemModule::get_factory_reset(httpd_req_t* req) {
 };
 
 esp_err_t HttpSystemModule::get_restart(httpd_req_t* req) {
-  set_header(req);
+  ;
   ESP_ERROR_CHECK(httpd_resp_send(req, nullptr, 0));
   Sync::sleep(1000);
   esp_restart();

@@ -23,6 +23,7 @@ void HttpModule::set_global_header(httpd_req_t* req) {
 }
 
 esp_err_t HttpModule::middleware(httpd_req_t* req) {
+  set_global_header(req);
   if (!check_content_len(req)) {
     JsonObject resp;
     auto message =
@@ -30,7 +31,6 @@ esp_err_t HttpModule::middleware(httpd_req_t* req) {
     resp.set("message", message.c_str());
     return ESP_OK;
   }
-  set_global_header(req);
   auto handler = reinterpret_cast<esp_err_t (*)(httpd_req_t*)>(req->user_ctx);
   if (handler == nullptr) {
     LOGE("empty handler while trying to call from middleware");
@@ -40,6 +40,7 @@ esp_err_t HttpModule::middleware(httpd_req_t* req) {
 }
 
 esp_err_t HttpModule::json_middleware(httpd_req_t* req) {
+  set_global_header(req);
   if (!check_content_len(req)) {
     JsonObject resp;
     auto message =
@@ -47,7 +48,6 @@ esp_err_t HttpModule::json_middleware(httpd_req_t* req) {
     resp.set("message", message.c_str());
     return ESP_OK;
   }
-  set_global_header(req);
   auto handler = reinterpret_cast<esp_err_t (*)(httpd_req_t*, JsonObject*)>(req->user_ctx);
 
   auto req_json_result = parse_json(req);
@@ -153,7 +153,6 @@ void HttpModule::register_ws_uri(const char* uri_address,
 void HttpModule::register_uri_with_option(const char* uri_address,
                                           httpd_method_t method,
                                           esp_err_t (*handler)(httpd_req_t* req)) {
-                                          
   if (!check_uri(uri_address)) {
     return;
   }
@@ -190,8 +189,8 @@ void HttpModule::register_uri_with_option(const char* uri_address,
 
 void HttpModule::register_uri_with_option(const char* uri_address,
                                           httpd_method_t method,
-                                          esp_err_t (*handler)(httpd_req_t* req, JsonObject* req_json)) {
-                                          
+                                          esp_err_t (*handler)(httpd_req_t* req,
+                                                               JsonObject* req_json)) {
   if (!check_uri(uri_address)) {
     return;
   }
@@ -226,10 +225,7 @@ void HttpModule::register_uri_with_option(const char* uri_address,
   LOGI("uri address registered %s", full_uri_address->c_str());
 }
 
-
-
 esp_err_t HttpModule::options_handler(httpd_req_t* req) {
-  set_header(req);
   httpd_resp_send(req, NULL, 0);
   return ESP_OK;
 }
@@ -246,12 +242,6 @@ void HttpModule::set_keep_alive(httpd_req_t* req) {
 
 void HttpModule::set_type_json(httpd_req_t* req) {
   httpd_resp_set_type(req, "application/json");
-}
-
-void HttpModule::set_header(httpd_req_t* req) {
-  allow_cors(req);
-  set_keep_alive(req);
-  set_type_json(req);
 }
 
 bool HttpModule::check_uri(const char* uri) {

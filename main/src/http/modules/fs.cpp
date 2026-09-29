@@ -71,7 +71,7 @@ cleanup:
 }
 
 esp_err_t HttpFsModule::put_ls(httpd_req_t* req) {
-  set_header(req);
+  ;
   auto data = new char[req->content_len];
   httpd_req_recv(req, data, req->content_len);
   JsonObject resp_json;
