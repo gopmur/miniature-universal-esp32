@@ -201,20 +201,11 @@ esp_err_t HttpControlModule::ws_manual_torque(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpControlModule::put_manual_params(httpd_req_t* req) {
-  set_header(req);
-  auto req_json_result = parse_json(req);
+esp_err_t HttpControlModule::put_manual_params(httpd_req_t* req, JsonObject* req_json) {
   JsonObject resp_json;
 
-  if (std::holds_alternative<JsonError>(req_json_result)) {
-    resp_json.set("message", "parse error");
-    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-  }
-
-  auto req_json = std::get<JsonObject>(req_json_result);
-
-  auto left_json_result = req_json.get_object("left", &resp_json);
-  auto right_json_result = req_json.get_object("right", &resp_json);
+  auto left_json_result = req_json->get_object("left", &resp_json);
+  auto right_json_result = req_json->get_object("right", &resp_json);
 
   if (std::holds_alternative<JsonError>(left_json_result) ||
       std::holds_alternative<JsonError>(right_json_result)) {
@@ -240,22 +231,11 @@ esp_err_t HttpControlModule::put_manual_params(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req) {
-  set_header(req);
-  char* req_body = new char[req->content_len];
-  httpd_req_recv(req, req_body, req->content_len);
+esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req, JsonObject* req_json) {
   JsonObject resp_json;
-  auto req_json_result = JsonObject::parse(req_body);
-  delete[] req_body;
 
-  if (std::holds_alternative<JsonError>(req_json_result)) {
-    resp_json.set("message", "parse error");
-    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-  }
-
-  auto req_json = std::get<JsonObject>(req_json_result);
-  auto left_json_result = req_json.get_object("left", &resp_json);
-  auto right_json_result = req_json.get_object("right", &resp_json);
+  auto left_json_result = req_json->get_object("left", &resp_json);
+  auto right_json_result = req_json->get_object("right", &resp_json);
 
   if (std::holds_alternative<JsonError>(left_json_result) ||
       std::holds_alternative<JsonError>(right_json_result)) {
@@ -303,25 +283,14 @@ esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpControlModule::put_semiautomatic_params(httpd_req_t* req) {
-  set_header(req);
-  char* req_body = new char[req->content_len];
-  httpd_req_recv(req, req_body, req->content_len);
+esp_err_t HttpControlModule::put_semiautomatic_params(httpd_req_t* req, JsonObject* req_json) {
   JsonObject resp_json;
-  auto req_json_result = JsonObject::parse(req_body);
 
-  if (std::holds_alternative<JsonError>(req_json_result)) {
-    resp_json.set("message", "parse error");
-    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-  }
-
-  auto req_json = std::get<JsonObject>(req_json_result);
-
-  auto weak_leg_result = req_json.get_string("weakLeg", &resp_json);
-  auto start_assist_angle_result = req_json.get_number("startAssistAngle", &resp_json);
-  auto stop_assist_angle_result = req_json.get_number("stopAssistAngle", &resp_json);
-  auto left_json_result = req_json.get_object("left", &resp_json);
-  auto right_json_result = req_json.get_object("right", &resp_json);
+  auto weak_leg_result = req_json->get_string("weakLeg", &resp_json);
+  auto start_assist_angle_result = req_json->get_number("startAssistAngle", &resp_json);
+  auto stop_assist_angle_result = req_json->get_number("stopAssistAngle", &resp_json);
+  auto left_json_result = req_json->get_object("left", &resp_json);
+  auto right_json_result = req_json->get_object("right", &resp_json);
 
   if (std::holds_alternative<JsonError>(weak_leg_result) ||
       std::holds_alternative<JsonError>(start_assist_angle_result) ||
@@ -374,23 +343,12 @@ esp_err_t HttpControlModule::put_semiautomatic_params(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t HttpControlModule::put_smart_params(httpd_req_t* req) {
-  set_header(req);
-  char* req_body = new char[req->content_len];
-  httpd_req_recv(req, req_body, req->content_len);
+esp_err_t HttpControlModule::put_smart_params(httpd_req_t* req, JsonObject* req_json) {
   JsonObject resp_json;
-  auto req_json_result = JsonObject::parse(req_body);
-  delete[] req_body;
 
-  if (std::holds_alternative<JsonError>(req_json_result)) {
-    resp_json.set("message", "parse error");
-    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
-  }
 
-  auto req_json = std::get<JsonObject>(req_json_result);
-
-  auto left_json_result = req_json.get_object("left", &resp_json);
-  auto right_json_result = req_json.get_object("right", &resp_json);
+  auto left_json_result = req_json->get_object("left", &resp_json);
+  auto right_json_result = req_json->get_object("right", &resp_json);
 
   if (std::holds_alternative<JsonError>(left_json_result) ||
       std::holds_alternative<JsonError>(right_json_result)) {
