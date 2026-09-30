@@ -12,7 +12,6 @@ class HttpWifiModule : public HttpModule {
   private:
   static ScanWifisThread scan_wifis_thread;
 
-  static esp_err_t get_scan(httpd_req_t* req);
   static esp_err_t get(httpd_req_t* req);
   static esp_err_t put_connect(httpd_req_t* req);
   static esp_err_t get_disconnect(httpd_req_t* req);

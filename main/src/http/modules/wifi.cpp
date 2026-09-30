@@ -9,13 +9,6 @@
 extern WifiConHandlerTask* wifi_con_handler_task;
 ScanWifisThread HttpWifiModule::scan_wifis_thread;
 
-esp_err_t HttpWifiModule::get_scan(httpd_req_t* req) {
-  httpd_req_t* async_req;
-  httpd_req_async_handler_begin(req, &async_req);
-  scan_wifis_thread.start("ws_service", 2, 4096, async_req);
-  return ESP_OK;
-}
-
 esp_err_t HttpWifiModule::get(httpd_req_t* req) {
   wifi_ap_record_t ap_info;
   auto result = esp_wifi_sta_get_ap_info(&ap_info);
@@ -52,9 +45,8 @@ esp_err_t HttpWifiModule::get_disconnect(httpd_req_t* req) {
 }
 
 void HttpWifiModule::register_direct_uris() {
-  register_uri("/scan", HTTP_GET, get_scan);
+  register_async_uri("/scan", HTTP_GET, &scan_wifis_thread);
   register_uri("/", HTTP_GET, get);
   register_uri_with_option("/connect", HTTP_PUT, put_connect);
   register_uri("/disconnect", HTTP_GET, get_disconnect);
 }
-

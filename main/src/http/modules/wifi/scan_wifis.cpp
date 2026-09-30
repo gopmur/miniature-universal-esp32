@@ -36,16 +36,12 @@ void ScanWifisThread::main(httpd_req_t** req_p) {
   uint16_t ap_count = 0;
   esp_wifi_scan_get_ap_num(&ap_count);
 
-  wifi_ap_record_t* ap_records = (wifi_ap_record_t*)malloc(sizeof(wifi_ap_record_t) * 20);
+  wifi_ap_record_t* ap_records = (wifi_ap_record_t*)malloc(sizeof(wifi_ap_record_t) * ap_count);
 
-  uint16_t number = ap_count;
-  if (number > 20)
-    number = 20;
-
-  esp_wifi_scan_get_ap_records(&number, ap_records);
+  esp_wifi_scan_get_ap_records(&ap_count, ap_records);
 
   JsonArray root_json;
-  for (int i = 0; i < number; i++) {
+  for (int i = 0; i < ap_count; i++) {
     JsonObject ap_json;
     ap_json.set("rssi", ap_records[i].rssi);
     auto bssid = get_bssid_string(ap_records[i].bssid);

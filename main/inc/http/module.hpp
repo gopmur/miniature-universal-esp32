@@ -5,6 +5,7 @@
 #include <vector>
 #include "esp_http_server.h"
 #include "jayson.hpp"
+#include "jaythread/thread_with_args.hpp"
 #include "system_logger.hpp"
 
 class HttpModule {
@@ -21,6 +22,7 @@ class HttpModule {
   static void set_global_header(httpd_req_t* req);
   static esp_err_t middleware(httpd_req_t* req);
   static esp_err_t json_middleware(httpd_req_t* req);
+  static esp_err_t async_middleware(httpd_req_t* req);
   static bool check_uri(const char* uri);
   static bool check_content_len(httpd_req_t* req);
 
@@ -31,6 +33,9 @@ class HttpModule {
   void register_uri(const char* uri_address,
                     httpd_method_t method,
                     esp_err_t (*handler)(httpd_req_t* req, JsonObject* req_json));
+  void register_async_uri(const char* uri_address,
+                          httpd_method_t method,
+                          ThreadWithArg<httpd_req_t*>* handler);
   void register_ws_uri(const char* uri_address,
                        esp_err_t (*handler)(httpd_req_t* req),
                        esp_err_t (*post_handshake_handler)(httpd_req_t* req));
