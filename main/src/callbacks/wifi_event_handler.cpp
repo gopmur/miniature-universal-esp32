@@ -4,10 +4,11 @@
 #include "esp_netif_sntp.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types_generic.h"
-#include "tasks/wifi_con_handler.hpp"
+#include "http.hpp"
+#include "http/modules/wifi.hpp"
 #include "tasks/ws.hpp"
 
-extern WifiConHandlerTask* wifi_con_handler_task;
+extern HttpWifiModule http_wifi_module;
 
 void WifiEventCallback::wifi_event_handler(void* arg,
                                            esp_event_base_t event_base,
@@ -24,11 +25,11 @@ void WifiEventCallback::wifi_event_handler(void* arg,
       case WIFI_REASON_AUTH_EXPIRE:
       case WIFI_REASON_HANDSHAKE_TIMEOUT:
       case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        wifi_con_handler_task->connection_result_queue.send(WifiConnectionRequestResult::FAILED, 0);
+        http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::FAILED, 0);
         break;
 
       case WIFI_REASON_NO_AP_FOUND:
-        wifi_con_handler_task->connection_result_queue.send(WifiConnectionRequestResult::WRONG_SSID,
+        http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::WRONG_SSID,
                                                             0);
         break;
 
@@ -36,7 +37,7 @@ void WifiEventCallback::wifi_event_handler(void* arg,
         break;
 
       default:
-        wifi_con_handler_task->connection_result_queue.send(WifiConnectionRequestResult::OTHER, 0);
+        http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::OTHER, 0);
         break;
     }
   }
@@ -46,6 +47,6 @@ void WifiEventCallback::wifi_event_handler(void* arg,
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("129.70.132.36");
     config.sync_cb = SntpCallback::sync_done;
     esp_netif_sntp_init(&config);
-    wifi_con_handler_task->connection_result_queue.send(WifiConnectionRequestResult::OK, 0);
+    http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::OK, 0);
   }
 }

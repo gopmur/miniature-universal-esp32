@@ -52,7 +52,6 @@
 #include "tasks/logger.hpp"
 #include "tasks/monitor.hpp"
 #include "tasks/motor.hpp"
-#include "tasks/wifi_con_handler.hpp"
 #include "tasks/ws.hpp"
 
 twai_node_handle_t twai;
@@ -61,7 +60,6 @@ sdmmc_card_t* card;
 CanRecvTask can_recv_task;
 ImuTask* imu_task;
 WebSocketTask ws_task;
-WifiConHandlerTask* wifi_con_handler_task;
 DnsTask* dns_task;
 ControlTask* control_task;
 MotorTask* motor_task;
@@ -278,7 +276,6 @@ class App {
 
   void start_tasks() {
     motor_task = new MotorTask();
-    wifi_con_handler_task = new WifiConHandlerTask();
     dns_task = new DnsTask("192.168.4.1", "hexa.lan");
     control_task = new ControlTask();
     imu_task = new ImuTask();
@@ -287,9 +284,6 @@ class App {
 
     motor_task->start("motor", 2, 4096);
     can_recv_task.start("can_recv", 2, 4096);
-    wifi_con_handler_task->start("http_con",
-                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY,
-                                 CONFIG_HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE);
     dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
     ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
     control_task->start("control",

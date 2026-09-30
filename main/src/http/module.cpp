@@ -90,6 +90,44 @@ esp_err_t HttpModule::async_middleware(httpd_req_t* req) {
   return ESP_OK;
 };
 
+esp_err_t HttpModule::json_async_middleware(httpd_req_t* req) {
+  set_global_header(req);
+  if (!check_content_len(req)) {
+    JsonObject resp;
+    auto message =
+        std::format("content length is longer than {}", CONFIG_HEXA_HTTP_MAX_REQUEST_LEN);
+    resp.set("message", message.c_str());
+    return send_json(req, resp, HTTPD_413_CONTENT_TOO_LARGE);
+  }
+  auto handler = reinterpret_cast<ThreadWithArg<HttpJsonAsyncHandlerArgs>*>(req->user_ctx);
+  if (handler == nullptr) {
+    LOGE("empty handler while trying to call from middleware");
+    return ESP_OK;
+  }
+  auto req_json_result = parse_json(req);
+  if (std::holds_alternative<JsonError>(req_json_result)) {
+    send_message_json(req, "json parse error", HTTPD_400_BAD_REQUEST);
+    return ESP_OK;
+  }
+  auto req_json = std::get<JsonObject>(req_json_result);
+
+  httpd_req_t* async_req;
+  httpd_req_async_handler_begin(req, &async_req);
+  HttpJsonAsyncHandlerArgs args = {
+      .req = async_req,
+      .json = req_json,
+  };
+  auto thread_started = handler->start(req->uri, 2, 4096, args);
+  if (!thread_started) {
+    auto status = send_message_json(async_req,
+                                    "async handler is already running",
+                                    HTTPD_500_INTERNAL_SERVER_ERROR);
+    httpd_req_async_handler_complete(async_req);
+    return status;
+  }
+  return ESP_OK;
+};
+
 void HttpModule::register_modules_uris() {
   for (auto module : modules) {
     module->base_uri = base_uri + name + "/";
@@ -105,7 +143,8 @@ void HttpModule::register_uris(httpd_handle_t server_instance) {
 
 void HttpModule::register_uri(const char* uri_address,
                               httpd_method_t method,
-                              esp_err_t (*handler)(httpd_req_t* req)) {
+                              void* handler,
+                              esp_err_t (*middleware)(httpd_req_t* req)) {
   if (!check_uri(uri_address)) {
     return;
   }
@@ -124,31 +163,25 @@ void HttpModule::register_uri(const char* uri_address,
       .ws_post_handshake_cb = nullptr,
   };
   ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
-  LOGI("uri address registered %s", full_uri_address->c_str());
+  LOGI("uri address registered %s %s", http_method_str(method), full_uri_address->c_str());
+}
+
+void HttpModule::register_uri(const char* uri_address,
+                              httpd_method_t method,
+                              esp_err_t (*handler)(httpd_req_t* req)) {
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), middleware);
 }
 
 void HttpModule::register_async_uri(const char* uri_address,
                                     httpd_method_t method,
                                     ThreadWithArg<httpd_req_t*>* handler) {
-  if (!check_uri(uri_address)) {
-    return;
-  }
-  if (strlen(uri_address) == 1) {
-    uri_address = "";
-  }
-  auto full_uri_address = new std::string(base_uri + name + uri_address);
-  httpd_uri uri = {
-      .uri = full_uri_address->c_str(),
-      .method = method,
-      .handler = async_middleware,
-      .user_ctx = reinterpret_cast<void*>(handler),
-      .is_websocket = false,
-      .handle_ws_control_frames = false,
-      .supported_subprotocol = nullptr,
-      .ws_post_handshake_cb = nullptr,
-  };
-  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
-  LOGI("uri address registered %s", full_uri_address->c_str());
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), async_middleware);
+}
+
+void HttpModule::register_async_uri(const char* uri_address,
+                                    httpd_method_t method,
+                                    ThreadWithArg<HttpJsonAsyncHandlerArgs>* handler) {
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), json_async_middleware);
 }
 
 void HttpModule::register_uri(const char* uri_address,
@@ -159,25 +192,7 @@ void HttpModule::register_uri(const char* uri_address,
          uri_address);
     return;
   }
-  if (!check_uri(uri_address)) {
-    return;
-  }
-  if (strlen(uri_address) == 1) {
-    uri_address = "";
-  }
-  auto full_uri_address = new std::string(base_uri + name + uri_address);
-  httpd_uri uri = {
-      .uri = full_uri_address->c_str(),
-      .method = method,
-      .handler = middleware,
-      .user_ctx = reinterpret_cast<void*>(handler),
-      .is_websocket = false,
-      .handle_ws_control_frames = false,
-      .supported_subprotocol = nullptr,
-      .ws_post_handshake_cb = nullptr,
-  };
-  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
-  LOGI("uri address registered %s", full_uri_address->c_str());
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), json_middleware);
 }
 
 void HttpModule::register_ws_uri(const char* uri_address,
@@ -202,82 +217,36 @@ void HttpModule::register_ws_uri(const char* uri_address,
 
   };
   ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
-  LOGI("uri address registered %s", full_uri_address->c_str());
+  LOGI("uri address registered WS %s", full_uri_address->c_str());
 }
 
 void HttpModule::register_uri_with_option(const char* uri_address,
                                           httpd_method_t method,
                                           esp_err_t (*handler)(httpd_req_t* req)) {
-  if (!check_uri(uri_address)) {
-    return;
-  }
-  if (strlen(uri_address) == 1) {
-    uri_address = "";
-  }
-  auto full_uri_address = new std::string(base_uri + name + uri_address);
-  httpd_uri uri = {
-      .uri = full_uri_address->c_str(),
-      .method = method,
-      .handler = middleware,
-      .user_ctx = reinterpret_cast<void*>(handler),
-      .is_websocket = false,
-      .handle_ws_control_frames = false,
-      .supported_subprotocol = nullptr,
-      .ws_post_handshake_cb = nullptr,
-  };
-
-  httpd_uri option_uri = {
-      .uri = uri_address,
-      .method = HTTP_OPTIONS,
-      .handler = middleware,
-      .user_ctx = reinterpret_cast<void*>(options_handler),
-      .is_websocket = false,
-      .handle_ws_control_frames = false,
-      .supported_subprotocol = nullptr,
-      .ws_post_handshake_cb = nullptr,
-  };
-
-  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
-  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &option_uri));
-  LOGI("uri address registered %s", full_uri_address->c_str());
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), middleware);
+  register_uri(uri_address, HTTP_OPTIONS, reinterpret_cast<void*>(options_handler), middleware);
 }
 
 void HttpModule::register_uri_with_option(const char* uri_address,
                                           httpd_method_t method,
                                           esp_err_t (*handler)(httpd_req_t* req,
                                                                JsonObject* req_json)) {
-  if (!check_uri(uri_address)) {
-    return;
-  }
-  if (strlen(uri_address) == 1) {
-    uri_address = "";
-  }
-  auto full_uri_address = new std::string(base_uri + name + uri_address);
-  httpd_uri uri = {
-      .uri = full_uri_address->c_str(),
-      .method = method,
-      .handler = json_middleware,
-      .user_ctx = reinterpret_cast<void*>(handler),
-      .is_websocket = false,
-      .handle_ws_control_frames = false,
-      .supported_subprotocol = nullptr,
-      .ws_post_handshake_cb = nullptr,
-  };
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), json_middleware);
+  register_uri(uri_address, HTTP_OPTIONS, reinterpret_cast<void*>(options_handler), middleware);
+}
 
-  httpd_uri option_uri = {
-      .uri = uri_address,
-      .method = HTTP_OPTIONS,
-      .handler = middleware,
-      .user_ctx = reinterpret_cast<void*>(options_handler),
-      .is_websocket = false,
-      .handle_ws_control_frames = false,
-      .supported_subprotocol = nullptr,
-      .ws_post_handshake_cb = nullptr,
-  };
+void HttpModule::register_async_uri_with_option(const char* uri_address,
+                                                httpd_method_t method,
+                                                ThreadWithArg<httpd_req_t*>* handler) {
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), async_middleware);
+  register_uri(uri_address, HTTP_OPTIONS, reinterpret_cast<void*>(options_handler), middleware);
+}
 
-  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &uri));
-  ESP_ERROR_CHECK(httpd_register_uri_handler(this->server_instance, &option_uri));
-  LOGI("uri address registered %s", full_uri_address->c_str());
+void HttpModule::register_async_uri_with_option(const char* uri_address,
+                                                httpd_method_t method,
+                                                ThreadWithArg<HttpJsonAsyncHandlerArgs>* handler) {
+  register_uri(uri_address, method, reinterpret_cast<void*>(handler), json_async_middleware);
+  register_uri(uri_address, HTTP_OPTIONS, reinterpret_cast<void*>(options_handler), middleware);
 }
 
 esp_err_t HttpModule::options_handler(httpd_req_t* req) {

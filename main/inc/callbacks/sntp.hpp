@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tasks/wifi_con_handler.hpp"
+#include "system_logger.hpp"
 
 class SntpCallback {
   MAKE_LOGGABLE("sntp_callback");

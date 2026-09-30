@@ -1,4 +1,5 @@
 #include "callbacks/sntp.hpp"
+#include <ctime>
 
 void SntpCallback::sync_done(struct timeval* tv) {
   time_t now;

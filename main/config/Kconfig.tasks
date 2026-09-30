@@ -32,18 +32,6 @@ config HEXA_WS_MAX_CONNECTIONS
 
 endmenu
 
-menu "Wifi Connection Handler"
-
-config HEXA_TASKS_WIFI_CON_HANDLER_PRIORITY
-  int "Priority"
-  default 2
-
-config HEXA_TASKS_WIFI_CON_HANDLER_STACK_SIZE
-  int "Stack Size"
-  default 4096
-
-endmenu
-
 menu "IMU"
 
 config HEXA_TASKS_IMU_PRIORITY
