@@ -26,10 +26,6 @@ config HEXA_TASKS_WS_STACK_SIZE
   int "Stack Size"
   default 4096
 
-config HEXA_WS_MAX_CONNECTIONS
-  int "Max Connections"
-  default 3
-
 endmenu
 
 menu "IMU"

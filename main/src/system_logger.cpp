@@ -39,7 +39,7 @@ int SystemLogger::log_vprintf(const char* fmt, va_list args) {
       auto buffer = new std::string;
       buffer->resize(len);
       vsprintf(buffer->data(), fmt, ws_args);
-      ws_task.sys_log_queue.send(std::make_pair(connection.fd, buffer));
+      ws_task.sys_log_queue.send(std::make_pair(connection.fd, buffer), 10);
     }
     va_end(ws_args);
   }

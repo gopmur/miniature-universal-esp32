@@ -65,7 +65,7 @@ ControlTask* control_task;
 MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
-Can can; 
+Can can;
 
 HttpLegacyModule http_legacy_module("legacy");
 HttpFsModule http_fs_module("fs");
@@ -161,9 +161,7 @@ class App {
     ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, i2c_config.mode, 0, 0, 0));
   }
 
-  void setup_twai() {
-    can.init();
-  }
+  void setup_twai() { can.init(); }
 
   void setup_gpio() {
     gpio_config_t motor_power_switch = {
@@ -271,7 +269,6 @@ class App {
     LOGI("filesystem mounted");
 
     sdmmc_card_print_info(stdout, card);
-    SystemLogger::init();
   }
 
   void start_tasks() {
@@ -296,7 +293,8 @@ class App {
   }
 
   void setup() {
-    // setup_sd();
+    setup_sd();
+    SystemLogger::init();
     setup_tz();
     setup_gpio();
     setup_flash();
@@ -308,12 +306,15 @@ class App {
     start_tasks();
 
     http_server.start();
-
   }
 
   public:
   void run() {
     setup();
+    while (true) {
+      LOGI("heartbeat");
+      Sync::sleep(1000);
+    }
   }
 };
 

@@ -277,8 +277,8 @@ void HttpServer::start() {
 #ifdef CONFIG_HEXA_HTTP_USE_HTTPS
   httpd_ssl_config_t https_config = HTTPD_SSL_CONFIG_DEFAULT();
   https_config.httpd.keep_alive_enable = true;
-  https_config.httpd.max_open_sockets = 3;
-  https_config.httpd.max_uri_handlers = 128;
+  https_config.httpd.max_open_sockets = CONFIG_HEXA_HTTP_MAX_OPEN_SOCKET;
+  https_config.httpd.max_uri_handlers = CONFIG_HEXA_HTTP_MAX_URI_HANDLER_COUNT;
   https_config.servercert = server_cert_pem_start;
   https_config.servercert_len = strlen((char*)server_cert_pem_start) + 1;
   https_config.prvtkey_pem = server_key_pem_start;
@@ -287,20 +287,10 @@ void HttpServer::start() {
 #else
   httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
   http_config.keep_alive_enable = true;
-  http_config.max_open_sockets = 3;
-  http_config.max_uri_handlers = 128;
+  http_config.max_open_sockets = CONFIG_HEXA_HTTP_MAX_OPEN_SOCKET;
+  http_config.max_uri_handlers = CONFIG_HEXA_HTTP_MAX_URI_HANDLER_COUNT;
   ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
 #endif
-
   http_server_register_assets(server_instance);
-
   root_module->register_uris(server_instance);
-
-  // httpd_config_t http_config = HTTPD_DEFAULT_CONFIG();
-  // // http_config.close_fn = on_close;
-  // http_config.max_uri_handlers = 128;
-  // ESP_ERROR_CHECK(httpd_start(&server_instance, &http_config));
-  // http_server_register_assets(server_instance);
-  // root_module->register_uris(server_instance);
-  // // ESP_ERROR_CHECK(register_dynamic_endpoints());
 }

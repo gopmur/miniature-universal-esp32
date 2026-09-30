@@ -1,6 +1,4 @@
 #include "tasks/motor.hpp"
-#include "boost/preprocessor/comparison/less.hpp"
-#include "boost/preprocessor/control/if.hpp"
 #include "boost/preprocessor/repetition/repeat.hpp"
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive.hpp"

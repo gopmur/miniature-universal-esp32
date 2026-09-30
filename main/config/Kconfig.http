@@ -17,4 +17,12 @@ config HEXA_HTTP_KEEP_ALIVE
   bool "Enable keep alive"
   default y
 
+config HEXA_HTTP_MAX_OPEN_SOCKET
+  int "Maximum number of open sockets"
+  default 16
+
+config HEXA_HTTP_MAX_URI_HANDLER_COUNT
+  int "Maximum number of uri handlers"
+  default 128
+
 endmenu
