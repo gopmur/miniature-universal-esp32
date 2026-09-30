@@ -3870,7 +3870,7 @@ CONFIG_WL_SECTOR_SIZE=4096
 CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN=4
 # default:
 CONFIG_HEXA_MOTOR_TIMEOUT_MS=50
-CONFIG_HEXA_MOTOR_COUNT=2
+CONFIG_HEXA_MOTOR_COUNT=8
 
 #
 # Motor 0
@@ -3896,6 +3896,108 @@ CONFIG_HEXA_MOTOR_1_RECEIVE_ID=0x0
 # default:
 # CONFIG_HEXA_MOTOR_1_BACKWARDS is not set
 # end of Motor 1
+
+#
+# Motor 2
+#
+# default:
+CONFIG_HEXA_MOTOR_2_ID=0x0
+# default:
+CONFIG_HEXA_MOTOR_2_TYPE_ODRIVE=y
+# default:
+# CONFIG_HEXA_MOTOR_2_TYPE_SMC is not set
+# default:
+# CONFIG_HEXA_MOTOR_2_TYPE_T_MOTOR is not set
+# default:
+CONFIG_HEXA_MOTOR_2_RECEIVE_ID=0x0
+# default:
+# CONFIG_HEXA_MOTOR_2_BACKWARDS is not set
+# end of Motor 2
+
+#
+# Motor 3
+#
+# default:
+CONFIG_HEXA_MOTOR_3_ID=0x0
+# default:
+CONFIG_HEXA_MOTOR_3_TYPE_ODRIVE=y
+# default:
+# CONFIG_HEXA_MOTOR_3_TYPE_SMC is not set
+# default:
+# CONFIG_HEXA_MOTOR_3_TYPE_T_MOTOR is not set
+# default:
+CONFIG_HEXA_MOTOR_3_RECEIVE_ID=0x0
+# default:
+# CONFIG_HEXA_MOTOR_3_BACKWARDS is not set
+# end of Motor 3
+
+#
+# Motor 4
+#
+# default:
+CONFIG_HEXA_MOTOR_4_ID=0x0
+# default:
+CONFIG_HEXA_MOTOR_4_TYPE_ODRIVE=y
+# default:
+# CONFIG_HEXA_MOTOR_4_TYPE_SMC is not set
+# default:
+# CONFIG_HEXA_MOTOR_4_TYPE_T_MOTOR is not set
+# default:
+CONFIG_HEXA_MOTOR_4_RECEIVE_ID=0x0
+# default:
+# CONFIG_HEXA_MOTOR_4_BACKWARDS is not set
+# end of Motor 4
+
+#
+# Motor 5
+#
+# default:
+CONFIG_HEXA_MOTOR_5_ID=0x0
+# default:
+CONFIG_HEXA_MOTOR_5_TYPE_ODRIVE=y
+# default:
+# CONFIG_HEXA_MOTOR_5_TYPE_SMC is not set
+# default:
+# CONFIG_HEXA_MOTOR_5_TYPE_T_MOTOR is not set
+# default:
+CONFIG_HEXA_MOTOR_5_RECEIVE_ID=0x0
+# default:
+# CONFIG_HEXA_MOTOR_5_BACKWARDS is not set
+# end of Motor 5
+
+#
+# Motor 6
+#
+# default:
+CONFIG_HEXA_MOTOR_6_ID=0x0
+# default:
+CONFIG_HEXA_MOTOR_6_TYPE_ODRIVE=y
+# default:
+# CONFIG_HEXA_MOTOR_6_TYPE_SMC is not set
+# default:
+# CONFIG_HEXA_MOTOR_6_TYPE_T_MOTOR is not set
+# default:
+CONFIG_HEXA_MOTOR_6_RECEIVE_ID=0x0
+# default:
+# CONFIG_HEXA_MOTOR_6_BACKWARDS is not set
+# end of Motor 6
+
+#
+# Motor 7
+#
+# default:
+CONFIG_HEXA_MOTOR_7_ID=0x0
+# default:
+CONFIG_HEXA_MOTOR_7_TYPE_ODRIVE=y
+# default:
+# CONFIG_HEXA_MOTOR_7_TYPE_SMC is not set
+# default:
+# CONFIG_HEXA_MOTOR_7_TYPE_T_MOTOR is not set
+# default:
+CONFIG_HEXA_MOTOR_7_RECEIVE_ID=0x0
+# default:
+# CONFIG_HEXA_MOTOR_7_BACKWARDS is not set
+# end of Motor 7
 # end of Motors
 
 #
