@@ -5,11 +5,12 @@
 #include <variant>
 #include "esp_http_server.h"
 #include "helper/formats.hpp"
+#include "http/module.hpp"
 #include "jayson.hpp"
 
-HttpCatThread HttpFsModule::http_cat_thread;
+HttpFsModule::PutCatAsyncHandler HttpFsModule::put_cat;
 
-void HttpCatThread::main(HttpCatThreadArgs* args_p) {
+void HttpFsModule::PutCatAsyncHandler::main(HttpJsonAsyncHandlerArgs* args_p) {
   auto req = args_p->req;
   auto req_json = args_p->json;
   JsonObject resp_json;
@@ -22,25 +23,25 @@ void HttpCatThread::main(HttpCatThreadArgs* args_p) {
 
   path_result = req_json.get_string("path", &resp_json);
   if (std::holds_alternative<JsonError>(path_result)) {
-    HttpFsModule::send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+    send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
     goto cleanup;
   }
   path = std::get<char*>(path_result);
   if (strlen(path) == 0) {
     resp_json.set("path", "cannot be empty");
-    HttpFsModule::send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+    send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
     goto cleanup;
   }
   if (path[0] != '/') {
     resp_json.set("path", "should start with /");
-    HttpFsModule::send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+    send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
     goto cleanup;
   }
   absolute_path = std::string("/sd") + path;
   file = fopen(absolute_path.c_str(), "r");
   if (!file) {
     resp_json.set("path", "does not exist");
-    HttpFsModule::send_json(req, resp_json, HTTPD_404_NOT_FOUND);
+    send_json(req, resp_json, HTTPD_404_NOT_FOUND);
     goto cleanup;
   }
   buffer = new uint8_t[buffer_size];
@@ -95,18 +96,8 @@ esp_err_t HttpFsModule::put_ls(httpd_req_t* req, JsonObject* req_json) {
   return ESP_OK;
 }
 
-esp_err_t HttpFsModule::put_cat(httpd_req_t* req, JsonObject* req_json) {
-  httpd_req_t* async_req;
-  httpd_req_async_handler_begin(req, &async_req);
-  HttpCatThreadArgs thread_args = {
-      .req = async_req,
-      .json = *req_json,
-  };
-  http_cat_thread.start("http_cat", 2, 4096, thread_args);
-  return ESP_OK;
-}
 
 void HttpFsModule::register_direct_uris() {
   register_uri_with_option("/ls", HTTP_PUT, put_ls);
-  register_uri_with_option("/cat", HTTP_PUT, put_cat);
+  register_async_uri_with_option("/cat", HTTP_PUT, &put_cat);
 }
