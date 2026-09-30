@@ -19,11 +19,10 @@ config HEXA_MOTOR_0_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_0_DISABLED
 
 choice HEXA_MOTOR_0_TYPE
   prompt "Type"
-  default HEXA_MOTOR_0_DISABLED
+  default HEXA_MOTOR_0_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -36,10 +35,12 @@ config HEXA_MOTOR_0_TYPE_SMC
 config HEXA_MOTOR_0_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_0_DISABLED
-  bool "Disable"
-
 endchoice
+
+config HEXA_MOTOR_0_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_0_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_0_BACKWARDS
   bool "Is backwards"
@@ -54,11 +55,10 @@ config HEXA_MOTOR_1_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_1_DISABLED
 
 choice HEXA_MOTOR_1_TYPE
   prompt "Type"
-  default HEXA_MOTOR_1_DISABLED
+  default HEXA_MOTOR_1_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -71,10 +71,13 @@ config HEXA_MOTOR_1_TYPE_SMC
 config HEXA_MOTOR_1_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_1_DISABLED
-  bool "Disable"
   
 endchoice
+
+config HEXA_MOTOR_1_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_1_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_1_BACKWARDS
   bool "Is backwards"
@@ -88,11 +91,10 @@ config HEXA_MOTOR_2_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_2_DISABLED
 
 choice HEXA_MOTOR_2_TYPE
   prompt "Type"
-  default HEXA_MOTOR_2_DISABLED
+  default HEXA_MOTOR_2_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -105,10 +107,13 @@ config HEXA_MOTOR_2_TYPE_SMC
 config HEXA_MOTOR_2_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_2_DISABLED
-  bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_2_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_2_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_2_BACKWARDS
   bool "Is backwards"
@@ -123,11 +128,10 @@ config HEXA_MOTOR_3_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_3_DISABLED
 
 choice HEXA_MOTOR_3_TYPE
   prompt "Type"
-  default HEXA_MOTOR_3_DISABLED
+  default HEXA_MOTOR_3_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -140,10 +144,13 @@ config HEXA_MOTOR_3_TYPE_SMC
 config HEXA_MOTOR_3_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_3_DISABLED
-  bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_3_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_3_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_3_BACKWARDS
   bool "Is backwards"
@@ -158,11 +165,10 @@ config HEXA_MOTOR_4_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_4_DISABLED
 
 choice HEXA_MOTOR_4_TYPE
   prompt "Type"
-  default HEXA_MOTOR_4_DISABLED
+  default HEXA_MOTOR_4_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -175,10 +181,13 @@ config HEXA_MOTOR_4_TYPE_SMC
 config HEXA_MOTOR_4_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_4_DISABLED
-  bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_4_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_4_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_4_BACKWARDS
   bool "Is backwards"
@@ -193,11 +202,10 @@ config HEXA_MOTOR_5_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_5_DISABLED
 
 choice HEXA_MOTOR_5_TYPE
   prompt "Type"
-  default HEXA_MOTOR_5_DISABLED
+  default HEXA_MOTOR_5_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -210,10 +218,13 @@ config HEXA_MOTOR_5_TYPE_SMC
 config HEXA_MOTOR_5_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_5_DISABLED
-  bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_5_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_5_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_5_BACKWARDS
   bool "Is backwards"
@@ -228,11 +239,10 @@ config HEXA_MOTOR_6_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_6_DISABLED
 
 choice HEXA_MOTOR_6_TYPE
   prompt "Type"
-  default HEXA_MOTOR_6_DISABLED
+  default HEXA_MOTOR_6_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -245,10 +255,13 @@ config HEXA_MOTOR_6_TYPE_SMC
 config HEXA_MOTOR_6_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_6_DISABLED
-  bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_6_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_6_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_6_BACKWARDS
   bool "Is backwards"
@@ -263,11 +276,10 @@ config HEXA_MOTOR_7_ID
   hex "ID"
   range 0x0 0x7FF
   default 0x0
-  depends on !HEXA_MOTOR_7_DISABLED
 
 choice HEXA_MOTOR_7_TYPE
   prompt "Type"
-  default HEXA_MOTOR_7_DISABLED
+  default HEXA_MOTOR_7_TYPE_ODRIVE
   help
       Select motor type.
 
@@ -280,10 +292,13 @@ config HEXA_MOTOR_7_TYPE_SMC
 config HEXA_MOTOR_7_TYPE_T_MOTOR
   bool "T-Motor"
 
-config HEXA_MOTOR_7_DISABLED
-  bool "Disable"
 
 endchoice
+
+config HEXA_MOTOR_7_RECEIVE_ID
+  hex "Receive ID" if HEXA_MOTOR_7_TYPE_T_MOTOR
+  range 0x0 0x7FF
+  default 0x0
 
 config HEXA_MOTOR_7_BACKWARDS
   bool "Is backwards"

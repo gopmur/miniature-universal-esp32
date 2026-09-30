@@ -4,6 +4,8 @@
 #include "boost/preprocessor/repetition/repeat.hpp"
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive.hpp"
+#include "custom_drivers/motor/smc.hpp"
+#include "custom_drivers/motor/t_motor.hpp"
 #include "helper.hpp"
 #include "jaythread/sync.hpp"
 #include "sdkconfig.h"
@@ -13,21 +15,41 @@
 extern CanRecvTask can_recv_task;
 extern Can can;
 
-#define MOTOR_ODRIVE(n)                                                                            \
-  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))           \
-                                 ? MotorDirection::BACKWARD                                        \
-                                 : MotorDirection::FORWARD;                                        \
-  motors[n] =                                                                                      \
+#define MOTOR_ODRIVE(n)                                                                           \
+  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))          \
+                                 ? MotorDirection::BACKWARD                                       \
+                                 : MotorDirection::FORWARD;                                       \
+  motors[n] =                                                                                     \
       new ODriveMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0.2, direction, 0.02); \
   can_recv_task.bind(motors[n]->get_id() << 5, ~((1 << 5) - 1), motors[n]);
 
-#define NEW_MOTOR(z, n, data)                                          \
-  if (IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_ODRIVE))) { \
-    MOTOR_ODRIVE(n)                                                    \
+#define MOTOR_SMC(n)                                                                           \
+  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))       \
+                                 ? MotorDirection::BACKWARD                                    \
+                                 : MotorDirection::FORWARD;                                    \
+  motors[n] =                                                                                  \
+      new SmcMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0.2, direction, 0.02); \
+  can_recv_task.bind(motors[n]->get_id(), motors[n]);
+
+#define MOTOR_T_MOTOR(n)                                                                     \
+  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))     \
+                                 ? MotorDirection::BACKWARD                                  \
+                                 : MotorDirection::FORWARD;                                  \
+  motors[n] =                                                                                \
+      new TMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0.2, direction, 0.02); \
+  can_recv_task.bind(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_RECEIVE_ID), motors[n]);
+
+#define NEW_MOTOR(z, n, data)                                                            \
+  if constexpr (IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_ODRIVE))) {         \
+    MOTOR_ODRIVE(n);                                                                     \
+  } else if constexpr (IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_SMC))) {     \
+    MOTOR_SMC(n);                                                                        \
+  } else if constexpr (IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_TYPE_T_MOTOR))) { \
+    MOTOR_T_MOTOR(n);                                                                    \
   }
 
 MotorTask::MotorTask() {
-  BOOST_PP_REPEAT(2, NEW_MOTOR, ~);
+  BOOST_PP_REPEAT(CONFIG_HEXA_MOTOR_COUNT, NEW_MOTOR, ~);
   torques.fill(0);
 }
 

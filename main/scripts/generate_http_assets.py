@@ -93,7 +93,7 @@ def generate_c_code(output_path: str, asset_uris: dict[str, str]):
 
 if __name__ == "__main__":
   if len(sys.argv) != 3:
-    print("In correct number of arguments")
+    print("Incorrect number of arguments")
     exit(errno.EINVAL)
   input_path = sys.argv[1]
   output_path = sys.argv[2]
