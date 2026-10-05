@@ -44,8 +44,9 @@ void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {
   }
 }
 
-void WebSocketTask::fill_task_status_json(JsonObject* task_status_json) {
-  add_time_stamp(task_status_json);
+JsonObject WebSocketTask::fill_task_status_json(std::vector<ThreadStatus>& thread_status) {
+  JsonObject task_status_json;
+  add_time_stamp(&task_status_json);
   auto tasks_status = monitor_task->get_threads_status();
   for (auto status : tasks_status) {
     auto status_json = JsonObject();
@@ -57,8 +58,9 @@ void WebSocketTask::fill_task_status_json(JsonObject* task_status_json) {
     if (status.stack_size) {
       status_json.set("stackSize", status.stack_size);
     }
-    task_status_json->set(status.name, &status_json);
+    task_status_json.set(status.name, &status_json);
   }
+  return task_status_json;
 }
 
 // void WebSocketTask::fill_ota_progress_json(JsonObject* ota_json) {
@@ -80,6 +82,14 @@ esp_err_t WebSocketTask::send_to_connection(int fd, std::string& data) {
 esp_err_t WebSocketTask::send_to_connection(int fd, JsonObject* json) {
   auto json_str = json->stringify();
   return send_to_connection(fd, json_str);
+}
+
+void WebSocketTask::send_to_connections(WebSocketConnectionType connection_type, JsonObject* json) {
+  auto connections = get_connections(connection_type);
+  for (auto connection : connections) {
+    auto status = send_to_connection(connection.fd, json);
+    handle_ws_transmit_status(connection, status);
+  }
 }
 
 esp_err_t WebSocketTask::send_to_legacy_connection(int fd) {
@@ -183,28 +193,11 @@ void WebSocketTask::main() {
             ret = send_to_connection(connection.fd, &motor_data_json);
             break;
           }
-          case WebSocketConnectionType::TASK: {
-            if (task_status_json.is_empty()) {
-              fill_task_status_json(&task_status_json);
-            }
-            ret = send_to_connection(connection.fd, &task_status_json);
-            break;
-          }
-          case WebSocketConnectionType::SYS_LOG: {
+          default:
             ret = ESP_OK;
             break;
-          }
-          case WebSocketConnectionType::LEGACY: {
-            ret = send_to_legacy_connection(connection.fd);
-            break;
-          }
-          default:
-            LOGE("unhandled outgoing stream %d", static_cast<uint32_t>(connection.stream));
-            break;
         }
-        if (ret != ESP_OK) {
-          remove_connection(connection.fd);
-        }
+        handle_ws_transmit_status(connection, ret);
       }
       while (true) {
         auto sys_log_result = sys_log_queue.receive(0);
@@ -278,4 +271,9 @@ std::vector<WebSocketConnection> WebSocketTask::get_connections(
   }
   connection_mutex.give();
   return filtered_connections;
+}
+
+void WebSocketTask::send_to_task_connections(std::vector<ThreadStatus>& thread_status) {
+  JsonObject json = fill_task_status_json(thread_status);
+  send_to_connections(WebSocketConnectionType::TASK, &json);
 }
