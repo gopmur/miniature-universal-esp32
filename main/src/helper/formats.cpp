@@ -1,5 +1,6 @@
 #include "helper/formats.hpp"
-#include "dirent.h"
+#include <sys/dirent.h>
+#include "tasks/ws.hpp"
 
 char get_hex_char(uint8_t byte) {
   byte &= 0xf;
@@ -57,6 +58,8 @@ const char* get_ws_stream_string(WebSocketConnectionType stream) {
       return "sys_log";
     case WebSocketConnectionType::LEGACY:
       return "legacy";
+    case WebSocketConnectionType::MOTOR_STATUS:
+      return "motor_status";
   }
   return "unknown";
 }
@@ -71,6 +74,20 @@ const char* get_control_mode_string(ControlMode control_mode) {
       return "semiautomatic";
     case ControlMode::HEXA_SMART:
       return "smart";
+  }
+  return "unkown";
+}
+
+const char* get_motor_status_string(MotorStatus status) {
+  switch (status) {
+    case MotorStatus::OK:
+      return "ok";
+    case MotorStatus::TIMEDOUT:
+      return "timeout";
+    case MotorStatus::UNINITIALIZED:
+      return "uninitialized";
+    case MotorStatus::CAN_ERROR:
+      return "can_error";
   }
   return "unkown";
 }

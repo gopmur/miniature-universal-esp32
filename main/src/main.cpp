@@ -229,7 +229,6 @@ class App {
 
     sdmmc_host_t host = SDSPI_HOST_DEFAULT();
     host.unaligned_multi_block_rw_max_chunk_size = 8;
-
     spi_bus_config_t bus_cfg = {
         .mosi_io_num = CONFIG_HEXA_SD_CARD_MOSI_PIN,
         .miso_io_num = CONFIG_HEXA_SD_CARD_MISO_PIN,
@@ -238,7 +237,6 @@ class App {
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
-
     ret =
         spi_bus_initialize(static_cast<spi_host_device_t>(host.slot), &bus_cfg, SDSPI_DEFAULT_DMA);
     if (ret != ESP_OK) {

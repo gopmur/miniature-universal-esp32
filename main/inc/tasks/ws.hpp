@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include <utility>
 #include <vector>
+#include "custom_drivers/motor.hpp"
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "jaythread/ipc/queue.hpp"
@@ -16,6 +16,7 @@ enum class WebSocketConnectionType {
   OTA,
   SYS_LOG,
   LEGACY,
+  MOTOR_STATUS,
 };
 
 struct WebSocketConnection {
@@ -42,6 +43,7 @@ class WebSocketTask : public Thread {
   std::vector<WebSocketConnection> connections;
   Mutex connection_mutex;
   JsonObject fill_task_status_json(std::vector<ThreadStatus>& thread_status);
+  JsonObject fill_motor_status_json(int motor_index, int motor_id, MotorStatus status);
   void fill_ota_progress_json(JsonObject* ota_json);
   void fill_imu_data_json(JsonObject* imu_data_json);
   void fill_motor_data_json(JsonObject* motor_data_json);
@@ -58,6 +60,7 @@ class WebSocketTask : public Thread {
   public:
   bool has_connection(WebSocketConnectionType connection_type);
   void send_to_task_connections(std::vector<ThreadStatus>& thread_status);
+  void send_to_motor_status_connections(int motor_index, int motor_id, MotorStatus status);
   void main();
   WebSocketTask();
   void remove_connection(int fd);

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <concepts>
 #include <cstdint>
 #include "esp_err.h"
 
@@ -12,8 +11,6 @@
 
 #define IS_ENABLED(option) config_enabled(option)
 
-template <typename T>
-concept Numeric = std::integral<T> || std::floating_point<T>;
 
 #define ESP_BREAK_ON_ERROR(x)           \
   ({                                    \

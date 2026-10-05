@@ -277,3 +277,20 @@ void WebSocketTask::send_to_task_connections(std::vector<ThreadStatus>& thread_s
   JsonObject json = fill_task_status_json(thread_status);
   send_to_connections(WebSocketConnectionType::TASK, &json);
 }
+
+JsonObject WebSocketTask::fill_motor_status_json(int motor_index,
+                                                 int motor_id,
+                                                 MotorStatus status) {
+  JsonObject json;
+  json.set("motorId", motor_id);
+  json.set("motorIdex", motor_index);
+  json.set("status", get_motor_status_string(status));
+  return json;
+}
+
+void WebSocketTask::send_to_motor_status_connections(int motor_index,
+                                                     int motor_id,
+                                                     MotorStatus status) {
+  auto json = fill_motor_status_json(motor_index, motor_id, status);
+  send_to_connections(WebSocketConnectionType::MOTOR_STATUS, &json);
+}

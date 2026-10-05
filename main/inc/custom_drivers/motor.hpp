@@ -42,6 +42,7 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   MAKE_LOGGABLE("motor_driver");
 
   friend class MotorTimeoutTimer;
+
   private:
   MotorStatus status = MotorStatus::UNINITIALIZED;
   Mutex status_mutex;

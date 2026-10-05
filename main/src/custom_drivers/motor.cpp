@@ -9,6 +9,9 @@
 #include "hal/twai_types.h"
 #include "sdkconfig.h"
 #include "system_logger.hpp"
+#include "tasks/ws.hpp"
+
+extern WebSocketTask ws_task;
 
 void MotorTimeoutTimer::main() {
   motor->status_mutex.take();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "custom_drivers/motor.hpp"
 #include "helper/ds/static_string.hpp"
 #include "tasks/control.hpp"
 #include "tasks/ws.hpp"
@@ -10,3 +11,4 @@ StaticString<2> get_hex(uint8_t byte);
 const char* get_entry_type_string(uint8_t entry_type);
 const char* get_ws_stream_string(WebSocketConnectionType stream);
 const char* get_control_mode_string(ControlMode control_mode);
+const char* get_motor_status_string(MotorStatus status);

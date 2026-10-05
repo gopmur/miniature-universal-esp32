@@ -1,4 +1,5 @@
 #include "tasks/motor.hpp"
+#include <array>
 #include "boost/preprocessor/repetition/repeat.hpp"
 #include "custom_drivers/motor.hpp"
 #include "custom_drivers/motor/odrive.hpp"
@@ -9,8 +10,10 @@
 #include "sdkconfig.h"
 #include "system_logger.hpp"
 #include "tasks/can_recv.hpp"
+#include "tasks/ws.hpp"
 
 extern CanRecvTask can_recv_task;
+extern WebSocketTask ws_task;
 extern Can can;
 
 #define MOTOR_ODRIVE(n)                                                                           \
@@ -173,11 +176,18 @@ void MotorTask::zero_pos(size_t motor_index) {
 void MotorTask::main() {
   init_all();
   disable_all();
+  std::array<MotorStatus, motor_count> prev_motor_statuses;
+  prev_motor_statuses.fill(MotorStatus::UNINITIALIZED);
   while (true) {
     for (int i = 0; i < motors.size(); i++) {
       auto motor = motors[i];
       auto torque = torques[i];
       auto status = motor->get_status();
+      auto& prev_status = prev_motor_statuses[i];
+      if (status != prev_status) {
+        ws_task.send_to_motor_status_connections(i, motor->get_id(), status);
+        prev_status = status;
+      }
       if (status == MotorStatus::OK) {
         motor->set_torque(torque);
       } else {
