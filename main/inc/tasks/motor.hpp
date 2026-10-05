@@ -22,6 +22,8 @@ class MotorTask : public Thread {
   void zero_pos(size_t motor_index);
   float get_position(size_t motor_index);
   float get_velocity(size_t motor_index);
+  MotorStatus get_status(size_t motor_index);
+  int get_can_id(size_t motor_index);
 
   private:
   std::array<float, CONFIG_HEXA_MOTOR_COUNT> torques;

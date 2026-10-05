@@ -88,6 +88,8 @@ const char* get_motor_status_string(MotorStatus status) {
       return "uninitialized";
     case MotorStatus::CAN_ERROR:
       return "can_error";
+    case MotorStatus::INVALID:
+      return "invalid";
   }
   return "unkown";
 }

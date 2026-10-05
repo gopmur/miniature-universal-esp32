@@ -36,6 +36,7 @@ enum class MotorStatus {
   TIMEDOUT,
   UNINITIALIZED,
   CAN_ERROR,
+  INVALID,
 };
 
 class AbstractMotorDriver : public AbstractCanDeviceReader {

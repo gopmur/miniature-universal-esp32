@@ -197,3 +197,29 @@ void MotorTask::main() {
     Sync::sleep(10);
   }
 }
+
+MotorStatus MotorTask::get_status(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("failed to get status of motor %d. index out of bounds", motor_index);
+    return MotorStatus::INVALID;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("failed to get status of motor %d. doesn't exist", motor_index);
+    return MotorStatus::INVALID;
+  };
+  return motor->get_status();
+}
+
+int MotorTask::get_can_id(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("failed to get status of motor %d. index out of bounds", motor_index);
+    return 0x00;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("failed to get status of motor %d. doesn't exist", motor_index);
+    return 0x00;
+  };
+  return motor->get_id();
+}

@@ -55,19 +55,6 @@
 #include "tasks/motor.hpp"
 #include "tasks/ws.hpp"
 
-twai_node_handle_t twai;
-sdmmc_card_t* card;
-
-CanRecvTask can_recv_task;
-ImuTask* imu_task;
-WebSocketTask ws_task;
-DnsTask* dns_task;
-ControlTask* control_task;
-MotorTask* motor_task;
-LoggerTask* logger_task;
-MonitorTask* monitor_task;
-Can can;
-
 HttpLegacyModule http_legacy_module("legacy");
 HttpFsModule http_fs_module("fs");
 HttpLogModule http_log_module("log");
@@ -85,6 +72,19 @@ HttpRootModule http_root_module("api",
                                  &http_fs_module,
                                  &http_legacy_module});
 HttpServer http_server(&http_root_module);
+
+twai_node_handle_t twai;
+sdmmc_card_t* card;
+
+CanRecvTask can_recv_task;
+ImuTask* imu_task;
+WebSocketTask ws_task;
+DnsTask* dns_task;
+ControlTask* control_task;
+MotorTask* motor_task;
+LoggerTask* logger_task;
+MonitorTask* monitor_task;
+Can can;
 
 class App {
   MAKE_LOGGABLE("app");

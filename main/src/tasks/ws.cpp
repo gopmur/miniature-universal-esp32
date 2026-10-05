@@ -283,7 +283,7 @@ JsonObject WebSocketTask::fill_motor_status_json(int motor_index,
                                                  MotorStatus status) {
   JsonObject json;
   json.set("motorId", motor_id);
-  json.set("motorIdex", motor_index);
+  json.set("motorIndex", motor_index);
   json.set("status", get_motor_status_string(status));
   return json;
 }

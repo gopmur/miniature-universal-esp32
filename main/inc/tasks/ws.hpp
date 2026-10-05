@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "custom_drivers/motor.hpp"
+#include "http.hpp"
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
 #include "jaythread/ipc/queue.hpp"
@@ -50,12 +51,14 @@ class WebSocketTask : public Thread {
   void add_time_stamp(JsonObject* json);
   esp_err_t send_to_legacy_connection(int fd);
   esp_err_t send_to_connection(int fd, std::string& data);
+  esp_err_t send_to_connection_async();
   esp_err_t send_to_connection(int fd, JsonObject* json);
   void send_to_connections(WebSocketConnectionType connection_type, JsonObject* json);
   std::vector<WebSocketConnection> get_connections();
   std::vector<WebSocketConnection> get_connections(WebSocketConnectionType connection_type);
   void handle_ws_transmit_status(WebSocketConnection connection, esp_err_t status);
   void send_to_sys_log_connections(const char* data);
+  void send_initial_motor_status(int fd);
 
   public:
   bool has_connection(WebSocketConnectionType connection_type);
