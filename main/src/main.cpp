@@ -22,6 +22,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_types_generic.h"
+#include "freertos/idf_additions.h"
 #include "hal/gpio_types.h"
 #include "hal/i2c_types.h"
 #include "hal/spi_types.h"

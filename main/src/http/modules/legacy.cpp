@@ -311,7 +311,7 @@ void HttpLegacyModule::send_resp(httpd_req_t* req, JsonObject json) {
 esp_err_t HttpLegacyModule::ws_post_handshake(httpd_req_t* req) {
   LOGI("connected");
   int fd = httpd_req_to_sockfd(req);
-  ws_task.add_connection(fd, WsStream::LEGACY);
+  ws_task.add_connection(fd, WebSocketConnectionType::LEGACY);
   return ESP_OK;
 }
 

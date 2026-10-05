@@ -9,7 +9,7 @@
 #include "jaythread/thread.hpp"
 #include "system_logger.hpp"
 
-enum class WsStream {
+enum class WebSocketConnectionType {
   TASK,
   IMU,
   MOTOR,
@@ -18,9 +18,9 @@ enum class WsStream {
   LEGACY,
 };
 
-struct WebSocketConnections {
+struct WebSocketConnection {
   int fd;
-  WsStream stream;
+  WebSocketConnectionType stream;
 };
 
 struct __attribute__((packed)) LegacyDataPacket {
@@ -39,7 +39,7 @@ class WebSocketTask : public Thread {
   MAKE_LOGGABLE("websocket_task");
 
   private:
-  std::vector<WebSocketConnections> connections;
+  std::vector<WebSocketConnection> connections;
   Mutex connection_mutex;
   void fill_task_status_json(JsonObject* task_status_json);
   void fill_ota_progress_json(JsonObject* ota_json);
@@ -49,12 +49,16 @@ class WebSocketTask : public Thread {
   esp_err_t send_to_legacy_connection(int fd);
   esp_err_t send_to_connection(int fd, std::string& data);
   esp_err_t send_to_connection(int fd, JsonObject* json);
+  std::vector<WebSocketConnection> get_connections();
+  std::vector<WebSocketConnection> get_connections(WebSocketConnectionType connection_type);
+  void handle_ws_transmit_status(WebSocketConnection connection, esp_err_t status);
+  void send_to_sys_log_connections(const char* data);
 
   public:
+  bool has_connection(WebSocketConnectionType connection_type);
   void main();
   WebSocketTask();
-  std::vector<WebSocketConnections> get_connections();
   void remove_connection(int fd);
-  void add_connection(int fd, WsStream stream);
-  Queue<std::pair<int, std::string*>, 8> sys_log_queue;
+  void add_connection(int fd, WebSocketConnectionType stream);
+  Queue<char*, 8> sys_log_queue;
 };

@@ -3,8 +3,10 @@
 #include <vector>
 
 #include "custom_drivers/motor.hpp"
+#include "esp_err.h"
 #include "esp_http_server.h"
 #include "esp_timer.h"
+#include "helper/formats.hpp"
 #include "http.hpp"
 #include "jayson.hpp"
 #include "jaythread/ipc/mutex.hpp"
@@ -103,6 +105,43 @@ esp_err_t WebSocketTask::send_to_legacy_connection(int fd) {
   return httpd_ws_send_data(http_server.server_instance, fd, &ws_packet);
 }
 
+bool WebSocketTask::has_connection(WebSocketConnectionType connection_type) {
+  connections = get_connections();
+  for (auto connection : connections) {
+    if (connection.stream == connection_type) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void WebSocketTask::handle_ws_transmit_status(WebSocketConnection connection, esp_err_t status) {
+  if (status == ESP_FAIL) {
+    remove_connection(connection.fd);
+  } else if (status == ESP_ERR_NO_MEM) {
+    LOGE("failed to allocated memory while sending to connection (fd: %d, type: %s)",
+         connection.fd,
+         get_ws_stream_string(connection.stream));
+  } else if (status != ESP_OK) {
+    LOGE("unhandled error occurred while sending to connection (fd: %d, type: %s). %s",
+         connection.fd,
+         get_ws_stream_string(connection.stream),
+         esp_err_to_name(status));
+  }
+}
+
+void WebSocketTask::send_to_sys_log_connections(const char* data) {
+  auto sys_log_connections = get_connections(WebSocketConnectionType::SYS_LOG);
+  if (sys_log_connections.empty()) {
+    return;
+  }
+  auto data_str = std::string(data);
+  for (auto connection : sys_log_connections) {
+    auto status = send_to_connection(connection.fd, data_str);
+    handle_ws_transmit_status(connection, status);
+  }
+}
+
 void WebSocketTask::main() {
   JsonObject task_status_json;
   JsonObject imu_data_json;
@@ -130,32 +169,32 @@ void WebSocketTask::main() {
       esp_err_t ret = ESP_FAIL;
       for (auto connection : connections) {
         switch (connection.stream) {
-          case WsStream::IMU: {
+          case WebSocketConnectionType::IMU: {
             if (imu_data_json.is_empty()) {
               fill_imu_data_json(&imu_data_json);
             }
             ret = send_to_connection(connection.fd, &imu_data_json);
             break;
           }
-          case WsStream::MOTOR: {
+          case WebSocketConnectionType::MOTOR: {
             if (motor_data_json.is_empty()) {
               fill_motor_data_json(&motor_data_json);
             }
             ret = send_to_connection(connection.fd, &motor_data_json);
             break;
           }
-          case WsStream::TASK: {
+          case WebSocketConnectionType::TASK: {
             if (task_status_json.is_empty()) {
               fill_task_status_json(&task_status_json);
             }
             ret = send_to_connection(connection.fd, &task_status_json);
             break;
           }
-          case WsStream::SYS_LOG: {
+          case WebSocketConnectionType::SYS_LOG: {
             ret = ESP_OK;
             break;
           }
-          case WsStream::LEGACY: {
+          case WebSocketConnectionType::LEGACY: {
             ret = send_to_legacy_connection(connection.fd);
             break;
           }
@@ -167,27 +206,21 @@ void WebSocketTask::main() {
           remove_connection(connection.fd);
         }
       }
-      std::optional<std::pair<int, std::string*>> sys_log_result;
       while (true) {
-        sys_log_result = sys_log_queue.receive(0);
+        auto sys_log_result = sys_log_queue.receive(0);
         if (!sys_log_result.has_value()) {
           break;
         }
         auto sys_log = sys_log_result.value();
-        auto fd = std::get<0>(sys_log);
-        auto sys_log_str = std::get<1>(sys_log);
-        ret = send_to_connection(fd, *sys_log_str);
-        if (ret != ESP_OK) {
-          remove_connection(fd);
-        }
-        delete sys_log_str;
+        send_to_sys_log_connections(sys_log);
+        delete sys_log;
       };
       Sync::sleep(10);
     }
   }
 }
 
-void WebSocketTask::add_connection(int fd, WsStream stream) {
+void WebSocketTask::add_connection(int fd, WebSocketConnectionType stream) {
   LOGI("connection opened %d", fd);
   connection_mutex.take();
   for (auto& connection : connections) {
@@ -211,7 +244,6 @@ cleanup:
 }
 
 void WebSocketTask::remove_connection(int fd) {
-  LOGI("connection closed %d", fd);
   connection_mutex.take();
   int connection_index_to_remove = -1;
   for (int i = 0; i < connections.size(); i++) {
@@ -225,11 +257,25 @@ void WebSocketTask::remove_connection(int fd) {
     connections.erase(connections.begin() + connection_index_to_remove);
   }
   connection_mutex.give();
+  LOGI("connection closed %d", fd);
 }
 
-std::vector<WebSocketConnections> WebSocketTask::get_connections() {
+std::vector<WebSocketConnection> WebSocketTask::get_connections() {
   connection_mutex.take();
   auto connections_copy = this->connections;
   connection_mutex.give();
   return connections_copy;
+}
+
+std::vector<WebSocketConnection> WebSocketTask::get_connections(
+    WebSocketConnectionType connection_type) {
+  std::vector<WebSocketConnection> filtered_connections;
+  connection_mutex.take();
+  for (auto connection : this->connections) {
+    if (connection.stream == connection_type) {
+      filtered_connections.push_back(connection);
+    }
+  }
+  connection_mutex.give();
+  return filtered_connections;
 }

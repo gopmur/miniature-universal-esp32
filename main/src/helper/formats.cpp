@@ -43,19 +43,19 @@ const char* get_entry_type_string(uint8_t entry_type) {
   return "unsupported";
 }
 
-const char* get_ws_stream_string(WsStream stream) {
+const char* get_ws_stream_string(WebSocketConnectionType stream) {
   switch (stream) {
-    case WsStream::TASK:
+    case WebSocketConnectionType::TASK:
       return "tasks";
-    case WsStream::IMU:
+    case WebSocketConnectionType::IMU:
       return "imu";
-    case WsStream::MOTOR:
+    case WebSocketConnectionType::MOTOR:
       return "motor";
-    case WsStream::OTA:
+    case WebSocketConnectionType::OTA:
       return "ota";
-    case WsStream::SYS_LOG:
+    case WebSocketConnectionType::SYS_LOG:
       return "sys_log";
-    case WsStream::LEGACY:
+    case WebSocketConnectionType::LEGACY:
       return "legacy";
   }
   return "unknown";

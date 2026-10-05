@@ -30,17 +30,12 @@ int SystemLogger::log_vprintf(const char* fmt, va_list args) {
   log_file_mutex.give();
   va_end(file_args);
 
-  auto ws_connections = ws_task.get_connections();
-
-  for (auto connection : ws_connections) {
+  if (ws_task.has_connection(WebSocketConnectionType::SYS_LOG)) {
     va_copy(ws_args, args);
     size_t len = vsnprintf(nullptr, 0, fmt, args);
-    if (connection.stream == WsStream::SYS_LOG) {
-      auto buffer = new std::string;
-      buffer->resize(len);
-      vsprintf(buffer->data(), fmt, ws_args);
-      ws_task.sys_log_queue.send(std::make_pair(connection.fd, buffer), 10);
-    }
+    auto buffer = new char[len + 1];
+    vsnprintf(buffer, len + 1, fmt, args);
+    ws_task.sys_log_queue.send(buffer, 0);
     va_end(ws_args);
   }
 

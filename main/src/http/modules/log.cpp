@@ -22,7 +22,7 @@ esp_err_t HttpLogModule::ws_system(httpd_req_t* req) {
 
 esp_err_t HttpLogModule::ws_system_post_handshake(httpd_req_t* req) {
   auto client_fd = httpd_req_to_sockfd(req);
-  ws_task.add_connection(client_fd, WsStream::SYS_LOG);
+  ws_task.add_connection(client_fd, WebSocketConnectionType::SYS_LOG);
   return ESP_OK;
 }
 

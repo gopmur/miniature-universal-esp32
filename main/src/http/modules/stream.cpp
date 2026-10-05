@@ -9,7 +9,7 @@ esp_err_t HttpStreamModule::ws_imu(httpd_req_t* req) {
 
 esp_err_t HttpStreamModule::ws_imu_post_handshake(httpd_req_t* req) {
   auto client_fd = httpd_req_to_sockfd(req);
-  ws_task.add_connection(client_fd, WsStream::IMU);
+  ws_task.add_connection(client_fd, WebSocketConnectionType::IMU);
   return ESP_OK;
 }
 
@@ -19,7 +19,7 @@ esp_err_t HttpStreamModule::ws_motor(httpd_req_t* req) {
 
 esp_err_t HttpStreamModule::ws_motor_post_handshake(httpd_req_t* req) {
   auto client_fd = httpd_req_to_sockfd(req);
-  ws_task.add_connection(client_fd, WsStream::MOTOR);
+  ws_task.add_connection(client_fd, WebSocketConnectionType::MOTOR);
   return ESP_OK;
 }
 
@@ -29,7 +29,7 @@ esp_err_t HttpStreamModule::ws_tasks(httpd_req_t* req) {
 
 esp_err_t HttpStreamModule::ws_tasks_post_handshake(httpd_req_t* req) {
   auto client_fd = httpd_req_to_sockfd(req);
-  ws_task.add_connection(client_fd, WsStream::TASK);
+  ws_task.add_connection(client_fd, WebSocketConnectionType::TASK);
   return ESP_OK;
 }
 
@@ -39,7 +39,7 @@ esp_err_t HttpStreamModule::ws_ota(httpd_req_t* req) {
 
 esp_err_t HttpStreamModule::ws_ota_post_handshake(httpd_req_t* req) {
   auto client_fd = httpd_req_to_sockfd(req);
-  ws_task.add_connection(client_fd, WsStream::OTA);
+  ws_task.add_connection(client_fd, WebSocketConnectionType::OTA);
   return ESP_OK;
 }
 
