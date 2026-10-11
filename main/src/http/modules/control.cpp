@@ -99,10 +99,13 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
       control_task->hexa_controller.semiautomatic.params.right.delay);
   semiautomatic_control_params_json.set(
       "startAssistAngle",
-      control_task->hexa_controller.semiautomatic.params.start_assist_angle);
+      control_task->hexa_controller.semiautomatic.configs.get_start_assist_angle());
   semiautomatic_control_params_json.set(
       "stopAssistAngle",
-      control_task->hexa_controller.semiautomatic.params.stop_assist_angle);
+      control_task->hexa_controller.semiautomatic.configs.get_stop_assist_angle());
+  semiautomatic_control_params_json.set(
+      "epsilon",
+      control_task->hexa_controller.semiautomatic.configs.get_epsilon());
   smart_control_params_left_json.set("torque",
                                      control_task->hexa_controller.smart.params.left.torque);
   smart_control_params_right_json.set("torque",
@@ -412,6 +415,7 @@ void HttpControlModule::register_direct_uris() {
   register_uri_with_option("/semiautomatic/params", HTTP_PUT, put_semiautomatic_params);
   register_uri_with_option("/smart/params", HTTP_PUT, put_smart_params);
   register_uri_with_option("/automatic/configs", HTTP_PUT, put_automatic_configs);
+  register_uri_with_option("/semiautomatic/configs", HTTP_PUT, put_automatic_configs);
   register_ws_uri("/manual/torque", ws_manual_torque, ws_manual_torque_post_handshake);
 }
 
