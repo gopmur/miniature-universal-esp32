@@ -24,6 +24,7 @@ class HttpControlModule : public HttpModule {
   static esp_err_t put_smart_params(httpd_req_t* req, JsonObject* req_json);
   static esp_err_t put_automatic_configs(httpd_req_t* req, JsonObject* req_json);
   static esp_err_t put_semiautomatic_configs(httpd_req_t* req, JsonObject* req_json);
+  static esp_err_t put_smart_configs(httpd_req_t* req, JsonObject* req_json);
   static esp_err_t ws_manual_torque(httpd_req_t* req);
   static esp_err_t ws_manual_torque_post_handshake(httpd_req_t* req);
   void register_direct_uris();

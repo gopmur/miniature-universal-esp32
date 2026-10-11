@@ -12,6 +12,20 @@ struct HexaSmartControlParams {
   HexaSmartControlParamsLeg right;
 };
 
+class HexaSmartControlConfigs {
+  private:
+  static constexpr const char* nvs_namespace = "hexa_smart";
+  static constexpr const char* velocity_threshold_key = "vel_th"; 
+
+  float velocity_threshold = 0.8;
+
+  public: 
+  float get_velocity_threshold();
+  void set_velocity_threshold(float velocity_threshold);
+  void init();
+  void load();
+};
+
 class HexaSmartController : public HexaController {
   private:
   int right_delay_timer = 200;
@@ -29,6 +43,7 @@ class HexaSmartController : public HexaController {
 
   public:
   HexaSmartControlParams params;
+  HexaSmartControlConfigs configs;
   void reset();
   using HexaController::run;
 };

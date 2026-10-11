@@ -1,20 +1,41 @@
 #include "controller/hexa/smart.hpp"
-#include "controller.hpp"
+#include "custom_drivers/nvs.hpp"
+#include "nvs.h"
+
+float HexaSmartControlConfigs::get_velocity_threshold() {
+  return velocity_threshold;
+}
+
+void HexaSmartControlConfigs::set_velocity_threshold(float velocity_threshold) {
+  Nvs nvs(nvs_namespace, NVS_READWRITE);
+  nvs.set(velocity_threshold_key, velocity_threshold);
+  this->velocity_threshold = velocity_threshold;
+}
+
+void HexaSmartControlConfigs::init() {
+  Nvs nvs(nvs_namespace, NVS_READWRITE);
+  nvs.init(velocity_threshold_key, 0.8);
+}
+
+void HexaSmartControlConfigs::load() {
+  Nvs nvs(nvs_namespace, NVS_READONLY);
+  velocity_threshold = nvs.get_float(velocity_threshold_key);
+}
 
 float HexaSmartController::calculate_output(const std::vector<float>& x) {
   float velocity = x[1];
   float last = x[2];
 
   if (last == 0) {
-    if (velocity > 0.8) {
+    if (velocity > configs.get_velocity_threshold()) {
       return 1.0;
     } else {
       return 0.0;
     }
   } else {  // last == 1
-    if (velocity > 0.8) {
+    if (velocity > configs.get_velocity_threshold()) {
       return 1.0;
-    } else if (velocity >= 0.8) {
+    } else if (velocity >= configs.get_velocity_threshold()) {
       return 1.0;
     } else {
       return 0.0;

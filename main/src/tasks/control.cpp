@@ -20,11 +20,17 @@ void ControlTask::reset() {
 void ControlTask::load_configs() {
   LOGI("loading control configs");
   hexa_controller.automatic.configs.load();
+  hexa_controller.semiautomatic.configs.load();
+  hexa_controller.smart.configs.load();
   LOGI("control configs loaded");
 }
 
 void ControlTask::init_configs() {
+  LOGI("initializing control configs");
   hexa_controller.automatic.configs.init();
+  hexa_controller.semiautomatic.configs.init();
+  hexa_controller.smart.configs.init();
+  LOGI("control configs initialized");
 }
 
 void ControlTask::main() {

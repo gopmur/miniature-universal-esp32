@@ -4,6 +4,7 @@
 
 struct HexaAutomaticControlParamsLeg {
   float torque = 5;
+  uint32_t timeout = 200;
 };
 
 struct HexaAutomaticControlParams {
@@ -17,26 +18,18 @@ class HexaAutomaticControlConfigs {
   static constexpr const char* angle_threshold_key = "angle_th";
   static constexpr const char* left_velocity_threshold_key = "left_vel_th";
   static constexpr const char* right_velocity_threshold_key = "right_vel_th";
-  static constexpr const char* right_timeout_key = "right_timeout";
-  static constexpr const char* left_timeout_key = "left_timeout";
 
   float angle_threshold = 0.286483699;
   float left_velocity_threshold = 1.431169987;
   float right_velocity_threshold = 1.431169987;
-  int32_t left_timeout = 200;
-  int32_t right_timeout = 200;
 
   public:
   void set_angle_threshold(float position_difference);
   void set_left_velocity_threshold(float left_velocity_threshold);
   void set_right_velocity_threshold(float right_velocity_threshold);
-  void set_left_timeout(int32_t left_timeout);
-  void set_right_timeout(int32_t right_timeout);
   float get_angle_threshold();
   float get_left_velocity_threshold();
   float get_right_velocity_threshold();
-  int32_t get_left_timeout();
-  int32_t get_right_timeout();
   void load();
   void init();
 };
