@@ -29,9 +29,16 @@ void WebSocketTask::add_time_stamp(JsonObject* json) {
 
 void WebSocketTask::fill_imu_data_json(JsonObject* imu_data_json) {
   add_time_stamp(imu_data_json);
-  imu_data_json->set("x", imu_task->data.gyro.x);
-  imu_data_json->set("y", imu_task->data.gyro.y);
-  imu_data_json->set("z", imu_task->data.gyro.z);
+  JsonObject accel_json;
+  JsonObject gyro_json;
+  gyro_json.set("x", imu_task->data.gyro.x);
+  gyro_json.set("y", imu_task->data.gyro.y);
+  gyro_json.set("z", imu_task->data.gyro.z);
+  accel_json.set("x", imu_task->data.accel.x);
+  accel_json.set("y", imu_task->data.accel.y);
+  accel_json.set("z", imu_task->data.accel.z);
+  imu_data_json->set("accel", &accel_json);
+  imu_data_json->set("gyro", &gyro_json);
 }
 
 void WebSocketTask::fill_motor_data_json(JsonObject* motor_data_json) {

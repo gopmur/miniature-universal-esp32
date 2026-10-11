@@ -1,6 +1,7 @@
 #include "tasks/imu.hpp"
 #include <cmath>
 #include "icm20948.h"
+#include "icm20948_dmp.h"
 #include "icm20948_i2c.h"
 #include "jaythread/sync.hpp"
 
@@ -51,6 +52,8 @@ void ImuTask::main() {
   bool success = true;
   success &= (icm20948_init_dmp_sensor_with_defaults(&icm) == ICM_20948_STAT_OK);
 
+  success &= (inv_icm20948_enable_dmp_sensor(&icm, INV_ICM20948_SENSOR_RAW_ACCELEROMETER, 1) ==
+              ICM_20948_STAT_OK);
   success &= (inv_icm20948_enable_dmp_sensor(&icm, INV_ICM20948_SENSOR_ORIENTATION, 1) ==
               ICM_20948_STAT_OK);
 
@@ -71,11 +74,11 @@ void ImuTask::main() {
     icm20948_status_e status = inv_icm20948_read_dmp_data(&icm, &icm_data);
     if ((status == ICM_20948_STAT_OK) || (status == ICM_20948_STAT_FIFO_MORE_DATA_AVAIL)) {
       if ((icm_data.header & DMP_header_bitmap_Quat9) > 0) {
-        double q1 = ((double)icm_data.Quat9.Data.Q1) / 1073741824.0;
-        double q2 = ((double)icm_data.Quat9.Data.Q2) / 1073741824.0;
-        double q3 = ((double)icm_data.Quat9.Data.Q3) / 1073741824.0;
-        double q0 = std::sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
-        double q_sum = (q1 * q1) + (q2 * q2) + (q3 * q3);
+        float q1 = static_cast<float>(icm_data.Quat9.Data.Q1) / 1073741824.0;
+        float q2 = static_cast<float>(icm_data.Quat9.Data.Q2) / 1073741824.0;
+        float q3 = static_cast<float>(icm_data.Quat9.Data.Q3) / 1073741824.0;
+        float q0 = std::sqrt(1.0 - ((q1 * q1) + (q2 * q2) + (q3 * q3)));
+        float q_sum = (q1 * q1) + (q2 * q2) + (q3 * q3);
         if (q_sum >= 1.0) {
           q0 = 0.0;
         } else {
@@ -101,6 +104,12 @@ void ImuTask::main() {
         data.gyro.x = roll;
         data.gyro.y = pitch;
         data.gyro.z = yaw;
+      }
+
+      if ((icm_data.header & DMP_header_bitmap_Accel) > 0) {
+        data.accel.x = static_cast<float>(icm_data.Raw_Accel.Data.X) / 8192.0f;
+        data.accel.y = static_cast<float>(icm_data.Raw_Accel.Data.Y) / 8192.0f;
+        data.accel.z = static_cast<float>(icm_data.Raw_Accel.Data.Z) / 8192.0f;
       }
 
       if (status != ICM_20948_STAT_FIFO_MORE_DATA_AVAIL) {
