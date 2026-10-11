@@ -4,7 +4,6 @@
 #include <sys/unistd.h>
 #include <cstdio>
 
-#include "callbacks/twai.hpp"
 #include "callbacks/wifi_event_handler.hpp"
 #include "custom_drivers/can.hpp"
 #include "driver/gpio.h"
@@ -15,8 +14,6 @@
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_netif.h"
-#include "esp_twai.h"
-#include "esp_twai_onchip.h"
 #include "esp_twai_types.h"
 #include "esp_vfs_fat.h"
 #include "esp_wifi.h"
@@ -91,6 +88,7 @@ class App {
 
   private:
   esp_err_t res;
+
   void setup_flash() {
     res = nvs_flash_init();
     if (res == ESP_ERR_NVS_NO_FREE_PAGES || res == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -100,6 +98,7 @@ class App {
       ESP_ERROR_CHECK(res);
     }
   }
+
   void setup_netif() {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -108,10 +107,9 @@ class App {
   }
 
   void setup_wifi() {
-    esp_wifi_set_band_mode(WIFI_BAND_MODE_5G_ONLY);
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_config));
-
+    
     wifi_config_t wifi_ap_config = {};
 
     strcpy(reinterpret_cast<char*>(&wifi_ap_config.ap.ssid), CONFIG_HEXA_WIFI_SSID);
@@ -142,6 +140,7 @@ class App {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_band_mode(WIFI_BAND_MODE_5G_ONLY));
   }
 
   void setup_i2c() {

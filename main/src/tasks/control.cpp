@@ -11,13 +11,25 @@
 extern MotorTask* motor_task;
 
 void ControlTask::reset() {
-  hexa_manual_controller.reset();
-  hexa_automatic_controller.reset();
-  hexa_semiautomatic_controller.reset();
-  hexa_smart_controller.reset();
+  hexa_controller.manual.reset();
+  hexa_controller.automatic.reset();
+  hexa_controller.semiautomatic.reset();
+  hexa_controller.smart.reset();
+}
+
+void ControlTask::load_configs() {
+  LOGI("loading control configs");
+  hexa_controller.automatic.configs.load();
+  LOGI("control configs loaded");
+}
+
+void ControlTask::init_configs() {
+  hexa_controller.automatic.configs.init();
 }
 
 void ControlTask::main() {
+  init_configs();
+  load_configs();
   ControllerInput input;
   ControllerOutput output;
   while (true) {
@@ -34,16 +46,16 @@ void ControlTask::main() {
     if (running) {
       switch (control_mode) {
         case ControlMode::HEXA_MANUAL:
-          output = hexa_manual_controller.run(input);
+          output = hexa_controller.manual.run(input);
           break;
         case ControlMode::HEXA_AUTOMATIC:
-          output = hexa_automatic_controller.run(input);
+          output = hexa_controller.automatic.run(input);
           break;
         case ControlMode::HEXA_SEMIAUTOMATIC:
-          output = hexa_semiautomatic_controller.run(input);
+          output = hexa_controller.semiautomatic.run(input);
           break;
         case ControlMode::HEXA_SMART:
-          output = hexa_smart_controller.run(input);
+          output = hexa_controller.smart.run(input);
           break;
         default:
           output = zero_controller.run(input);

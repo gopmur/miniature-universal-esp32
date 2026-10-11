@@ -106,8 +106,8 @@ esp_err_t HttpLegacyModule::handle_assist_manual(httpd_req_t* req, JsonObject js
       return ESP_OK;
   }
   control_task->control_mode = ControlMode::HEXA_MANUAL;
-  control_task->hexa_manual_controller.params.right.torque = right_torque;
-  control_task->hexa_manual_controller.params.left.torque = left_torque;
+  control_task->hexa_controller.manual.params.right.torque = right_torque;
+  control_task->hexa_controller.manual.params.left.torque = left_torque;
   control_task->running = true;
   return ESP_OK;
 }
@@ -146,10 +146,10 @@ esp_err_t HttpLegacyModule::handle_assist_automatic(httpd_req_t* req, JsonObject
   auto right_assist_time = std::get<double>(right_assist_time_result);
 
   control_task->control_mode = ControlMode::HEXA_AUTOMATIC;
-  control_task->hexa_automatic_controller.params.right.torque = right_torque;
-  control_task->hexa_automatic_controller.params.right.timeout = right_assist_time;
-  control_task->hexa_automatic_controller.params.left.torque = left_torque;
-  control_task->hexa_automatic_controller.params.left.timeout = left_assist_time;
+  control_task->hexa_controller.automatic.params.right.torque = right_torque;
+  control_task->hexa_controller.automatic.params.right.timeout = right_assist_time;
+  control_task->hexa_controller.automatic.params.left.torque = left_torque;
+  control_task->hexa_controller.automatic.params.left.timeout = left_assist_time;
   control_task->running = true;
   return ESP_OK;
 }
@@ -209,23 +209,23 @@ esp_err_t HttpLegacyModule::handle_assist_semiautomatic(httpd_req_t* req, JsonOb
   switch (active_leg) {
     case LegacyLeg::LEFT:
       right_torque = 0;
-      control_task->hexa_semiautomatic_controller.params.weak_leg = Leg::LEFT;
+      control_task->hexa_controller.semiautomatic.params.weak_leg = Leg::LEFT;
       break;
     case LegacyLeg::RIGHT:
       left_torque = 0;
-      control_task->hexa_semiautomatic_controller.params.weak_leg = Leg::RIGHT;
+      control_task->hexa_controller.semiautomatic.params.weak_leg = Leg::RIGHT;
       break;
     default:
       LOGW("invalid leg received");
       return ESP_OK;
   }
   control_task->control_mode = ControlMode::HEXA_SEMIAUTOMATIC;
-  control_task->hexa_semiautomatic_controller.params.right.torque = right_torque;
-  control_task->hexa_semiautomatic_controller.params.right.timeout = right_assist_time;
-  control_task->hexa_semiautomatic_controller.params.right.delay = right_delay;
-  control_task->hexa_semiautomatic_controller.params.left.torque = left_torque;
-  control_task->hexa_semiautomatic_controller.params.left.timeout = left_assist_time;
-  control_task->hexa_semiautomatic_controller.params.left.delay = left_delay;
+  control_task->hexa_controller.semiautomatic.params.right.torque = right_torque;
+  control_task->hexa_controller.semiautomatic.params.right.timeout = right_assist_time;
+  control_task->hexa_controller.semiautomatic.params.right.delay = right_delay;
+  control_task->hexa_controller.semiautomatic.params.left.torque = left_torque;
+  control_task->hexa_controller.semiautomatic.params.left.timeout = left_assist_time;
+  control_task->hexa_controller.semiautomatic.params.left.delay = left_delay;
   control_task->running = true;
   return ESP_OK;
 }

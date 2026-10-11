@@ -22,6 +22,13 @@ struct Data3D {
   float z;
 };
 
+struct HexaControllerGroup {
+  HexaManualController manual;
+  HexaAutomaticController automatic;
+  HexaSemiautomaticController semiautomatic;
+  HexaSmartController smart;
+};
+
 class ControlTask : public Thread {
   MAKE_LOGGABLE("control_task");
 
@@ -30,12 +37,11 @@ class ControlTask : public Thread {
   ControlMode control_mode = ControlMode::HEXA_MANUAL;
   ControlMode prev_control_mod = ControlMode::HEXA_MANUAL;
   ZeroController zero_controller;
-  HexaManualController hexa_manual_controller;
-  HexaAutomaticController hexa_automatic_controller;
-  HexaSemiautomaticController hexa_semiautomatic_controller;
-  HexaSmartController hexa_smart_controller;
+  HexaControllerGroup hexa_controller;
 
   private:
+  void init_configs();
+  void load_configs();
   void reset();
   void main();
 };

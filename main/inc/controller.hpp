@@ -3,15 +3,10 @@
 #include <array>
 #include "custom_drivers/motor.hpp"
 #include "sdkconfig.h"
+
 enum class Leg {
   LEFT,
   RIGHT,
-};
-
-
-struct ControllerMotorInput {
-  float velocity;
-  float position;
 };
 
 struct ControllerInput {
