@@ -61,7 +61,7 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
       control_task->hexa_controller.automatic.params.left.torque);
   automatic_control_params_left_json.set(
       "timeout",
-      control_task->hexa_controller.automatic.params.left.timeout);
+      control_task->hexa_controller.automatic.configs.get_left_timeout());
   automatic_control_params_left_json.set(
       "velocityThreshold",
       control_task->hexa_controller.automatic.configs.get_left_velocity_threshold());
@@ -70,7 +70,7 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
       control_task->hexa_controller.automatic.params.right.torque);
   automatic_control_params_right_json.set(
       "timeout",
-      control_task->hexa_controller.automatic.params.right.timeout);
+      control_task->hexa_controller.automatic.configs.get_right_timeout());
   automatic_control_params_right_json.set(
       "velocityThreshold",
       control_task->hexa_controller.automatic.configs.get_right_velocity_threshold());
@@ -261,11 +261,11 @@ esp_err_t HttpControlModule::put_automatic_params(httpd_req_t* req, JsonObject* 
   ESP_LOGI("PARAMS LEFT", "%f %f %f", left_timeout, left_torque, left_velocity_threshold);
   ESP_LOGI("PARAMS RIGHT", "%f %f %f", right_timeout, right_torque, right_velocity_threshold);
 
-  control_task->hexa_controller.automatic.params.left.timeout = left_timeout;
+  control_task->hexa_controller.automatic.configs.set_left_timeout(left_timeout);
   control_task->hexa_controller.automatic.params.left.torque = left_torque;
   control_task->hexa_controller.automatic.configs.set_left_velocity_threshold(
       left_velocity_threshold);
-  control_task->hexa_controller.automatic.params.right.timeout = right_timeout;
+  control_task->hexa_controller.automatic.configs.set_right_timeout(right_timeout);
   control_task->hexa_controller.automatic.params.right.torque = right_torque;
   control_task->hexa_controller.automatic.configs.set_right_velocity_threshold(
       right_velocity_threshold);
