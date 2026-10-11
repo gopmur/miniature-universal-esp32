@@ -36,6 +36,7 @@ class ODriveMotorDriver : public AbstractMotorDriver {
   void enable();
   void disable();
   void zero_pos();
+  void set_torque(float torque);
   void consume(CanPacket packet);
   float get_position();
   void init();

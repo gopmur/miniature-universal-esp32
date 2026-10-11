@@ -9,7 +9,6 @@
 #include "jaythread/sync.hpp"
 #include "system_logger.hpp"
 
-
 int ODriveMotorDriver::get_packet_id(ODriveMotorCommand command) {
   return (get_id() << 5) | static_cast<int>(command);
 }
@@ -156,4 +155,9 @@ void ODriveMotorDriver::init() {
   Sync::sleep(10);
   LOGI("0x%02x zero pos completed", get_id());
   LOGI("0x%02x initialization completed", get_id());
+}
+
+void ODriveMotorDriver::set_torque(float torque) {
+  feedback.torque = torque;
+  AbstractMotorDriver::set_torque(torque);
 }

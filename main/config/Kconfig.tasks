@@ -26,6 +26,10 @@ config HEXA_TASKS_WS_STACK_SIZE
   int "Stack Size"
   default 4096
 
+config HEXA_TASKS_WS_FREQ_HZ
+  int "Frequency (Hz)"
+  default 33
+
 endmenu
 
 menu "IMU"
@@ -37,6 +41,10 @@ config HEXA_TASKS_IMU_PRIORITY
 config HEXA_TASKS_IMU_STACK_SIZE
   int "Stack Size"
   default 4096
+
+config HEXA_TASKS_IMU_FREQ_HZ
+  int "Frequency (Hz)"
+  default 200
 
 endmenu
 

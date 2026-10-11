@@ -17,6 +17,7 @@ enum class WebSocketConnectionType {
   OTA,
   SYS_LOG,
   LEGACY,
+  HEAP,
   MOTOR_STATUS,
 };
 
@@ -48,6 +49,7 @@ class WebSocketTask : public Thread {
   void fill_ota_progress_json(JsonObject* ota_json);
   void fill_imu_data_json(JsonObject* imu_data_json);
   void fill_motor_data_json(JsonObject* motor_data_json);
+  void fill_heap_data_json(JsonObject* heap_data_json);
   void add_time_stamp(JsonObject* json);
   esp_err_t send_to_legacy_connection(int fd);
   esp_err_t send_to_connection(int fd, std::string& data);

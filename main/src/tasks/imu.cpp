@@ -1,11 +1,14 @@
 #include "tasks/imu.hpp"
 #include <cmath>
+#include "helper/ds/period.hpp"
 #include "icm20948.h"
 #include "icm20948_dmp.h"
 #include "icm20948_i2c.h"
 #include "jaythread/sync.hpp"
 
 void ImuTask::main() {
+  auto frequency = Period::from_hz(CONFIG_HEXA_TASKS_IMU_FREQ_HZ);
+
   icm0948_config_i2c_t icm_config = {
       .i2c_port = I2C_NUM_0,
       .i2c_addr = ICM_20948_I2C_ADDR_AD0,
@@ -113,9 +116,9 @@ void ImuTask::main() {
       }
 
       if (status != ICM_20948_STAT_FIFO_MORE_DATA_AVAIL) {
-        Sync::sleep(10);
+        Sync::sleep(frequency.ms() * 2);
       } else {
-        Sync::sleep(5);
+        Sync::sleep(frequency.ms());
       }
     }
   }

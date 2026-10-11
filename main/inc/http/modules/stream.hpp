@@ -14,6 +14,8 @@ class HttpStreamModule : public HttpModule {
   static esp_err_t ws_tasks_post_handshake(httpd_req_t* req);
   static esp_err_t ws_ota(httpd_req_t* req);
   static esp_err_t ws_ota_post_handshake(httpd_req_t* req);
+  static esp_err_t ws_heap(httpd_req_t* req);
+  static esp_err_t ws_heap_post_handshake(httpd_req_t* req);
   void register_direct_uris();
 
   public:

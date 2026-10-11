@@ -128,6 +128,19 @@ void MotorTask::init_all() {
   }
 }
 
+float MotorTask::get_torque(size_t motor_index) {
+  if (motor_index >= motors.size()) {
+    LOGW("failed to get torque of motor %d. index out of bounds", motor_index);
+    return 0;
+  }
+  auto motor = motors[motor_index];
+  if (motor == nullptr) {
+    LOGW("failed to get torque of motor %d. doesn't exist", motor_index);
+    return 0;
+  };
+  return motor->get_torque();
+}
+
 float MotorTask::get_velocity(size_t motor_index) {
   if (motor_index >= motors.size()) {
     LOGW("failed to get velocity of motor %d. index out of bounds", motor_index);

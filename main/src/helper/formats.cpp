@@ -60,6 +60,8 @@ const char* get_ws_stream_string(WebSocketConnectionType stream) {
       return "legacy";
     case WebSocketConnectionType::MOTOR_STATUS:
       return "motor_status";
+    case WebSocketConnectionType::HEAP:
+      return "heap";
   }
   return "unknown";
 }

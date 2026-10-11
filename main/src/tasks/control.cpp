@@ -1,8 +1,6 @@
 #include "tasks/control.hpp"
 #include <cmath>
 #include "controller.hpp"
-#include "custom_drivers/motor.hpp"
-#include "esp_log.h"
 #include "helper/formats.hpp"
 #include "jaythread/sync.hpp"
 #include "system_logger.hpp"
@@ -44,7 +42,6 @@ void ControlTask::main() {
       prev_control_mod = control_mode;
       LOGI("entered mode %s", get_control_mode_string(control_mode));
     }
-
     for (size_t i = 0; i < motor_task->motor_count; i++) {
       input.motor_feedbacks[i].position = motor_task->get_position(i);
       input.motor_feedbacks[i].velocity = motor_task->get_velocity(i);
