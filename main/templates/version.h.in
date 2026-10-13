@@ -1,4 +1,0 @@
-#pragma once
-
-#define API_VERSION "@API_VERSION@"
-#define CORE_VERSION "@CORE_VERSION@"

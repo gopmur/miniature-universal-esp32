@@ -153,29 +153,6 @@
 //   return ESP_OK;
 // }
 
-// // esp_err_t restart_stm32_handler(httpd_req_t* req) {
-// //   set_header(req);
-// //   send_command(SspCommand::RESTART);
-// //   uart_flush(config::stm_uart::port);
-// //   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), "LOG_TAG", "Restart
-// // failed ");
-// //   return ESP_OK;
-// // }
-// // esp_err_t restart32_handler(httpd_req_t* req) {
-// //   set_header(req);
-// //   ESP_RETURN_ON_ERROR(httpd_resp_send(req, nullptr, 0), "LOG_TAG", "Restart
-// // failed ");
-// //   vTaskDelay(10);
-// //   esp_restart();
-// //   return ESP_OK;
-// // }
-
-// //     esp_err_t
-// //     options_handler(httpd_req_t* req) {
-// //   set_header(req);
-// //   httpd_resp_send(req, NULL, 0);
-// //   return ESP_OK;
-// // }
 
 // // // ! this needs to be async
 // // esp_err_t check_for_update_handler(httpd_req_t* req) {

@@ -1,11 +1,3 @@
-set(API_VERSION "0.0.1")
-set(CORE_VERSION "0.0.1")
-
-configure_file(
-  "../main/templates/version.h.in"
-  "../main/inc/version.hpp"
-)
-
 file(GLOB_RECURSE SOURCE_CPP_FILES "src/*.cpp")
 file(GLOB_RECURSE SOURCE_C_FILES "src/*.c")
 file(GLOB_RECURSE HTTP_ASSET_FILES
