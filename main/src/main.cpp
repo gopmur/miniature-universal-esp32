@@ -27,6 +27,7 @@
 #include "http/modules/fs.hpp"
 #include "http/modules/legacy.hpp"
 #include "http/modules/log.hpp"
+#include "http/modules/update.hpp"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -57,7 +58,8 @@ HttpFsModule http_fs_module("fs");
 HttpLogModule http_log_module("log");
 HttpMotorModule http_motor_module("motor");
 HttpWifiModule http_wifi_module("wifi");
-HttpSystemModule http_system_module("system", {&http_wifi_module});
+HttpUpdateModule http_update_module("update");
+HttpSystemModule http_system_module("system", {&http_wifi_module, &http_update_module});
 HttpStreamModule http_stream_module("stream");
 HttpControlModule http_control_module("control");
 HttpRootModule http_root_module("api",
@@ -109,14 +111,14 @@ class App {
   void setup_wifi() {
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_config));
-    
+
     wifi_config_t wifi_ap_config = {};
 
     strcpy(reinterpret_cast<char*>(&wifi_ap_config.ap.ssid), CONFIG_HEXA_WIFI_SSID);
     strcpy(reinterpret_cast<char*>(&wifi_ap_config.ap.password), CONFIG_HEXA_WIFI_PASSWORD);
 
     wifi_ap_config.ap.ssid_len = strlen(CONFIG_HEXA_WIFI_SSID);
-    wifi_ap_config.ap.channel = CONFIG_HEXA_WIFI_CHANNELS;
+    wifi_ap_config.ap.channel = 0;
     wifi_ap_config.ap.max_connection = CONFIG_HEXA_WIFI_MAX_CONNECTIONS;
     wifi_ap_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_ap_config.ap.pmf_cfg.required = false;
@@ -137,10 +139,11 @@ class App {
                                                         NULL,
                                                         NULL));
 
+    ESP_ERROR_CHECK(esp_wifi_set_country_code("IR", true));
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
     ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_set_band_mode(WIFI_BAND_MODE_5G_ONLY));
+    ESP_ERROR_CHECK(esp_wifi_set_band_mode(WIFI_BAND_MODE_2G_ONLY));
   }
 
   void setup_i2c() {
@@ -307,13 +310,7 @@ class App {
   }
 
   public:
-  void run() {
-    setup();
-    while (true) {
-      LOGI("heartbeat");
-      Sync::sleep(1000);
-    }
-  }
+  void run() { setup(); }
 };
 
 extern "C" void app_main() {

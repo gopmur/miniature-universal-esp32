@@ -6,6 +6,7 @@
 #include "esp_wifi_types_generic.h"
 #include "http.hpp"
 #include "http/modules/wifi.hpp"
+#include "system_logger.hpp"
 #include "tasks/ws.hpp"
 
 extern HttpWifiModule http_wifi_module;
@@ -14,9 +15,9 @@ void WifiEventCallback::wifi_event_handler(void* arg,
                                            esp_event_base_t event_base,
                                            int32_t event_id,
                                            void* event_data) {
-  // if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-  //   esp_wifi_connect();
-  // }
+  if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+    esp_wifi_connect();
+  }
 
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
     wifi_event_sta_disconnected_t* disconn = (wifi_event_sta_disconnected_t*)event_data;
@@ -25,18 +26,22 @@ void WifiEventCallback::wifi_event_handler(void* arg,
       case WIFI_REASON_AUTH_EXPIRE:
       case WIFI_REASON_HANDSHAKE_TIMEOUT:
       case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::FAILED, 0);
+        http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::FAILED,
+                                                             0);
         break;
 
       case WIFI_REASON_NO_AP_FOUND:
-        http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::WRONG_SSID,
-                                                            0);
+        http_wifi_module.get_connection_result_queue()->send(
+            WifiConnectionRequestResult::WRONG_SSID,
+            0);
         break;
 
       case WIFI_REASON_ASSOC_LEAVE:
+        LOGI("ap left");
         break;
 
       default:
+        LOGI("disconnected. reason: %d", disconn->reason);
         http_wifi_module.get_connection_result_queue()->send(WifiConnectionRequestResult::OTHER, 0);
         break;
     }

@@ -117,7 +117,7 @@ esp_err_t HttpModule::json_async_middleware(httpd_req_t* req) {
       .req = async_req,
       .json = req_json,
   };
-  auto thread_started = handler->start(req->uri, 2, 4096, args);
+  auto thread_started = handler->start(req->uri, 2, 4096 * 2, args);
   if (!thread_started) {
     auto status = send_message_json(async_req,
                                     "async handler is already running",

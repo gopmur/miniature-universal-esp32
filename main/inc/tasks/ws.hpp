@@ -46,6 +46,8 @@ class WebSocketTask : public Thread {
   Mutex connection_mutex;
   JsonObject fill_task_status_json(std::vector<ThreadStatus>& thread_status);
   JsonObject fill_motor_status_json(int motor_index, int motor_id, MotorStatus status);
+  JsonObject fill_ota_progress_json(int total, int progress);
+  JsonObject fill_ota_progress_json(bool ok);
   void fill_ota_progress_json(JsonObject* ota_json);
   void fill_imu_data_json(JsonObject* imu_data_json);
   void fill_motor_data_json(JsonObject* motor_data_json);
@@ -61,11 +63,16 @@ class WebSocketTask : public Thread {
   void handle_ws_transmit_status(WebSocketConnection connection, esp_err_t status);
   void send_to_sys_log_connections(const char* data);
   void send_initial_motor_status(int fd);
+  void check_connections();
+  esp_err_t send_ping_frame(int fd);
 
   public:
+  static void on_ws_disconnect(void *ctx);
   bool has_connection(WebSocketConnectionType connection_type);
   void send_to_task_connections(std::vector<ThreadStatus>& thread_status);
   void send_to_motor_status_connections(int motor_index, int motor_id, MotorStatus status);
+  void send_to_ota_connections(int total, int progress);
+  void send_to_ota_connections(bool ok);
   void main();
   WebSocketTask();
   void remove_connection(int fd);

@@ -1,5 +1,4 @@
 #include "tasks/ws.hpp"
-#include <format>
 #include <vector>
 
 #include "custom_drivers/motor.hpp"
@@ -75,11 +74,6 @@ JsonObject WebSocketTask::fill_task_status_json(std::vector<ThreadStatus>& threa
   }
   return task_status_json;
 }
-
-// void WebSocketTask::fill_ota_progress_json(JsonObject* ota_json) {
-//   ota_json->set("total", ota_total);
-//   ota_json->set("progress", ota_progress);
-// }
 
 esp_err_t WebSocketTask::send_to_connection(int fd, std::string& data) {
   httpd_ws_frame_t ws_packet = {
@@ -177,6 +171,27 @@ void WebSocketTask::fill_heap_data_json(JsonObject* heap_data_json) {
   heap_data_json->set("totalSize", total_size);
 }
 
+esp_err_t WebSocketTask::send_ping_frame(int fd) {
+  httpd_ws_frame_t ws_packet = {
+      .final = true,
+      .fragmented = false,
+      .type = HTTPD_WS_TYPE_PING,
+      .payload = nullptr,
+      .len = 0,
+  };
+  return httpd_ws_send_data(http_server.server_instance, fd, &ws_packet);
+};
+
+void WebSocketTask::check_connections() {
+  auto connections = get_connections();
+  for (auto connection : connections) {
+    auto err = send_ping_frame(connection.fd);
+    if (err != ESP_OK) {
+      remove_connection(connection.fd);
+    }
+  }
+}
+
 void WebSocketTask::main() {
   auto frequency = Period::from_hz(CONFIG_HEXA_TASKS_WS_FREQ_HZ);
   JsonObject task_status_json;
@@ -189,6 +204,7 @@ void WebSocketTask::main() {
     Sync::wait_for_notification();
     LOGI("woke up");
     while (true) {
+      // check_connections();
       connection_mutex.take();
       auto no_connections = connections.empty();
       connection_mutex.give();
@@ -326,4 +342,31 @@ void WebSocketTask::send_to_motor_status_connections(int motor_index,
                                                      MotorStatus status) {
   auto json = fill_motor_status_json(motor_index, motor_id, status);
   send_to_connections(WebSocketConnectionType::MOTOR_STATUS, &json);
+}
+
+JsonObject WebSocketTask::fill_ota_progress_json(int total, int progress) {
+  JsonObject json;
+  json.set("total", total);
+  json.set("progress", progress);
+  return json;
+}
+
+JsonObject WebSocketTask::fill_ota_progress_json(bool ok) {
+  JsonObject json;
+  json.set("ok", ok);
+  return json;
+}
+
+void WebSocketTask::send_to_ota_connections(bool ok) {
+  auto json = fill_ota_progress_json(ok);
+  send_to_connections(WebSocketConnectionType::OTA, &json);
+}
+
+void WebSocketTask::send_to_ota_connections(int total, int progress) {
+  auto json = fill_ota_progress_json(total, progress);
+  send_to_connections(WebSocketConnectionType::OTA, &json);
+}
+
+void WebSocketTask::on_ws_disconnect(void* ctx) {
+  LOGI("client closed");
 }

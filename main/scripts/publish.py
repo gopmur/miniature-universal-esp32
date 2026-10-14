@@ -21,7 +21,7 @@ def get_project_data():
         pass  # The presence of this file triggers the JSON output
 
     # 2. Run CMake to configure the project (this generates the JSON)
-    # subprocess.run(["idf.py", "clean", "build"])
+    subprocess.run(["idf.py", "clean", "build"])
 
     # 3. Locate and read the generated JSON reply
     reply_dir = os.path.join("build", ".cmake", "api", "v1", "reply")
