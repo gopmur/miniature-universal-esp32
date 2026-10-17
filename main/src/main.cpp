@@ -280,17 +280,17 @@ class App {
     logger_task = new LoggerTask();
     monitor_task = new MonitorTask();
 
-    motor_task->start("motor", 2, 4096);
-    can_recv_task.start("can_recv", 2, 4096);
-    dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
-    ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    motor_task->start("motor", 18, 4096);
+    can_recv_task.start("can_recv", 18, 4096);
+    dns_task->start("dns", 18, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
+    ws_task.start("ws", 18, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
     control_task->start("control",
-                        CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
+                        18,
                         CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
     // logger_task->start("logger", 2, 4096);
 
-    imu_task->start("imu", 3, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
-    monitor_task->start("monitor", 2, 4096);
+    imu_task->start("imu", 19, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    monitor_task->start("monitor", 18, 4096);
   }
 
   void setup() {
