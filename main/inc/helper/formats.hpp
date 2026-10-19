@@ -12,3 +12,4 @@ const char* get_entry_type_string(uint8_t entry_type);
 const char* get_ws_stream_string(WebSocketConnectionType stream);
 const char* get_control_mode_string(ControlMode control_mode);
 const char* get_motor_status_string(MotorStatus status);
+const char* get_motor_direction_string(MotorDirection direction);

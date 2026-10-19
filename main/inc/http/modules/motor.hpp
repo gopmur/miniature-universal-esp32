@@ -10,6 +10,8 @@ class HttpMotorModule : public HttpModule {
   static esp_err_t ws_notification_status(httpd_req_t* req);
   static esp_err_t ws_notification_status_post_handshake(httpd_req_t* req);
   static esp_err_t get_status(httpd_req_t* req);
+  static esp_err_t get(httpd_req_t* req);
+  static esp_err_t put_config(httpd_req_t* req, JsonObject* req_json);
   void register_direct_uris();
 
   public:

@@ -53,7 +53,7 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   MotorTimeoutTimer timeout_timer;
   MotorFeedback feedback;
   Can can;
-  float max_torque = 0;
+  float torque_limit = 0;
   MotorDirection direction;
   float torque_constant = 0;
 
@@ -73,7 +73,7 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   MotorStatus get_status();
   AbstractMotorDriver(int id,
                       Can can,
-                      float max_torque,
+                      float torque_limit,
                       MotorDirection direction,
                       float torque_constant);
   virtual void set_torque(float torque);
@@ -88,4 +88,9 @@ class AbstractMotorDriver : public AbstractCanDeviceReader {
   virtual void init();
   virtual void consume(CanPacket packet);
   int get_id();
+  void set_torque_constant(float torque_constant);
+  void set_torque_limit(float torque_limit);
+  float get_torque_limit();
+  float get_torque_constant();
+  MotorDirection get_direction();
 };
