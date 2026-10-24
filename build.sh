@@ -24,9 +24,9 @@ function generate_assets() {
 }
 
 function build_firmware() {
-  if [[ -z "$IDF_PATH" ]]; then
-  source "$HOME/esp/v5.4.2/esp-idf/export.sh"
-  fi
+  # if [[ -z "$IDF_PATH" ]]; then
+  # source "$HOME/esp/v5.4.2/esp-idf/export.sh"
+  # fi
   idf.py build
 }
 
