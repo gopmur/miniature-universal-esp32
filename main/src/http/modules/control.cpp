@@ -76,6 +76,9 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
   automatic_control_params_right_json.set(
       "velocityThreshold",
       control_task->hexa_controller.automatic.configs.get_right_velocity_threshold());
+  automatic_control_params_json.set(
+      "angleThreshold",
+      control_task->hexa_controller.automatic.configs.get_angle_threshold());
   semiautomatic_control_params_json.set(
       "weakLeg",
       get_leg_str(control_task->hexa_controller.semiautomatic.params.weak_leg));
@@ -108,8 +111,20 @@ esp_err_t HttpControlModule::get_params(httpd_req_t* req) {
       control_task->hexa_controller.semiautomatic.configs.get_epsilon());
   smart_control_params_left_json.set("torque",
                                      control_task->hexa_controller.smart.params.left.torque);
+  smart_control_params_left_json.set(
+      "timeout",
+      control_task->hexa_controller.smart.configs.get_left_timeout());
+  smart_control_params_left_json.set(
+      "delayTimeout",
+      control_task->hexa_controller.smart.configs.get_left_delay_timeout());
   smart_control_params_right_json.set("torque",
                                       control_task->hexa_controller.smart.params.right.torque);
+  smart_control_params_right_json.set(
+      "timeout",
+      control_task->hexa_controller.smart.configs.get_right_timeout());
+  smart_control_params_right_json.set(
+      "delayTimeout",
+      control_task->hexa_controller.smart.configs.get_right_delay_timeout());
 
   manual_control_params_json.set("right", &manual_control_params_right_json);
   manual_control_params_json.set("left", &manual_control_params_left_json);
@@ -406,10 +421,40 @@ esp_err_t HttpControlModule::put_smart_params(httpd_req_t* req, JsonObject* req_
 esp_err_t HttpControlModule::put_smart_configs(httpd_req_t* req, JsonObject* req_json) {
   JsonObject resp_json;
   auto velocity_threshold_result = req_json->get_number("velocityThreshold", &resp_json);
-  if (std::holds_alternative<JsonError>(velocity_threshold_result)) {
+  auto left_json_result = req_json->get_object("left", &resp_json);
+  auto right_json_result = req_json->get_object("right", &resp_json);
+
+  if (std::holds_alternative<JsonError>(velocity_threshold_result) ||
+      std::holds_alternative<JsonError>(left_json_result) ||
+      std::holds_alternative<JsonError>(right_json_result)) {
     return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
   }
+
+  auto left_json = std::get<JsonObject>(left_json_result);
+  auto right_json = std::get<JsonObject>(right_json_result);
+
+  auto left_timeout_result = left_json.get_number("timeout");
+  auto left_delay_timeout_result = left_json.get_number("delayTimeout");
+  auto right_timeout_result = right_json.get_number("timeout");
+  auto right_delay_timeout_result = right_json.get_number("delayTimeout");
+
+  if (std::holds_alternative<JsonError>(left_timeout_result) ||
+      std::holds_alternative<JsonError>(left_delay_timeout_result) ||
+      std::holds_alternative<JsonError>(right_timeout_result) ||
+      std::holds_alternative<JsonError>(right_delay_timeout_result)) {
+    return send_json(req, resp_json, HTTPD_400_BAD_REQUEST);
+  }
+
+  auto left_timeout = std::get<double>(left_timeout_result);
+  auto left_delay_timeout = std::get<double>(left_delay_timeout_result);
+  auto right_timeout = std::get<double>(right_timeout_result);
+  auto right_delay_timeout = std::get<double>(right_delay_timeout_result);
   auto velocity_threshold = std::get<double>(velocity_threshold_result);
+
+  control_task->hexa_controller.smart.configs.set_left_timeout(left_timeout);
+  control_task->hexa_controller.smart.configs.set_left_delay_timeout(left_delay_timeout);
+  control_task->hexa_controller.smart.configs.set_right_timeout(right_timeout);
+  control_task->hexa_controller.smart.configs.set_right_delay_timeout(right_delay_timeout);
   control_task->hexa_controller.smart.configs.set_velocity_threshold(velocity_threshold);
   return send_success_json(req);
 }
@@ -427,7 +472,7 @@ void HttpControlModule::register_direct_uris() {
   register_uri_with_option("/semiautomatic/params", HTTP_PUT, put_semiautomatic_params);
   register_uri_with_option("/smart/params", HTTP_PUT, put_smart_params);
   register_uri_with_option("/automatic/configs", HTTP_PUT, put_automatic_configs);
-  register_uri_with_option("/semiautomatic/configs", HTTP_PUT, put_automatic_configs);
+  register_uri_with_option("/semiautomatic/configs", HTTP_PUT, put_semiautomatic_configs);
   register_uri_with_option("/smart/configs", HTTP_PUT, put_smart_configs);
   register_ws_uri("/manual/torque", ws_manual_torque, ws_manual_torque_post_handshake);
 }

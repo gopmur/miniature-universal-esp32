@@ -25,7 +25,7 @@ void HexaSemiautomaticControlConfigs::set_start_assist_angle(float start_assist_
 void HexaSemiautomaticControlConfigs::set_stop_assist_angle(float stop_assist_angle) {
   Nvs nvs(nvs_namespace, NVS_READWRITE);
   nvs.set(stop_assist_angle_key, stop_assist_angle);
-  this->stop_assist_angle = start_assist_angle;
+  this->stop_assist_angle = stop_assist_angle;
 }
 
 void HexaSemiautomaticControlConfigs::set_epsilon(float epsilon) {
@@ -60,8 +60,9 @@ HexaControllerOutput HexaSemiautomaticController::run(HexaControllerInput input)
       activate_assistance = true;
     }
     if (activate_assistance) {
-      if (++d_t >= params.right.delay) {
-        r_t++;
+      d_t += 10;
+      if (d_t >= params.right.delay) {
+        r_t += 10;
         output.right_motor.torque = params.right.torque;
       }
       if ((input.left_motor.position - input.right_motor.position) <
@@ -82,8 +83,9 @@ HexaControllerOutput HexaSemiautomaticController::run(HexaControllerInput input)
       activate_assistance = true;
     }
     if (activate_assistance) {
-      if (++d_t >= params.left.delay) {
-        l_t++;
+      d_t += 10;
+      if (d_t >= params.left.delay) {
+        l_t += 10;
         output.left_motor.torque = params.left.torque;
       }
       if ((input.right_motor.position - input.left_motor.position) <

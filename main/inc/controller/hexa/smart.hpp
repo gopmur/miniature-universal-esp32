@@ -15,13 +15,29 @@ struct HexaSmartControlParams {
 class HexaSmartControlConfigs {
   private:
   static constexpr const char* nvs_namespace = "hexa_smart";
-  static constexpr const char* velocity_threshold_key = "vel_th"; 
+  static constexpr const char* velocity_threshold_key = "vel_th";
+  static constexpr const char* right_timeout_key = "r_timeout";
+  static constexpr const char* left_timeout_key = "l_timeout";
+  static constexpr const char* right_delay_timeout_key = "r_delay";
+  static constexpr const char* left_delay_timeout_key = "l_delay";
 
   float velocity_threshold = 0.8;
+  int32_t right_timeout = 300;
+  int32_t left_timeout = 300;
+  int32_t right_delay_timeout = 20;
+  int32_t left_delay_timeout = 20;
 
-  public: 
+  public:
   float get_velocity_threshold();
+  int32_t get_right_timeout();
+  int32_t get_left_timeout();
+  int32_t get_right_delay_timeout();
+  int32_t get_left_delay_timeout();
   void set_velocity_threshold(float velocity_threshold);
+  void set_right_timeout(int32_t right_timeout);
+  void set_left_timeout(int32_t left_timeout);
+  void set_right_delay_timeout(int32_t right_delay_timeout);
+  void set_left_delay_timeout(int32_t left_delay_timeout);
   void init();
   void load();
 };

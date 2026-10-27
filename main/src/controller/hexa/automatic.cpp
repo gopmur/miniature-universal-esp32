@@ -73,7 +73,7 @@ HexaControllerOutput HexaAutomaticController::run(HexaControllerInput input) {
   }
 
   if (ro == true) {
-    right_timer = right_timer + 1;
+    right_timer = right_timer + 10;
     torque_profile_right_value = torque_profile(right_timer, params.right.timeout);
   } else if (ro == false) {
     right_timer = 0;
@@ -81,7 +81,7 @@ HexaControllerOutput HexaAutomaticController::run(HexaControllerInput input) {
   }
 
   if (lo == true) {
-    left_timer = left_timer + 1;
+    left_timer = left_timer + 10;
     torque_profile_left_value = torque_profile(left_timer, params.left.timeout);
   } else if (lo == false) {
     left_timer = 0;
