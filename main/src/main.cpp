@@ -303,7 +303,6 @@ class App {
     setup_wifi();
     setup_i2c();
     setup_twai();
-
     start_tasks();
 
     http_server.start();
