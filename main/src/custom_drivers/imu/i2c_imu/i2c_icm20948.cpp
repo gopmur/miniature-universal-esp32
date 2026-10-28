@@ -6,8 +6,8 @@
 #include "icm20948_i2c.h"
 #include "jaythread/sync.hpp"
 
-I2cIcm20948::I2cIcm20948(i2c_port_t i2c_port, bool ad0)
-    : I2cImu(i2c_port, ad0 ? ICM_20948_I2C_ADDR_AD0 : ICM_20948_I2C_ADDR_AD1) {}
+I2cIcm20948::I2cIcm20948(i2c_port_t i2c_port, bool ad1)
+    : I2cImu(i2c_port, ad1 ? ICM_20948_I2C_ADDR_AD1 : ICM_20948_I2C_ADDR_AD0) {}
 
 void I2cIcm20948::init() {
   icm0948_config_i2c_t icm_config = {

@@ -287,7 +287,7 @@ class App {
     // control_task->start("control", 18, CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
     // logger_task->start("logger", 2, 4096);
 
-    // imu_task->start("imu", 19, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    imu_task->start("imu", 19, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
     monitor_task->start("monitor", 18, 4096);
   }
 

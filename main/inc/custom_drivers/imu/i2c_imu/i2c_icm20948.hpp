@@ -13,7 +13,7 @@ class I2cIcm20948 : public I2cImu {
   icm20948_device_t icm;
 
   public:
-  I2cIcm20948(i2c_port_t i2c_port, bool ad0);
+  I2cIcm20948(i2c_port_t i2c_port, bool ad1);
   void init();
   bool poll();
 };
