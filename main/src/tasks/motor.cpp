@@ -7,10 +7,12 @@
 #include "custom_drivers/motor/smc.hpp"
 #include "custom_drivers/motor/t_motor.hpp"
 #include "custom_drivers/nvs.hpp"
+#include "driver/gpio.h"
 #include "helper.hpp"
 #include "jaythread/sync.hpp"
 #include "nvs.h"
 #include "sdkconfig.h"
+#include "soc/gpio_num.h"
 #include "system_logger.hpp"
 #include "tasks/can_recv.hpp"
 #include "tasks/ws.hpp"
@@ -332,6 +334,7 @@ void MotorTask::main() {
   std::array<MotorStatus, motor_count> prev_motor_statuses;
   prev_motor_statuses.fill(MotorStatus::UNINITIALIZED);
   while (true) {
+    bool all_motors_ok = true;
     for (int i = 0; i < motors.size(); i++) {
       auto motor = motors[i];
       auto torque = torques[i];
@@ -344,9 +347,11 @@ void MotorTask::main() {
       if (status == MotorStatus::OK) {
         motor->set_torque(torque);
       } else {
+        all_motors_ok = false;
         motor->set_torque(0);
       }
     }
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), all_motors_ok);
     Sync::sleep(10);
   }
 }

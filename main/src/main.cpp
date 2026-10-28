@@ -176,7 +176,7 @@ class App {
     };
 
     gpio_config(&motor_power_switch);
-    gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), 1);
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), 0);
     LOGI("motors turned on");
   }
 
