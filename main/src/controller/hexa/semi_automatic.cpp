@@ -43,9 +43,9 @@ void HexaSemiautomaticControlConfigs::load() {
 
 void HexaSemiautomaticControlConfigs::init() {
   Nvs nvs(nvs_namespace, NVS_READWRITE);
-  nvs.init(start_assist_angle_key, 0.287979327);
-  nvs.init(stop_assist_angle_key, 2.583087293);
-  nvs.init(epsilon_key, 0.02864837);
+  nvs.init(start_assist_angle_key, 0.287979327f);
+  nvs.init(stop_assist_angle_key, 2.583087293f);
+  nvs.init(epsilon_key, 0.02864837f);
 }
 
 HexaControllerOutput HexaSemiautomaticController::run(HexaControllerInput input) {
