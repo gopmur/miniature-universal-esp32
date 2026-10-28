@@ -3,6 +3,7 @@
 #include "esp_err.h"
 #include "esp_twai.h"
 #include "esp_twai_onchip.h"
+#include "system_logger.hpp"
 
 Can::Can(uint8_t rx_pin,
          uint8_t tx_pin,
