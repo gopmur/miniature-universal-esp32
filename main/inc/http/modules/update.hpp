@@ -1,5 +1,6 @@
 #pragma once
 
+#include "esp_err.h"
 #include "esp_http_server.h"
 #include "http/module.hpp"
 #include "jaythread/thread_with_args.hpp"
@@ -18,6 +19,7 @@ class HttpUpdateModule : public HttpModule {
   class PutHandler : public ThreadWithArg<HttpJsonAsyncHandlerArgs> {
     MAKE_LOGGABLE(HttpUpdateModule::tag);
     private:
+    void send_failed_message(httpd_req_t* req, esp_err_t err);
     void main(HttpJsonAsyncHandlerArgs* req_p);
   };
 

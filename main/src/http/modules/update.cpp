@@ -1,6 +1,7 @@
 #include "http/modules/update.hpp"
 #include <format>
 #include "esp_crt_bundle.h"
+#include "esp_err.h"
 #include "esp_http_client.h"
 #include "esp_http_server.h"
 #include "esp_https_ota.h"
@@ -15,6 +16,13 @@ extern WebSocketTask ws_task;
 bool HttpUpdateModule::ota_busy = false;
 HttpUpdateModule::GetCheckHandler HttpUpdateModule::get_check;
 HttpUpdateModule::PutHandler HttpUpdateModule::put;
+
+void HttpUpdateModule::PutHandler::send_failed_message(httpd_req_t* req, esp_err_t err) {
+  auto message = std::format("failed {}", esp_err_to_name(err));
+  send_message_json(req, message.c_str());
+  LOGE("%s", message.c_str());
+  ws_task.send_to_ota_connections(false);
+}
 
 void HttpUpdateModule::PutHandler::main(HttpJsonAsyncHandlerArgs* args) {
   ota_busy = true;
@@ -64,7 +72,7 @@ void HttpUpdateModule::PutHandler::main(HttpJsonAsyncHandlerArgs* args) {
   }
 
   LOGI("updating form %s to %s", currect_version, version.c_str());
-  while (esp_https_ota_perform(ota_handle) == ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
+  while ((err = esp_https_ota_perform(ota_handle)) == ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
     downloaded = esp_https_ota_get_image_len_read(ota_handle);
     total = esp_https_ota_get_image_size(ota_handle);
     LOGI("updating %d%% - %d/%d (bytes)", downloaded * 100 / total, downloaded, total);
@@ -72,16 +80,21 @@ void HttpUpdateModule::PutHandler::main(HttpJsonAsyncHandlerArgs* args) {
   }
 
   if (err != ESP_OK) {
-    ws_task.send_to_ota_connections(false);
+    send_failed_message(req, err);
     goto cleanup;
   }
 
   LOGI("updating %d%% - %d/%d (bytes)", total * 100 / total, total, total);
   LOGI("update to %s completed. waiting for restart", version.c_str());
   ws_task.send_to_ota_connections(total, total);
-  ws_task.send_to_ota_connections(true);
 
-  esp_https_ota_finish(ota_handle);
+  err = esp_https_ota_finish(ota_handle);
+  if (err != ESP_OK) {
+    send_failed_message(req, err);
+    goto cleanup;
+  }
+
+  ws_task.send_to_ota_connections(true);
   send_success_json(req);
 
 cleanup:
