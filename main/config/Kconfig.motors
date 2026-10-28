@@ -15,6 +15,12 @@ config HEXA_MOTOR_COUNT
 menu "Motor 0"
   depends on HEXA_MOTOR_COUNT >= 1
 
+config HEXA_MOTOR_0_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
+
 config HEXA_MOTOR_0_ID
   hex "ID"
   range 0x0 0x7FF
@@ -44,12 +50,18 @@ config HEXA_MOTOR_0_RECEIVE_ID
 
 config HEXA_MOTOR_0_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 
 menu "Motor 1"
   depends on HEXA_MOTOR_COUNT >= 2
+
+config HEXA_MOTOR_1_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_1_ID
   hex "ID"
@@ -81,11 +93,17 @@ config HEXA_MOTOR_1_RECEIVE_ID
 
 config HEXA_MOTOR_1_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 endmenu
 
 menu "Motor 2"
   depends on HEXA_MOTOR_COUNT >= 3
+
+config HEXA_MOTOR_2_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_2_ID
   hex "ID"
@@ -117,12 +135,18 @@ config HEXA_MOTOR_2_RECEIVE_ID
 
 config HEXA_MOTOR_2_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 
 menu "Motor 3"
   depends on HEXA_MOTOR_COUNT >= 4
+
+config HEXA_MOTOR_3_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_3_ID
   hex "ID"
@@ -154,12 +178,18 @@ config HEXA_MOTOR_3_RECEIVE_ID
 
 config HEXA_MOTOR_3_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 
 menu "Motor 4"
   depends on HEXA_MOTOR_COUNT >= 5
+
+config HEXA_MOTOR_4_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_4_ID
   hex "ID"
@@ -191,12 +221,18 @@ config HEXA_MOTOR_4_RECEIVE_ID
 
 config HEXA_MOTOR_4_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 
 menu "Motor 5"
   depends on HEXA_MOTOR_COUNT >= 6
+
+config HEXA_MOTOR_5_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_5_ID
   hex "ID"
@@ -228,12 +264,18 @@ config HEXA_MOTOR_5_RECEIVE_ID
 
 config HEXA_MOTOR_5_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 
 menu "Motor 6"
   depends on HEXA_MOTOR_COUNT >= 7
+
+config HEXA_MOTOR_6_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_6_ID
   hex "ID"
@@ -265,12 +307,18 @@ config HEXA_MOTOR_6_RECEIVE_ID
 
 config HEXA_MOTOR_6_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 
 menu "Motor 7"
   depends on HEXA_MOTOR_COUNT >= 8
+
+config HEXA_MOTOR_7_CAN_INTERFACE
+  int "CAN interface"
+  range 0 1 if HEXA_CAN_COUNT = 2
+  range 0 0 if HEXA_CAN_COUNT = 1
+  default 0
 
 config HEXA_MOTOR_7_ID
   hex "ID"
@@ -302,7 +350,7 @@ config HEXA_MOTOR_7_RECEIVE_ID
 
 config HEXA_MOTOR_7_BACKWARDS
   bool "Is backwards"
-  default false
+  default n
 
 endmenu
 

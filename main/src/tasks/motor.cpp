@@ -19,28 +19,39 @@
 
 extern CanRecvTask can_recv_task;
 extern WebSocketTask ws_task;
-extern Can can;
+extern Can can[CONFIG_HEXA_CAN_COUNT];
 
-#define MOTOR_ODRIVE(n)                                                                      \
-  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))     \
-                                 ? MotorDirection::BACKWARD                                  \
-                                 : MotorDirection::FORWARD;                                  \
-  motors[n] =                                                                                \
-      new ODriveMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0, direction, 0); \
+#define MOTOR_ODRIVE(n)                                                                       \
+  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))      \
+                                 ? MotorDirection::BACKWARD                                   \
+                                 : MotorDirection::FORWARD;                                   \
+  motors[n] = new ODriveMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID),                 \
+                                    can[BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_CAN_INTERFACE)], \
+                                    0,                                                        \
+                                    direction,                                                \
+                                    0);                                                       \
   can_recv_task.bind(motors[n]->get_id() << 5, ~((1 << 5) - 1), motors[n]);
 
-#define MOTOR_SMC(n)                                                                              \
-  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))          \
-                                 ? MotorDirection::BACKWARD                                       \
-                                 : MotorDirection::FORWARD;                                       \
-  motors[n] = new SmcMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0, direction, 0); \
+#define MOTOR_SMC(n)                                                                       \
+  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))   \
+                                 ? MotorDirection::BACKWARD                                \
+                                 : MotorDirection::FORWARD;                                \
+  motors[n] = new SmcMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID),                 \
+                                 can[BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_CAN_INTERFACE)], \
+                                 0,                                                        \
+                                 direction,                                                \
+                                 0);                                                       \
   can_recv_task.bind(motors[n]->get_id(), motors[n]);
 
-#define MOTOR_T_MOTOR(n)                                                                        \
-  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS))        \
-                                 ? MotorDirection::BACKWARD                                     \
-                                 : MotorDirection::FORWARD;                                     \
-  motors[n] = new TMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID), can, 0, direction, 0); \
+#define MOTOR_T_MOTOR(n)                                                                 \
+  MotorDirection direction = IS_ENABLED(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_BACKWARDS)) \
+                                 ? MotorDirection::BACKWARD                              \
+                                 : MotorDirection::FORWARD;                              \
+  motors[n] = new TMotorDriver(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_ID),                 \
+                               can[BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_CAN_INTERFACE)], \
+                               0,                                                        \
+                               direction,                                                \
+                               0);                                                       \
   can_recv_task.bind(BOOST_PP_CAT(CONFIG_HEXA_MOTOR_, n##_RECEIVE_ID), motors[n]);
 
 #define NEW_MOTOR(z, n, data)                                                            \

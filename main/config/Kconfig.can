@@ -1,20 +1,106 @@
 
 menu "CAN"
 
-config HEXA_CAN_RX_PIN
+config HEXA_CAN_COUNT
+  int "Number of CAN interfaces"
+  range 1 2
+  default 2
+
+menu "CAN 0"
+  depends on HEXA_CAN_COUNT >= 1
+
+config HEXA_CAN_0_FDCAN
+  bool "FDCAN"
+  default n
+
+config HEXA_CAN_0_FDCAN_NORMALIZED
+  int
+  default 1 if HEXA_CAN_0_FDCAN
+  default 0
+
+config HEXA_CAN_0_RX_PIN
   int "Rx Pin Number"
-  default 26
 
-config HEXA_CAN_TX_PIN
+config HEXA_CAN_0_TX_PIN
   int "Tx Pin Number"
-  default 25
 
-config HEXA_CAN_BAUDRATE_KHZ
-  int "Buadrate (KHz)"
-  default 1000
+config HEXA_CAN_0_NOMINAL_BAUDRATE_KHZ
+  int "Nominal buadrate (KHz)"
 
-config HEXA_CAN_TX_QUEUE_LEN
+config HEXA_CAN_0_DATA_BAUDRATE_KHZ
+  int "Data baudrate (KHz)"
+  depends on HEXA_CAN_0_FDCAN
+
+config HEXA_CAN_0_TX_QUEUE_LEN
   int "Transmit Queue Len"
-  default 8
+  default 32
+
+config HEXA_CAN_0_NOMINAL_SAMPLE_POINT_PERMILL
+  int "Nominal sample point (parts per thousand)"
+  range 0 1000
+
+config HEXA_CAN_0_NOMINAL_SECONDARY_SAMPLE_POINT_PERMILL
+  int "Nominal secondary sample point (parts per thousand)"
+  range 0 1000
+
+config HEXA_CAN_0_DATA_SAMPLE_POINT_PERMILL
+  int "Data sample point (parts per thousand)"
+  range 0 1000
+  depends on HEXA_CAN_0_FDCAN
+
+config HEXA_CAN_0_DATA_SECONDARY_SAMPLE_POINT_PERMILL
+  int "Data secondary sample point (parts per thousand)"
+  range 0 1000
+  depends on HEXA_CAN_0_FDCAN
+
+endmenu
+
+menu "CAN 1"
+  depends on HEXA_CAN_COUNT >= 2
+
+config HEXA_CAN_1_FDCAN
+  bool "FDCAN"
+  default n
+
+config HEXA_CAN_1_FDCAN_NORMALIZED
+  int
+  default 1 if HEXA_CAN_1_FDCAN
+  default 0
+
+config HEXA_CAN_1_RX_PIN
+  int "Rx Pin Number"
+
+config HEXA_CAN_1_TX_PIN
+  int "Tx Pin Number"
+
+config HEXA_CAN_1_NOMINAL_BAUDRATE_KHZ
+  int "Nominal buadrate (KHz)"
+
+config HEXA_CAN_1_DATA_BAUDRATE_KHZ
+  int "Data baudrate (KHz)"
+  depends on HEXA_CAN_1_FDCAN
+
+config HEXA_CAN_1_TX_QUEUE_LEN
+  int "Transmit Queue Len"
+  default 32
+
+config HEXA_CAN_1_NOMINAL_SAMPLE_POINT_PERMILL
+  int "Nominal sample point (parts per thousand)"
+  range 0 1000
+
+config HEXA_CAN_1_NOMINAL_SECONDARY_SAMPLE_POINT_PERMILL
+  int "Nominal secondary sample point (parts per thousand)"
+  range 0 1000
+
+config HEXA_CAN_1_DATA_SAMPLE_POINT_PERMILL
+  int "Data sample point (parts per thousand)"
+  range 0 1000
+  depends on HEXA_CAN_1_FDCAN
+
+config HEXA_CAN_1_DATA_SECONDARY_SAMPLE_POINT_PERMILL
+  int "Data secondary sample point (parts per thousand)"
+  range 0 1000
+  depends on HEXA_CAN_1_FDCAN
+endmenu
 
 endmenu
