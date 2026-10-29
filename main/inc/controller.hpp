@@ -11,6 +11,7 @@ enum class Leg {
 
 struct ControllerInput {
   std::array<MotorFeedback, CONFIG_HEXA_MOTOR_COUNT> motor_feedbacks;
+  Period freq;
 };
 
 struct ControllerMotorOutput {

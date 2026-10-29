@@ -102,6 +102,10 @@ config HEXA_TASKS_LOGGER_STACK_SIZE
   int "Stack size"
   default 4096
 
+config HEXA_TASKS_LOGGER_FREQ_HZ
+  int "Frequency (Hz)"
+  default 33
+
 endmenu
 
 menu "Monitor"
@@ -113,6 +117,10 @@ config HEXA_TASKS_MONITOR_PRIORITY
 config HEXA_TASKS_MONITOR_STACK_SIZE
   int "Stack size"
   default 4096
+
+config HEXA_TASKS_MONITOR_FREQ_MS
+  int "Period (ms)"
+  default 1000
 
 endmenu
 

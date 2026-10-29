@@ -9,6 +9,7 @@
 #include "custom_drivers/nvs.hpp"
 #include "driver/gpio.h"
 #include "helper.hpp"
+#include "helper/ds/period.hpp"
 #include "jaythread/sync.hpp"
 #include "nvs.h"
 #include "sdkconfig.h"
@@ -342,6 +343,7 @@ void MotorTask::main() {
   load_nvs();
   init_all();
   disable_all();
+  auto freq = Period::from_hz(CONFIG_HEXA_TASKS_MOTOR_FREQ_HZ);
   std::array<MotorStatus, motor_count> prev_motor_statuses;
   prev_motor_statuses.fill(MotorStatus::UNINITIALIZED);
   while (true) {
@@ -363,7 +365,7 @@ void MotorTask::main() {
       }
     }
     gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), all_motors_ok);
-    Sync::sleep(10);
+    Sync::sleep(freq.ms());
   }
 }
 

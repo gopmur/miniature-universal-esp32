@@ -2,6 +2,7 @@
 #include <cstdio>
 #include "custom_drivers/motor.hpp"
 #include "jaythread/sync.hpp"
+#include "sdkconfig.h"
 #include "tasks/imu.hpp"
 #include "tasks/motor.hpp"
 
@@ -43,13 +44,14 @@ void LoggerTask::write_data() {
 
 void LoggerTask::main() {
   Sync::wait_for_notification_and_clear();
+  Period freq = Period::from_hz(CONFIG_HEXA_TASKS_LOGGER_FREQ_HZ);
   while (true) {
     LOGI("log started");
     log_file = fopen("/sd/my_log.csv", "w");
     write_header();
     while (is_logging) {
       write_header();
-      Sync::sleep(10);
+      Sync::sleep(freq.ms());
     }
     LOGI("log stopped");
     fclose(log_file);

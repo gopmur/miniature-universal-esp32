@@ -60,9 +60,9 @@ HexaControllerOutput HexaSemiautomaticController::run(HexaControllerInput input)
       activate_assistance = true;
     }
     if (activate_assistance) {
-      d_t += 10;
+      d_t += input.freq.ms();
       if (d_t >= params.right.delay) {
-        r_t += 10;
+        r_t += input.freq.ms();
         output.right_motor.torque = params.right.torque;
       }
       if ((input.left_motor.position - input.right_motor.position) <
@@ -83,9 +83,9 @@ HexaControllerOutput HexaSemiautomaticController::run(HexaControllerInput input)
       activate_assistance = true;
     }
     if (activate_assistance) {
-      d_t += 10;
+      d_t += input.freq.ms();
       if (d_t >= params.left.delay) {
-        l_t += 10;
+        l_t += input.freq.ms();
         output.left_motor.torque = params.left.torque;
       }
       if ((input.right_motor.position - input.left_motor.position) <

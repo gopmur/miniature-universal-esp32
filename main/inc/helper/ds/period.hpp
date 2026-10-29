@@ -3,9 +3,9 @@
 class Period {
   private:
   double _ns;
-  inline Period();
 
   public:
+  inline Period();
   inline static Period from_ns(double ns);
   inline static Period from_us(double us);
   inline static Period from_ms(double ms);
@@ -34,7 +34,7 @@ class Period {
   inline void ghz(double ghz);
 };
 
-inline Period::Period() {}
+inline Period::Period() : _ns(0) {}
 
 inline Period Period::from_ns(double ns) {
   Period p;

@@ -133,10 +133,10 @@ HexaControllerOutput HexaSmartController::run(HexaControllerInput input) {
   }
   previous_left_state = left_state;
   previous_right_state = right_state;
-  fuzzy_timer_r += 10;
-  fuzzy_timer_l += 10;
-  right_delay_timer += 10;
-  left_delay_timer += 10;
+  fuzzy_timer_r += input.freq.ms();
+  fuzzy_timer_l += input.freq.ms();
+  right_delay_timer += input.freq.ms();
+  left_delay_timer += input.freq.ms();
   float torque_profile_right_value = torque_profile(fuzzy_timer_r, 50);
   float torque_profile_left_value = torque_profile(fuzzy_timer_l, 50);
   output.right_motor.torque = params.right.torque * torque_profile_right_value * right_state;

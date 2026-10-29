@@ -14,6 +14,7 @@ ControllerOutput HexaController::run(ControllerInput input) {
               .position = input.motor_feedbacks[HEXA_RIGHT_MOTOR_INDEX].position,
               .velocity = input.motor_feedbacks[HEXA_RIGHT_MOTOR_INDEX].velocity,
           },
+      .freq = input.freq,
   };
   auto hexa_output = run(hexa_input);
   output.torques.fill(0);

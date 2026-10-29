@@ -13,6 +13,7 @@ struct HexaControllerMotorInput {
 struct HexaControllerInput {
   HexaControllerMotorInput left_motor;
   HexaControllerMotorInput right_motor;
+  Period freq;
 };
 
 struct HexaControllerMotorOutput {
