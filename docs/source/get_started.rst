@@ -29,9 +29,7 @@ Prerequisites
 =============
 
 1. **Hardware:** The FUMCARE mini-universal board (ESP32-C5) and a formatted MicroSD card.
-2. **Build tools:** The Espressif IoT Development Framework (`ESP-IDF <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/>`_), `Bun <https://bun.sh/>`_, and Python 3. 
-
-*Note: Ensure your ESP-IDF environment is activated before running any* ``idf.py`` *commands.*
+2. **Build tools:** The Espressif IoT Development Framework ESP-IDF v6.0.5, bun (or any other node build system) and Python 3. 
 
 Quick Start
 ===========
@@ -45,6 +43,7 @@ Clone the FUMCARE-RP repository into your workspace:
 
    git clone https://github.com/gopmur/miniature-universal-esp32.git
    cd miniature-universal-esp32
+   git submodule update --init --recursive
 
 2. Configure the Target
 -----------------------
@@ -60,6 +59,21 @@ Open the project configuration menu. Here, you can configure your Wi-Fi credenti
 .. code-block:: bash
 
    idf.py menuconfig
+
+Configure API address for the dashboard by first creating the config file and then setting your desired addresses
+in it.
+
+.. code-block:: bash
+
+   cp app/hexa-webapp/config.sample.ts app/hexa-webapp/config.ts
+
+Open /app/hexa-webapp/config.ts and configure the addresses. The default value should work for the firmware built with
+HTTPS disabled.
+
+.. code-block:: javascript
+   
+   export const API_ADDRESS = "http://192.168.4.1"
+   export const WS_API_ADDRESS = "ws://192.168.4.1"
 
 3. Build and Flash
 ------------------
