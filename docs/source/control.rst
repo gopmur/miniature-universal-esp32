@@ -1,114 +1,109 @@
-=======================================
-Detailed Control Subsystem Architecture
-=======================================
+====================================
+Real-time Control Subsystem
+====================================
 
-The FUMCARE-RP platform delegates all real-time kinematic calculations and hardware dispatching to the **ControlTask**. This dedicated FreeRTOS thread runs an infinite loop with a strict 10-millisecond delay interval, ensuring highly deterministic response times for robotic actuation.
+The control subsystem is the decision layer that translates raw feedback from the
+IMU and motor drivers into torque commands for the robot. Its implementation is
+centered around ``ControlTask`` and the four control modes defined in
+``main/inc/tasks/control.hpp``.
 
-Base Controller & Torque Profiling
-==================================
-
-All specific control modes inherit from the base **Controller** class. The most critical shared utility provided by this base class is the **torque_profile()** method. 
-
-To prevent sudden, jerky motor movements that could harm the patient, FUMCARE-RP does not apply square-wave torque. Instead, it generates a smooth, three-phase sigmoid curve based on the current **count_timer** and the **total_time** allocated for the step. 
-
-The time is split into three phases:
-* **Phase A (Ramp Up):** $0.15 \times total\_time$.
-* **Phase B (Hold):** $0.70 \times total\_time$.
-* **Phase C (Ramp Down):** $0.15 \times total\_time$.
-
-During the ramp-up phase, the torque multiplier is calculated as:
-$$Multiplier = \frac{1}{1 + e^{-c_1 \times (t - \frac{a}{2})}}$$
-Where $c_1 = \frac{10}{a}$.
-
-During the ramp-down phase, the multiplier mirrors this using:
-$$Multiplier = \frac{1}{1 + e^{c_2 \times (t - (a + b + \frac{c}{2}))}}$$
-Where $c_2 = \frac{10}{c}$.
-
-Detailed Control Modes
+Control task lifecycle
 ======================
 
-1. Zero Controller
-------------------
-The **ZeroController** acts as the system's absolute fallback. Regardless of incoming IMU or encoder data, its **run()** method strictly populates the output array with **0** for all motors. The **ControlTask** automatically reverts to this mode if the **running** boolean is false or an undefined mode is requested.
+``ControlTask`` derives from the project thread base and owns the active control
+state:
 
-2. Manual Controller
---------------------
-The **HexaManualController** maps user-defined static torque values directly to the motors. 
-* **Input Parameters:** **left.torque** and **right.torque**.
-* **Logic:** Applies the exact requested torque continuously without any time limit or velocity checking.
+* ``running``
+* ``control_mode``
+* ``prev_control_mod``
+* the ``hexa_controller`` group containing the active controller instances
 
-3. Automatic Controller
------------------------
-The **HexaAutomaticController** implements a continuous walking-gait state machine.
+The task is responsible for:
 
-* **NVS Namespace:** **hexa_automatic**.
-* **NVS Keys & Defaults:** **left_vel_th** (1.4311), **right_vel_th** (1.4311), **angle_th** (1.4311).
-* **Logic Flow:** 
-  For the right leg to trigger assistance, it must meet three simultaneous conditions:
-  1. The right motor velocity exceeds **configs.get_right_velocity_threshold()**.
-  2. The delta angle (left position minus right position) exceeds **configs.get_angle_threshold()**.
-  3. The opposing (left) motor velocity is less than or equal to 0.
-  Once triggered, it applies the sigmoid torque profile scaled by **params.right.torque** for exactly **params.right.timeout** ticks.
+* switching between manual and automatic modes
+* applying torque to the motors
+* loading and saving configuration values
+* distributing the desired control state through the HTTP and WebSocket APIs
 
-4. Semi-Automatic Controller
-----------------------------
-The **HexaSemiautomaticController** is specifically designed for hemiparetic patients, where only one leg (the **weak_leg**) requires robotic assistance.
+The controller set is composed of:
 
-* **NVS Namespace:** **hexa_semi_auto**.
-* **NVS Keys & Defaults:** **start_angle** (0.2879), **stop_angle** (2.583), **epsilon** (0.0286).
-* **Logic Flow (Assuming Right Leg is Weak):**
-  1. The controller monitors the angular difference (left minus right).
-  2. Assistance prepares to activate if the difference exceeds the **start_assist_angle** AND both the left and right motor velocities drop below the **epsilon** threshold (indicating the patient has planted their healthy foot and stabilized).
-  3. Once activated, a timer increments until it reaches **params.right.delay**.
-  4. After the delay, the torque is applied. 
-  5. The assistance terminates either when the delta angle falls below negative **stop_assist_angle**, or the **params.right.timeout** is exceeded.
+* ``ZeroController``
+* ``HexaManualController``
+* ``HexaAutomaticController``
+* ``HexaSemiautomaticController``
+* ``HexaSmartController``
 
-5. Smart Controller
--------------------
-The **HexaSmartController** utilizes a dynamic fuzzy-logic evaluation matrix.
+This structure allows the same task to share configuration and state while the
+active mode changes at runtime.
 
-* **NVS Namespace:** **hexa_smart**.
-* **NVS Keys & Defaults:** **vel_th** (0.8).
-* **Logic Flow:** 
-  The **calculate_output** function takes the delta angle, velocity, and the previous state. To prevent dangerous oscillation, the controller utilizes two crucial timers:
-  * **fuzzy_timer:** Must exceed 300 ticks before a new state calculation is permitted.
-  * **delay_timer:** A cross-leg lockout. If the right leg activates, the left leg's delay timer is reset, and the left leg is blocked from activating if its delay timer is under 20 ticks. This absolutely prevents the exoskeleton from triggering both legs to swing simultaneously.
+Controller modes
+================
 
-HTTP API Reference
-==================
-
-The **HttpControlModule** exposes the following strict REST API structure:
-
-State Endpoints
+Zero controller
 ---------------
-* **PUT /api/control/start:** Activates the system.
-* **PUT /api/control/stop:** Deactivates the system.
-* **GET /api/control/params:** Retrieves the master state. The JSON response includes **running**, **mode**, and a deeply nested **controlParams** object containing the properties of every single mode simultaneously.
 
-Mode Selection Endpoints
+The zero controller is the fallback mode. It outputs zero torque for every motor,
+which keeps the system stable when the controller is disabled or an invalid mode is
+selected.
+
+Manual controller
+-----------------
+
+The manual controller is literal: it takes direct torque requests and applies them
+without higher-level gait logic.
+
+Manual torque updates are available through the WebSocket interface. See the
+:doc:`Complete API Reference <api>` for the endpoint and payload details.
+
+Automatic controller
+--------------------
+
+The automatic controller performs the core gait logic. It makes decisions using
+signals from the motion state and threshold values such as angle and velocity.
+The configuration values are loaded from NVS-backed settings and exposed by the
+HTTP routes.
+
+Key fields in the automatic controller configuration include:
+
+* ``angleThreshold``
+* ``left.velocityThreshold``
+* ``right.velocityThreshold``
+* per-leg torque and timeout values
+
+These settings can be persisted through the control API; see the
+:doc:`Complete API Reference <api>` for the endpoint details.
+
+Semiautomatic controller
 ------------------------
-* **PUT /api/control/set-mode/manual**
-* **PUT /api/control/set-mode/automatic**
-* **PUT /api/control/set-mode/semiautomatic**
-* **PUT /api/control/set-mode/smart**
 
-Parameter Tuning Endpoints
---------------------------
-These endpoints update the volatile RAM parameters (lost on reboot).
+The semiautomatic controller is intended for assisted motion where one side is
+weak and needs support. Each leg can be configured with:
 
-* **PUT /api/control/manual/params:** Requires JSON with **left** and **right** objects, each containing a **torque** float.
-* **PUT /api/control/automatic/params:** Requires **left** and **right** objects, each containing **torque** and **timeout** floats.
-* **PUT /api/control/semiautomatic/params:** Requires a **weakLeg** string (left or right), plus **left** and **right** objects containing **torque**, **timeout**, and **delay** floats.
-* **PUT /api/control/smart/params:** Requires **left** and **right** objects containing **torque** floats.
+* torque
+* timeout
+* delay
+* a weak-leg selection
 
-Configuration Tuning Endpoints
-------------------------------
-These endpoints write directly to the non-volatile storage (NVS) to permanently save patient calibrations.
+The request payload uses ``weakLeg`` with values ``left`` or ``right`` and a
+per-leg object with the relevant fields.
 
-* **PUT /api/control/automatic/configs:** Requires **angleThreshold**, plus **left** and **right** objects containing a **velocityThreshold** float.
-* **PUT /api/control/semiautomatic/configs:** Requires **startAssistAngle**, **stopAssistAngle**, and **epsilon** floats.
-* **PUT /api/control/smart/configs:** Requires a **velocityThreshold** float.
+Smart controller
+---------------
 
-Real-Time Telemetry
--------------------
-* **WS /api/control/manual/torque:** Expects JSON frames containing **leftTorque** and/or **rightTorque** to instantly update the manual controller.
+The smart controller evaluates the motion state and applies its own internal
+logic. It also includes timeout and delay-based state protection to avoid rapid
+oscillation or simultaneous leg activation.
+
+Control HTTP routes are implemented by ``HttpControlModule``. For the available
+operations, request payloads, and response formats, see the
+:doc:`Complete API Reference <api>`.
+
+WebSocket manual torque stream
+=============================
+
+The manual torque stream is registered with ``register_ws_uri`` and updates
+torque while a client remains connected. See the
+:doc:`Complete API Reference <api>` for its endpoint and payload details.
+
+It is intentionally lightweight and supports interactive manual-drive control in
+the browser or a control dashboard.

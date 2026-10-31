@@ -1,66 +1,78 @@
-=========================
-Motor Subsystem & Drivers
-=========================
-
-The FUMCARE-RP platform provides a robust, extensible motor control architecture designed to manage multiple CAN-based actuators simultaneously. It handles real-time control, hardware communication, timeout monitoring, and web-based telemetry broadcasting.
-
-Architecture Overview
-=====================
-
-The motor subsystem is divided into three main layers:
-
-* **Driver Layer:** A hardware-agnostic base class (``AbstractMotorDriver``) that manages CAN packet transmission, torque limits, motor direction, and timeout timers.
-* **Task Layer:** A dedicated FreeRTOS thread (``MotorTask``) that manages the lifecycle, continuous torque application, and state monitoring of all instantiated motors.
-* **HTTP/API Layer:** Exposes HTTP and WebSocket endpoints via the ``HttpMotorModule`` for zeroing positions, querying status, and streaming real-time alerts.
-
-Hardware Abstraction: AbstractMotorDriver
+=========================================
+Motor Driver Stack and MotorTask Runtime
 =========================================
 
-All motor drivers inherit from the ``AbstractMotorDriver`` class, which implements the ``AbstractCanDeviceReader`` interface to process incoming CAN packets.
+The motor subsystem is the hardware-facing layer of the robot. It manages CAN bus
+connections, driver initialization, torque limits, status tracking, and the
+runtime motion commands that eventually reach the actuators.
 
-Core Responsibilities
----------------------
+Architecture
+============
 
-* **Torque Clamping:** Ensures the calculated control torque never exceeds the defined ``max_torque`` limit for physical safety.
-* **Direction Management:** Automatically inverts position, velocity, and torque values transparently if the motor is configured as ``BACKWARD``.
-* **Timeout Monitoring:** Utilizes a ``MotorTimeoutTimer`` to transition the motor to a ``TIMEDOUT`` state if no CAN feedback is received within the configured ``CONFIG_HEXA_MOTOR_TIMEOUT_MS`` limit.
+The project separates the system into a few layers:
 
-Supported Drivers
------------------
+* hardware driver abstraction
+* motor runtime task
+* HTTP and WebSocket management
 
-The framework natively implements drivers for three standard robotic actuators:
+The runtime is centered around ``MotorTask`` and the driver classes under the
+custom driver stack.
 
-* **ODrive:** Supports comprehensive CAN commands, including closed-loop control state switching and encoder estimates. It utilizes an internal semaphore to block initialization until valid position feedback is received.
-* **SMC:** Custom packet formulation for SMC protocol motors, encapsulating specific float-to-uint torque conversions.
-* **T-Motor:** Implements T-Motor specific CAN encoding bounds for torque, velocity, and positional feedback.
+Driver abstraction
+==================
 
-Extending the Driver
---------------------
+The motor drivers expose a common interface that abstracts the actual CAN packet
+structure used by the device. This keeps the rest of the application independent
+from the specific walker actuator hardware.
 
-To add a new motor type, inherit from ``AbstractMotorDriver`` and implement the required pure virtual packet generators:
+The base task API includes methods such as:
 
-.. code-block:: cpp
+* ``set_torque(size_t motor_index, float torque)``
+* ``enable(size_t motor_index)``
+* ``disable(size_t motor_index)``
+* ``zero_pos_all()``
+* ``get_position(size_t motor_index)``
+* ``get_velocity(size_t motor_index)``
+* ``get_status(size_t motor_index)``
+* ``get_torque_limit(size_t motor_index)``
 
-   virtual CanPacket make_torque_packet(float torque) = 0;
-   virtual CanPacket make_read_encoder_packet() = 0;
-   virtual CanPacket make_enable_packet() = 0;
-   virtual CanPacket make_disable_packet() = 0;
-   virtual CanPacket make_zero_pos_packet() = 0;
+The per-motor state is managed through the configured count and CAN identity.
 
-The Motor Task
-==============
+Runtime behavior
+================
 
-The ``MotorTask`` runs as a high-priority FreeRTOS thread and centrally manages up to 8 motors defined by ``CONFIG_HEXA_MOTOR_COUNT``.
+``MotorTask`` loads its configuration from NVS, initializes each connected motor,
+and then consumes control commands produced by the control layer. It is also the
+source of the telemetry values used by the logger and the WebSocket broadcaster.
 
-* **Dynamic Initialization:** At boot, the task utilizes Boost preprocessor macros (``BOOST_PP_REPEAT``) to dynamically instantiate the correct motor driver classes (ODrive, SMC, or T-Motor) directly based on the user's Kconfig selections.
-* **CAN Binding:** It maps each motor to the ``CanRecvTask``, ensuring that incoming CAN frames matching the motor's specific ID (or mask) are routed directly to the appropriate driver instance.
-* **Control Loop:** It executes a continuous loop (10ms interval) that checks for state changes, broadcasts status updates via WebSockets, and dispatches the latest target torque commands to the active motors. If a motor is in a fault state, it automatically demands 0 torque.
+Important runtime features include:
 
-HTTP & WebSocket APIs
-=====================
+* CAN ID and motor direction mapping
+* torque constant and torque limit initialization
+* per-motor status tracking
+* zeroing and enable/disable operations
 
-The ``HttpMotorModule`` exposes endpoints to interact with the motor subsystem over the network:
+The runtime also exposes a standardized status model that is broadcast to the
+frontend through the status WebSocket stream.
 
-* **GET /api/motor/zero-pos:** Triggers the ``zero_pos_all()`` function, resetting the internal encoder offset for all connected motors simultaneously.
-* **GET /api/motor/status:** Returns a JSON array containing the CAN ID and current state (ok, timeout, uninitialized, can_error, or invalid) of every registered motor.
-* **WS /api/motor/notification/status:** A dedicated WebSocket stream that pushes asynchronous JSON alerts to connected clients whenever a motor's status changes (e.g., dropping offline due to a CAN timeout).
+The motor subsystem's HTTP operations are documented in the
+:doc:`Complete API Reference <api>`.
+
+WebSocket status stream
+======================
+
+The motor status stream is event-driven: when a motor state changes, the
+WebSocket task publishes the new status to the connected dashboard. See the
+:doc:`Complete API Reference <api>` for the stream endpoint.
+
+In practice, a browser client can subscribe to this endpoint to show live motor
+health and fault events without polling the REST API.
+
+Operational considerations
+==========================
+
+Because the motors are connected to the CAN bus and are safety-critical, the
+software keeps tight control over values such as torque, timeout windows, and
+direction inversion. The board should always be validated after changing the
+motor configuration or ID mapping, because a single mismatched CAN mapping can
+render the actuator control path dangerous or ineffective.

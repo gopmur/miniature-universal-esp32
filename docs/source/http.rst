@@ -388,10 +388,21 @@ Static web assets
 =================
 
 The web frontend can be embedded in the firmware and served from flash. The
-build script ``main/scripts/build.sh`` runs
-``main/scripts/generate_http_assets.py`` on the compiled frontend output
-(normally ``app/hexa-webapp/dist``) and writes generated files under
-``generated/``.
+frontend must first be built with the Node.js build system from
+``app/hexa-webapp``. For example, using bun:
+
+.. code-block:: bash
+
+   cd app/hexa-webapp
+   bun install
+   bun run build
+   cd ../..
+
+Then run the Python asset generator from the repository root:
+
+.. code-block:: bash
+
+   python main/scripts/generate_http_assets.py app/hexa-webapp/dist generated
 
 The generator recursively compresses frontend files with GZIP level 9,
 creates ``generated/inc/http_assets.hpp``, and generates a GET handler and

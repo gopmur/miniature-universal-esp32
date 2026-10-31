@@ -1,599 +1,1048 @@
 ===========================================
-Detailed REST & WebSocket API Documentation
+API Reference
 ===========================================
 
-The FUMCARE-RP platform exposes a robust HTTP and WebSocket API routed through the **HttpRootModule** under the base **/api** path.
+This page documents the public HTTP API exposed by the project. Every HTTP route
+is mounted under the root module named ``api`` and all route names below are
+shown in their fully-qualified form.
 
-----------------
-System Endpoints
-----------------
+Type conventions used in this document
+=====================================
+
+The examples below intentionally use meaningful JSON values rather than abstract
+placeholder types so they remain valid snippet examples for readers and editors.
+This makes the documentation readable in source form and avoids confusing
+syntax-highlighting tools when a snippet is copied into templates or test data.
+
+Common HTTP response semantics
+=============================
+
+Routes that use the normal ``HttpModule`` middleware can return these standard
+HTTP behaviors:
+
+* ``HTTP 200`` for successful processing
+* ``HTTP 400`` when JSON parsing or validation fails
+* ``HTTP 413`` when the request body exceeds ``CONFIG_HEXA_HTTP_MAX_REQUEST_LEN``
+* ``HTTP 500`` when an async or operational task fails unexpectedly
+* ``OPTIONS`` preflight responses for routes registered with the ``*_with_option``
+  registration variants
+
+Most responses in this project are JSON objects or JSON arrays. A few endpoints
+stream raw bytes or text instead of returning a JSON envelope.
+
+System routes
+=============
 
 GET /api/system/version
-=======================
-**Description:** Interfaces with the **esp_app_desc_t** system struct to retrieve compiled firmware metadata.
+-----------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Returns the firmware metadata from ``esp_app_get_description()``.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "version": "string",
-       "idfVersion": "string",
-       "buildDate": "string"
-     }
+.. code-block:: json
+
+   {
+     "version": "1.2.3",
+     "idfVersion": "v5.3.2",
+     "buildDate": "2026-10-31"
+   }
+
+Field definitions:
+
+* ``version``: application version string
+* ``idfVersion``: ESP-IDF version reported by the firmware metadata
+* ``buildDate``: build date reported by the firmware metadata
 
 GET /api/system/restart
-=======================
-**Description:** Safely triggers a soft reboot. The handler suspends the thread for 1,000 milliseconds using **Sync::sleep()** to allow the HTTP response to successfully dispatch to the client before invoking the native **esp_restart()** command.
+-----------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Triggers a graceful device restart. The server sends a JSON message first, then
+waits one second before calling ``esp_restart()``.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "message": "string"
-     }
+.. code-block:: json
+
+   {
+     "message": "restarting in 1 seconds"
+   }
+
+Field definitions:
+
+* ``message``: restart notice string, typically ``"restarting in 1 seconds"``
 
 GET /api/system/factory-reset
-=============================
-**Description:** Performs a complete wipe of device storage. It calls **nvs_flash_erase()** to delete all saved controller calibrations, closes any active system logs, formats the SD card FAT partition via **esp_vfs_fat_sdcard_format()**, waits 1 second, and reboots.
+-----------------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Erases the non-volatile storage, closes the active system log file, formats the
+SD card, and then reboots the device.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "message": "string"
-     }
+.. code-block:: json
 
----------------
-Wi-Fi Endpoints
----------------
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: status string; in the successful path the implementation sets a
+  restart notice message before rebooting
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: error text, for example ``"failed to format sd card"``
+
+Wi-Fi routes
+============
 
 GET /api/wifi/
-==============
-**Description:** Queries the native **esp_wifi_sta_get_ap_info** driver to check the current connection status of the ESP32. If connected, it extracts the BSSID array and converts it into a human-readable hexadecimal MAC address format.
+--------------
 
-* **Input Payload:** None.
-* **Success Response (Connected):**
+Returns the current station connection state. If the device is connected, it
+includes the AP SSID, RSSI and BSSID. If not connected, it includes a structured
+error description instead.
 
-  .. code-block:: json
+Connected success response:
 
+.. code-block:: json
+
+   {
+     "connected": true,
+     "ssid": "MyNetwork",
+     "rssi": -55,
+     "bssid": "AA:BB:CC:DD:EE:FF"
+   }
+
+Disconnected success response:
+
+.. code-block:: json
+
+   {
+     "connected": true,
+     "errorMessage": "not connected"
+   }
+
+Field definitions:
+
+* ``connected``: ``true`` when a station connection exists, otherwise ``false``
+* ``ssid``: current AP SSID when connected
+* ``rssi``: received signal strength indicator in dBm when connected
+* ``bssid``: current AP MAC address as ``XX:XX:XX:XX:XX:XX``
+* ``errorMessage``: textual reason when disconnected; examples include
+  ``"not connected"`` and ``"wifi not initialized"``
+
+GET /api/wifi/scan
+------------------
+
+Starts a Wi-Fi scan on a background thread and returns the discovered access
+points.
+
+Success response:
+
+.. code-block:: json
+
+   [
      {
-       "connected": "boolean",
-       "ssid": "string",
-       "rssi": "number",
-       "bssid": "string"
+       "rssi": -55,
+       "bssid": "AA:BB:CC:DD:EE:FF",
+       "ssid": "MyNetwork",
+       "open": true
      }
+   ]
 
-  **Constraints:**
-  * **connected:** Will be strictly `true`.
-  * **bssid:** Must match the format "XX:XX:XX:XX:XX:XX".
+Field definitions:
 
-* **Success Response (Disconnected):**
+* ``rssi``: received signal strength in dBm
+* ``bssid``: access-point MAC address as ``XX:XX:XX:XX:XX:XX``
+* ``ssid``: access-point SSID string
+* ``open``: ``true`` when the AP uses an open authentication mode, otherwise
+  ``false``
 
-  .. code-block:: json
+PUT /api/wifi/connect
+---------------------
 
-     {
-       "connected": "boolean",
-       "errorMessage": "string"
-     }
+Connects the ESP32 to a new AP using the supplied station configuration.
 
-GET /api/wifi/scan (Async)
-==========================
-**Description:** Triggers an active 802.11 network scan on a background thread to prevent blocking. It stops any ongoing scans, initiates a new active scan, allocates memory for the Access Point records, and evaluates the security auth mode of each discovered network.
+Request body:
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+.. code-block:: json
 
-  .. code-block:: json
+   {
+     "ssid": "MyNetwork",
+     "password": "super-secret-password"
+   }
 
-     [
-       {
-         "rssi": "number",
-         "bssid": "string",
-         "ssid": "string",
-         "open": "boolean"
-       }
-     ]
+Field definitions:
 
-  **Constraints:**
-  * **bssid:** Formatted as "XX:XX:XX:XX:XX:XX".
+* ``ssid``: Wi-Fi network name
+* ``password``: Wi-Fi password
 
-PUT /api/wifi/connect (Async)
-=============================
-**Description:** Disconnects from the current network and attempts to connect to a new wireless access point. It validates string lengths, configures the station struct, invokes **esp_wifi_connect()**, and blocks on a FreeRTOS Queue awaiting the connection result from the global **WifiEventCallback**.
+Success response:
 
-* **Input Payload:**
+.. code-block:: json
 
-  .. code-block:: json
+   {
+     "message": "success"
+   }
 
-     {
-       "ssid": "string",
-       "password": "string"
-     }
+Field definitions:
 
-  **Constraints:**
-  * **ssid:** Maximum 31 characters.
-  * **password:** Maximum 31 characters.
+* ``message``: success message string, typically ``"success"``
 
-* **Success Response (200 OK):**
+Validation and failure response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "message": "string"
-     }
+   {
+     "ssid": "MyNetwork",
+     "password": "password is too short"
+   }
+
+Field definitions:
+
+* ``ssid``: validation error for an invalid or too-long SSID
+* ``password``: validation error for an invalid or too-long password
+
+Operational error responses are also possible and are returned as a message
+string:
+
+.. code-block:: json
+
+   {
+     "message": "connection failed"
+   }
+
+Examples of operational errors include:
+
+* ``"connection failed"``
+* ``"ap not found"``
+* ``"unhandled error"``
 
 GET /api/wifi/disconnect
-========================
-**Description:** Forces the ESP32 station interface to drop its current Wi-Fi connection.
+------------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Disconnects the ESP32 from the currently-associated access point.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "message": "string"
-     }
+.. code-block:: json
 
------------------------------------
-Over-The-Air (OTA) Update Endpoints
------------------------------------
+   {
+     "message": "success"
+   }
 
-GET /api/update/check (Async)
-=============================
-**Description:** Opens an HTTPS client connection to the configured remote distribution server, fetches the raw JSON response containing the latest available version, and proxies it directly back to the frontend.
+Field definitions:
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
-  Raw JSON object provided by the remote server (typically containing **api**: "string" and **core**: "string").
+* ``message``: success message string, typically ``"success"``
 
-PUT /api/update/ (Async)
-========================
-**Description:** Locks the **ota_busy** flag, formats the URI for the target binary, begins the native OTA flash process, and continuously reports byte-download progress to the WebSocket task until the flash is complete.
+OTA routes
+==========
 
-* **Input Payload:**
+GET /api/update/check
+---------------------
 
-  .. code-block:: json
+Starts an asynchronous update-check task. The route does not enforce a fixed
+JSON schema; it returns the raw JSON payload from the remote firmware server.
 
-     {
-       "version": "string"
-     }
+Success response:
 
-* **Success Response (200 OK):**
+.. code-block:: json
 
-  .. code-block:: json
+   {
+     "<server-defined-field>": <server-defined-value>
+   }
 
-     {
-       "message": "string"
-     }
+Field definitions:
+
+* The exact field names and values are defined by the remote firmware distribution
+  server and are not fixed by the ESP32 firmware.
+* The returned value is an object, not a primitive array.
+
+PUT /api/update/
+----------------
+
+Starts a firmware update using HTTPS OTA.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "version": "1.2.3"
+   }
+
+Field definitions:
+
+* ``version``: target firmware version to download and install
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: success message string, typically ``"success"``
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: error text generated by the OTA task, for example a certificate
+  or download failure description
 
 GET /api/update/status
-======================
-**Description:** Exposes the internal **ota_busy** state flag to determine if an OTA update is currently locking the system memory.
+----------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Returns the current OTA state.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "busy": "boolean"
-     }
+.. code-block:: json
 
----------------------
-File System Endpoints
----------------------
+   {
+     "busy": true
+   }
+
+Field definitions:
+
+* ``busy``: ``true`` while an OTA update is running, otherwise ``false``
+
+File-system routes
+==================
 
 PUT /api/fs/ls
-==============
-**Description:** Prepends **/sd** to the requested path, opens the directory using standard POSIX **opendir()**, and iterates through the entries to map out the folder structure.
+--------------
 
-* **Input Payload:**
+Lists the contents of the directory rooted under ``/sd``.
 
-  .. code-block:: json
+Request body:
 
-     {
-       "path": "string"
-     }
+.. code-block:: json
 
-  **Constraints:**
-  * **path:** Cannot be empty. Must begin with the "/" character.
+   {
+     "path": "/logs"
+   }
 
-* **Success Response (200 OK):**
+Field definitions:
 
-  .. code-block:: json
+* ``path``: absolute path on the SD card, for example ``"/logs"``
 
-     {
-       "files": [
-         {
-           "name": "string",
-           "type": "string"
-         }
-       ]
-     }
+Success response:
 
-  **Constraints:**
-  * **type:** Strictly constrained to "file", "directory", or "unsupported".
+.. code-block:: json
 
-PUT /api/fs/cat (Async)
-=======================
-**Description:** Opens a file from the SD card in read mode and uses an asynchronous thread with **httpd_resp_send_chunk()** to stream the file in 32KB buffer blocks, preventing RAM exhaustion.
-
-* **Input Payload:**
-
-  .. code-block:: json
-
-     {
-       "path": "string"
-     }
-
-  **Constraints:**
-  * **path:** Cannot be empty. Must begin with the "/" character.
-
-* **Success Response (200 OK):**
-  Raw binary or text file content.
-
----------------
-Motor Endpoints
----------------
-
-GET /api/motor/zero-pos
-=======================
-**Description:** Triggers the **zero_pos_all()** method on the MotorTask, instructing every active motor driver to record its current physical encoder reading as its new zero-offset reference point.
-
-* **Input Payload:** None.
-* **Success Response (200 OK):**
-
-  .. code-block:: json
-
-     {
-       "message": "string"
-     }
-
-GET /api/motor/status
-=====================
-**Description:** Iterates through the internal motor driver array to query the current hardware health state and CAN ID of all registered motors.
-
-* **Input Payload:** None.
-* **Success Response (200 OK):**
-
-  .. code-block:: json
-
-     [
+   {
+     "files": [
        {
-         "canId": "number",
-         "status": "string"
+         "name": "system.log",
+         "type": "file"
+       },
+       {
+         "name": "config",
+         "type": "directory"
        }
      ]
+   }
 
-  **Constraints:**
-  * **status:** Strictly constrained to "ok", "timeout", "uninitialized", "can_error", or "invalid".
+Field definitions:
 
------------------
-Logging Endpoints
------------------
+* ``files``: array of directory entries
+* ``name``: entry name as reported by the OS
+* ``type``: entry type string; the implementation returns ``"file"``,
+  ``"directory"``, or ``"unsupported"``
 
-GET /api/log/session/start
-==========================
-**Description:** Wakes the suspended **LoggerTask**, triggering it to open **/sd/my_log.csv**, write the headers, and begin recording continuous motor and IMU telemetry at 100Hz.
+Failure response:
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+.. code-block:: json
 
-  .. code-block:: json
+   {
+     "path": "/logs"
+   }
 
+Field definitions:
+
+* ``path``: validation error; currently either ``"cannot be empty"`` or
+  ``"should start with /"``
+
+PUT /api/fs/cat
+---------------
+
+Streams a file from the SD card in chunks and sends the raw file bytes back to
+the client.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "path": "/logs"
+   }
+
+Field definitions:
+
+* ``path``: absolute file path on the SD card, for example ``"/logs/system.log"``
+
+Success response:
+
+This route does not return a JSON object. It sends the file content as a raw
+payload, chunked by the HTTP server, and ends with a zero-length chunk.
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "path": "/logs"
+   }
+
+Field definitions:
+
+* ``path``: validation or file-not-found reason; examples include
+  ``"cannot be empty"``, ``"should start with /"``, and ``"does not exist"``
+
+Motor routes
+============
+
+GET /api/motor/zero-pos
+-----------------------
+
+Resets the motor encoder offsets for all configured motors.
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: success message string, typically ``"success"``
+
+GET /api/motor/status
+---------------------
+
+Returns the current runtime status for each configured motor.
+
+Success response:
+
+.. code-block:: json
+
+   [
      {
-       "message": "string"
-     }
-
-GET /api/log/session/stop
-=========================
-**Description:** Flips the **is_logging** flag to false, safely terminating the **LoggerTask** recording loop, flushing the file buffer, and closing the CSV.
-
-* **Input Payload:** None.
-* **Success Response (200 OK):**
-
-  .. code-block:: json
-
+       "canId": 1,
+       "status": "ok"
+     },
      {
-       "message": "string"
+       "canId": 2,
+       "status": "timeout"
      }
+   ]
 
----------------------------
-Control Subsystem Endpoints
----------------------------
+Field definitions:
+
+* ``canId``: numeric CAN identifier for that motor
+* ``status``: one of ``"ok"``, ``"timeout"``, ``"uninitialized"``,
+  ``"can_error"``, or ``"invalid"``
+
+GET /api/motor/
+---------------
+
+Returns per-motor configuration metadata.
+
+Success response:
+
+.. code-block:: json
+
+   [
+     {
+       "canId": 1,
+       "torqueLimit": 0.75,
+       "torqueConstant": 0.35,
+       "direction": "forward"
+     }
+   ]
+
+Field definitions:
+
+* ``canId``: numeric CAN identifier for the motor
+* ``torqueLimit``: configured torque limit for the motor
+* ``torqueConstant``: configured torque constant for the motor
+* ``direction``: ``"forward"`` or ``"backward"``
+
+PUT /api/motor/config
+---------------------
+
+Updates one or more per-motor configuration values.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "index": 1,
+     "torqueConstant": 0.35,
+     "torqueLimit": 0.75
+   }
+
+The implementation updates whichever fields are present; omitted values are left
+unchanged.
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: success message string, typically ``"success"``
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "torqueLimit": "invalid value"
+   }
+
+Field definitions:
+
+* ``<field>``: validation error name for a malformed field, for example
+  ``"torqueLimit"`` or ``"torqueConstant"``
+
+Control routes
+==============
 
 GET /api/control/params
-=======================
-**Description:** Compiles the absolute master state of the robotic exoskeleton. It aggregates the global running boolean, formats the active mode enumeration into a string, and deeply queries the RAM structs of the manual, automatic, semiautomatic, and smart controllers to build a comprehensive system snapshot.
+-----------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Returns the entire active control state in a single object.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "running": "boolean",
-       "mode": "string",
-       "controlParams": {
-         "manual": {
-           "left": { "torque": "number" },
-           "right": { "torque": "number" }
+.. code-block:: json
+
+   {
+     "running": true,
+     "mode": "manual",
+     "controlParams": {
+       "manual": {
+         "left": {
+           "torque": 0.2
          },
-         "automatic": {
-           "left": { "torque": "number", "timeout": "number", "velocityThreshold": "number" },
-           "right": { "torque": "number", "timeout": "number", "velocityThreshold": "number" }
+         "right": {
+           "torque": 0.25
+         }
+       },
+       "automatic": {
+         "left": {
+           "torque": 0.35,
+           "timeout": 2.5,
+           "velocityThreshold": 0.8
          },
-         "semiautomatic": {
-           "weakLeg": "string",
-           "startAssistAngle": "number",
-           "stopAssistAngle": "number",
-           "epsilon": "number",
-           "left": { "torque": "number", "timeout": "number", "delay": "number" },
-           "right": { "torque": "number", "timeout": "number", "delay": "number" }
+         "right": {
+           "torque": 0.3,
+           "timeout": 2.2,
+           "velocityThreshold": 0.75
          },
-         "smart": {
-           "left": { "torque": "number" },
-           "right": { "torque": "number" }
+         "angleThreshold": 18.0
+       },
+       "semiautomatic": {
+         "weakLeg": "left",
+         "left": {
+           "torque": 0.4,
+           "timeout": 1.8,
+           "delay": 0.6
+         },
+         "right": {
+           "torque": 0.38,
+           "timeout": 1.7,
+           "delay": 0.55
+         },
+         "startAssistAngle": 12.0,
+         "stopAssistAngle": 20.0,
+         "epsilon": 0.1
+       },
+       "smart": {
+         "left": {
+           "torque": 0.32,
+           "timeout": 1.9,
+           "delayTimeout": 0.7
+         },
+         "right": {
+           "torque": 0.29,
+           "timeout": 1.8,
+           "delayTimeout": 0.65
          }
        }
      }
+   }
 
-  **Constraints:**
-  * **mode:** Strictly constrained to "manual", "automatic", "semi-automatic", or "smart".
-  * **weakLeg:** Strictly constrained to "left" or "right".
+Field definitions:
+
+* ``running``: ``true`` when the control task is active, otherwise ``false``
+* ``mode``: current control mode value
+* ``controlParams.manual.left.torque``: left-leg manual drive torque
+* ``controlParams.manual.right.torque``: right-leg manual drive torque
+* ``controlParams.automatic.left.torque``: left automatic torque value
+* ``controlParams.automatic.left.timeout``: left automatic timeout value
+* ``controlParams.automatic.left.velocityThreshold``: left automatic velocity
+  threshold
+* ``controlParams.automatic.right.torque``: right automatic torque value
+* ``controlParams.automatic.right.timeout``: right automatic timeout value
+* ``controlParams.automatic.right.velocityThreshold``: right automatic velocity
+  threshold
+* ``controlParams.automatic.angleThreshold``: global automatic angle threshold
+* ``controlParams.semiautomatic.weakLeg``: leg currently marked as weak,
+  ``"left"`` or ``"right"``
+* ``controlParams.semiautomatic.left.*`` and
+  ``controlParams.semiautomatic.right.*``: semiautomatic per-leg torque, timeout,
+  and delay values
+* ``controlParams.semiautomatic.startAssistAngle``: semiautomatic assist start
+  threshold
+* ``controlParams.semiautomatic.stopAssistAngle``: semiautomatic assist stop
+  threshold
+* ``controlParams.semiautomatic.epsilon``: semiautomatic epsilon threshold
+* ``controlParams.smart.left.*`` and ``controlParams.smart.right.*``: smart-mode
+  torque and timing values
 
 PUT /api/control/start
-======================
-**Description:** Sets the ControlTask's **running** flag to true and broadcasts an **enable_all()** command to the MotorTask, energizing the physical actuators.
+----------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Starts the controller and enables all motors.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "message": "string"
-     }
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: success message string, typically ``"success"``
 
 PUT /api/control/stop
-=====================
-**Description:** Sets the ControlTask's **running** flag to false and broadcasts a **disable_all()** command to the MotorTask, forcing the robot into a safe, limp state.
+---------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Stops the controller and disables all motors.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "message": "string"
-     }
+.. code-block:: json
 
-PUT /api/control/set-mode/{mode}
-================================
-**Description:** Instantly switches the active kinematic controller. The ControlTask detects this state change on its next 10ms loop and automatically resets internal state timers to prevent erratic behavior.
+   {
+     "message": "success"
+   }
 
-* **Path Variable Constraints:**
-  * **{mode}** must be strictly "manual", "automatic", "semiautomatic", or "smart".
+PUT /api/control/set-mode/manual
+--------------------------------
 
-* **Input Payload:** None.
-* **Success Response (200 OK):**
+Switches the controller to manual mode.
 
-  .. code-block:: json
+Success response:
 
-     {
-       "message": "string"
-     }
+.. code-block:: json
 
-Parameter Update Endpoints (Volatile RAM)
-=========================================
-**Description:** Updates the live target parameters for a specific controller. These values immediately alter physical behavior but are lost upon device reboot.
+   {
+     "message": "success"
+   }
 
-* **PUT /api/control/manual/params**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+PUT /api/control/set-mode/automatic
+----------------------------------
 
-       {
-         "left": { "torque": "number" },
-         "right": { "torque": "number" }
-       }
+Switches the controller to automatic mode.
 
-* **PUT /api/control/automatic/params**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+Success response:
 
-       {
-         "left": { "torque": "number", "timeout": "number" },
-         "right": { "torque": "number", "timeout": "number" }
-       }
+.. code-block:: json
 
-* **PUT /api/control/semiautomatic/params**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+   {
+     "message": "success"
+   }
 
-       {
-         "weakLeg": "string",
-         "left": { "torque": "number", "timeout": "number", "delay": "number" },
-         "right": { "torque": "number", "timeout": "number", "delay": "number" }
-       }
-  * **Constraints:** **weakLeg** must be "left" or "right".
+PUT /api/control/set-mode/semiautomatic
+---------------------------------------
 
-* **PUT /api/control/smart/params**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+Switches the controller to semiautomatic mode.
 
-       {
-         "left": { "torque": "number" },
-         "right": { "torque": "number" }
-       }
+Success response:
 
-Configuration Update Endpoints (Non-Volatile NVS)
-=================================================
-**Description:** Stores fundamental threshold settings permanently into the ESP32's flash memory via the custom **Nvs** driver, ensuring calibrations persist across power cycles.
+.. code-block:: json
 
-* **PUT /api/control/automatic/configs**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+   {
+     "message": "success"
+   }
 
-       {
-         "angleThreshold": "number",
-         "left": { "velocityThreshold": "number" },
-         "right": { "velocityThreshold": "number" }
-       }
+PUT /api/control/set-mode/smart
+-------------------------------
 
-* **PUT /api/control/semiautomatic/configs**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+Switches the controller to smart mode.
 
-       {
-         "startAssistAngle": "number",
-         "stopAssistAngle": "number",
-         "epsilon": "number"
-       }
+Success response:
 
-* **PUT /api/control/smart/configs**
-  * **Input Payload:** 
-    
-    .. code-block:: json
+.. code-block:: json
 
-       {
-         "velocityThreshold": "number"
-       }
+   {
+     "message": "success"
+   }
 
------------------------------
-Stream Endpoints (WebSockets)
+PUT /api/control/manual/params
 -----------------------------
 
-**Description:** These endpoints upgrade standard HTTP GET requests into persistent, bidirectional WebSockets. Once the handshake is complete, the **WebSocketTask** continuously formats internal structs into JSON frames and pushes them to the client.
+Updates the manual torque values for both legs.
 
-* **WS /api/stream/imu:**
+Request body:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "microseconds": "number",
-       "accel": { "x": "number", "y": "number", "z": "number" },
-       "gyro": { "x": "number", "y": "number", "z": "number" }
+   {
+     "left": {
+       "torque": 0.2
+     },
+     "right": {
+       "torque": 0.3
      }
+   }
 
-* **WS /api/stream/motor:**
+Success response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "microseconds": "number",
-       "feedbacks": [
-         {
-           "position": "number",
-           "velocity": "number",
-           "torque": "number"
-         }
-       ]
+   {
+     "message": "success"
+   }
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "torqueLimit": "invalid value"
+   }
+
+PUT /api/control/automatic/params
+---------------------------------
+
+Updates the automatic-mode left and right torque and timeout values.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "left": {
+       "torque": 0.35,
+       "timeout": 2.5
+     },
+     "right": {
+       "torque": 0.3,
+       "timeout": 2.2
      }
+   }
 
-* **WS /api/stream/tasks:**
+Success response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "microseconds": "number",
-       "TaskName": {
-         "cpu": "number",
-         "minFreeStack": "number",
-         "currentPriority": "number",
-         "basePriority": "number",
-         "state": "string",
-         "stackSize": "number (optional)"
-       }
+   {
+     "message": "success"
+   }
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "timeout": "out of range"
+   }
+
+PUT /api/control/automatic/configs
+----------------------------------
+
+Updates the automatic controller thresholds.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "angleThreshold": 18.0,
+     "left": {
+       "velocityThreshold": 0.8
+     },
+     "right": {
+       "velocityThreshold": 0.75
      }
+   }
 
-* **WS /api/stream/heap:**
+Success response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "microseconds": "number",
-       "free": "number",
-       "largestBlock": "number",
-       "minFree": "number",
-       "totalSize": "number"
+   {
+     "message": "success"
+   }
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "angleThreshold": "invalid value"
+   }
+
+PUT /api/control/semiautomatic/params
+------------------------------------
+
+Updates semiautomatic drive parameters.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "weakLeg": "left",
+     "left": {
+       "torque": 0.4,
+       "timeout": 1.8,
+       "delay": 0.6
+     },
+     "right": {
+       "torque": 0.38,
+       "timeout": 1.7,
+       "delay": 0.55
      }
+   }
 
-* **WS /api/stream/ota:**
+Success response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "total": "number",
-       "progress": "number"
+   {
+     "message": "success"
+   }
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "weakLeg": "invalid value"
+   }
+
+PUT /api/control/semiautomatic/configs
+--------------------------------------
+
+Updates semiautomatic threshold settings.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "startAssistAngle": 12.0,
+     "stopAssistAngle": 20.0,
+     "epsilon": 0.1
+   }
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "epsilon": "invalid value"
+   }
+
+PUT /api/control/smart/params
+-----------------------------
+
+Updates smart-mode values for both legs.
+
+Request body:
+
+.. code-block:: json
+
+   {
+     "left": {
+       "torque": 0.32
+     },
+     "right": {
+       "torque": 0.29
      }
+   }
 
-  *(Upon completion, sends:)*
+Success response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "ok": "boolean"
-     }
+   {
+     "message": "success"
+   }
 
-* **WS /api/motor/notification/status:**
-  Pushed asynchronously only on state change:
+Failure response:
 
-  .. code-block:: json
+.. code-block:: json
 
-     {
-       "motorId": "number",
-       "motorIndex": "number",
-       "status": "string"
-     }
+   {
+     "left": "invalid value"
+   }
 
-* **WS /api/log/system:**
-  Pushes raw string data intercepted directly from the ESP-IDF **vprintf** console log buffer.
+PUT /api/control/smart/configs
+------------------------------
 
-* **WS /api/control/manual/torque:**
-  **Bidirectional:** Client sends the following to instantly mutate the manual controller RAM struct without HTTP overhead:
+Updates smart-mode configuration.
 
-  .. code-block:: json
+Request body:
 
-     {
-       "leftTorque": "number",
-       "rightTorque": "number"
-     }
+.. code-block:: json
 
+   {
+     "velocityThreshold": 0.75
+   }
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Failure response:
+
+.. code-block:: json
+
+   {
+     "velocityThreshold": "invalid value"
+   }
+
+Logger routes
+=============
+
+GET /api/log/session/start
 --------------------------
-Legacy Dashboard Endpoints
---------------------------
 
-WS /api/legacy/
+Starts a new CSV logging session.
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: success message string, typically ``"success"``
+
+GET /api/log/session/stop
+-------------------------
+
+Stops the active CSV logging session.
+
+Success response:
+
+.. code-block:: json
+
+   {
+     "message": "success"
+   }
+
+Field definitions:
+
+* ``message``: success message string, typically ``"success"``
+
+WebSocket routes
 ===============
-**Description:** A WebSocket endpoint to maintain compatibility with older dashboards. It parses a JSON **action** string and mutates the modern system state to match.
 
-* **Input Payload Structure:**
+The project also registers several WebSocket endpoints. These routes do not use
+HTTP JSON response envelopes; instead, they maintain a socket connection and push
+JSON frames over the connection.
 
-  .. code-block:: json
+Endpoint list:
 
-     {
-       "action": "string",
-       "mode": "number (optional)",
-       "weak_leg": "number (optional)",
-       "left_assistance_value": "number (optional)",
-       "right_assistance_value": "number (optional)",
-       "left_assistance_time": "number (optional)",
-       "right_assistance_time": "number (optional)",
-       "left_delay": "number (optional)",
-       "right_delay": "number (optional)"
+* ``WS /api/stream/imu``
+* ``WS /api/stream/motor``
+* ``WS /api/stream/tasks``
+* ``WS /api/stream/ota``
+* ``WS /api/stream/heap``
+* ``WS /api/log/system``
+* ``WS /api/control/manual/torque``
+* ``WS /api/motor/notification/status``
+
+The WebSocket payloads are implementation-defined per stream, but the common
+shape is represented by a timestamped payload such as:
+
+.. code-block:: json
+
+   {
+     "microseconds": 123456,
+     "accel": {
+       "x": 0.12,
+       "y": -0.08,
+       "z": 0.94
      }
+   }
 
-* **Output Payload (Binary):** A packed C-struct **LegacyDataPacket** containing 9 floats/ints representing legacy status, action, and motor positions.
+The exact fields depend on the stream; for example:
+
+* IMU payload includes ``accel`` and ``gyro`` objects
+* OTA payload includes progress-related fields
+* log payload includes a log line or log event object
+* status payload includes motor state information
+
+The project does not publish a single fixed schema for all WebSocket streams;
+stream-specific payloads are determined by the broadcaster implementation. A
+representative example is:
+
+.. code-block:: json
+
+   {
+     "microseconds": 123456,
+     "accel": {
+       "x": 0.12,
+       "y": -0.08,
+       "z": 0.94
+     },
+     "gyro": {
+       "x": 1.2,
+       "y": -0.7,
+       "z": 2.4
+     }
+   }

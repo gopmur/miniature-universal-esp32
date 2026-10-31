@@ -29,7 +29,7 @@ Prerequisites
 =============
 
 1. **Hardware:** The FUMCARE mini-universal board (ESP32-C5) and a formatted MicroSD card.
-2. **Build tools:** The Espressif IoT Development Framework ESP-IDF v6.0.5, bun (or any other node build system) and Python 3. 
+2. **Build tools:** The Espressif IoT Development Framework ESP-IDF v6.0.5, Node.js with bun or npm, and Python 3.
 
 Quick Start
 ===========
@@ -110,6 +110,15 @@ First, build the frontend web application so its static files are available in t
    cd app/hexa-webapp
    bun install
    bun run build
+   cd ../..
+
+Alternatively, use npm:
+
+.. code-block:: bash
+
+   cd app/hexa-webapp
+   npm install
+   npm run build
    cd ../..
 
 Next, generate the C/C++ assets for the static HTTP files using the provided Python script:

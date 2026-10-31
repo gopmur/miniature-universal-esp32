@@ -1,43 +1,64 @@
-===========================
-Logger Task & CSV Telemetry
-===========================
+===============================
+Logger Task and Telemetry Recording
+===============================
 
-The **LoggerTask** is a dedicated FreeRTOS thread responsible for recording high-speed, quantitative kinematic data directly to the ESP32's SD card. It operates independently of the real-time control loops, ensuring that file I/O operations do not block critical robotic movements.
+``LoggerTask`` is a simple but important data-capture worker. It is not the main
+real-time controller; instead, it records system telemetry to the SD card in a
+CSV format while remaining separate from the control loop.
 
-Architecture Overview
-=====================
+Task model
+===========
 
-The logger relies on cross-task communication to gather its data. It directly accesses the global **motor_task** and **imu_task** instances to sample their latest state.
+The logger class is defined in ``main/inc/tasks/logger.hpp`` and exposes:
 
-* **Thread Suspension:** To avoid wasting CPU cycles, the task remains blocked via **Sync::wait_for_notification_and_clear()** until a logging session is explicitly requested.
-* **Sampling Rate:** When active, the task utilizes **Sync::sleep(10)** between iterations, yielding a 100 Hz recording frequency.
+* ``start_new_log()``
+* ``stop_log()``
 
-CSV Data Format
-===============
+The task keeps a private flag named ``is_logging`` and waits for notifications
+before entering its active cycle.
 
-Data is formatted as comma-separated values and written to **/sd/my_log.csv**. 
+The implementation uses a very small state machine:
 
-The **write_header()** function establishes the following columns:
+1. wait for notification
+2. open ``/sd/my_log.csv`` in write mode
+3. write the header
+4. keep recording while ``is_logging`` is true
+5. close the file when stopped
+6. wait for the next notification
 
-* **Motor Positions:** Dynamically generates a **motor_X_position** column for every motor defined by the total motor count.
-* **Motor Velocities:** Dynamically generates a **motor_X_velocity** column for every motor.
-* **IMU Gyroscope:** Records the roll, pitch, and yaw under **imu_gyro_x**, **imu_gyro_y**, and **imu_gyro_z**.
+File format
+===========
 
-The **write_data()** function extracts the corresponding values for these columns:
+The logger writes a CSV table containing columns for:
 
-* Queries **motor_task->get_position(i)** for each motor.
-* Queries **motor_task->get_velocity(i)** for each motor.
-* Reads **imu_task->data.gyro** for the X, Y, and Z axes.
+* each motor position
+* each motor velocity
+* IMU gyro values: X, Y, Z
 
-Task Lifecycle & API Control
-============================
+The generated header is created by ``write_header()``:
 
-The logging session is controlled via the **HttpLogModule**, which exposes the following endpoints to the web frontend:
+.. code-block:: text
 
-* **GET /api/log/session/start:** Calls **logger_task->start_new_log()**. This sets the **is_logging** flag to true and calls **notify()** to wake the blocked task. The task opens the file in write mode (**"w"**) and begins the recording loop.
-* **GET /api/log/session/stop:** Calls **logger_task->stop_log()**. This sets the **is_logging** flag to false, allowing the task to exit its recording loop, safely close the file via **fclose()**, and return to a suspended state awaiting the next notification.
+   motor_0_position,motor_1_position,...,motor_0_velocity,...,imu_gyro_x,imu_gyro_y,imu_gyro_z
 
-Implementation Note
-===================
+The row values are produced by ``write_data()``.
 
-When reviewing the **LoggerTask::main()** loop, there appears to be a minor typo in the current implementation. Inside the active **while (is_logging)** loop, the task currently calls **write_header()** repeatedly instead of **write_data()**. You may want to swap that function call so your CSV populates with the actual telemetry values rather than repeating the column names on every row!
+Recording loop
+==============
+
+When a log starts, the task opens ``/sd/my_log.csv`` and writes the CSV header
+once. While logging is active, it writes a telemetry row at the configured
+logger task frequency. Each row contains the motor positions and velocities,
+followed by the current IMU gyro values. When logging stops, the task closes the
+file.
+
+Logging can be started and stopped through the web API. See the
+:doc:`Complete API Reference <api>` for the endpoint details.
+
+Operational responsibility
+=========================
+
+This subsystem is oriented toward offline analysis and diagnostics rather than
+live control. Its purpose is to capture the device state for later inspection,
+so it lives outside the critical control loop and avoids interfering with the
+motor update path.

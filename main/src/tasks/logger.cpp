@@ -50,7 +50,7 @@ void LoggerTask::main() {
     log_file = fopen("/sd/my_log.csv", "w");
     write_header();
     while (is_logging) {
-      write_header();
+      write_data();
       Sync::sleep(freq.ms());
     }
     LOGI("log stopped");

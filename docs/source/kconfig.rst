@@ -1,87 +1,128 @@
-=============================
-Project Configuration
-=============================
+===========================================
+Project Configuration and ESP-IDF Kconfig
+===========================================
 
-The FUMCARE-RP platform utilizes the standard ESP-IDF ``Kconfig`` system for compile-time configuration. This allows you to easily modify hardware pins, network credentials, task priorities, and motor properties without directly editing the C++ source code.
+The project uses the standard ESP-IDF Kconfig system with the top-level menu
+``HEXA``. The menu is assembled with ``rsource`` entries in
+``main/Kconfig`` and includes the following sections:
 
-To access the configuration menu, ensure your ESP-IDF environment is activated and run the following command in your terminal:
+* motors
+* IMU
+* CAN bus
+* HTTP
+* OTA
+* Wi-Fi
+* tasks
+* SD card
+
+Accessing the menu
+==================
+
+Run:
 
 .. code-block:: bash
 
    idf.py menuconfig
 
-Navigate to the **HEXA** menu to configure the platform-specific subsystems.
+Then open the ``HEXA`` menu to adjust board and runtime parameters. The config is
+used at compile time and at runtime through the generated compile-time macros.
 
-Hardware Subsystems
+HTTP configuration
+==================
+
+The HTTP subsystem is configured in ``main/config/Kconfig.http``.
+
+Relevant options:
+
+* ``CONFIG_HEXA_HTTP_USE_HTTPS``
+* ``CONFIG_HEXA_HTTP_MAX_REQUEST_LEN``
+* ``CONFIG_HEXA_HTTP_ALLOW_CORS``
+* ``CONFIG_HEXA_HTTP_KEEP_ALIVE``
+* ``CONFIG_HEXA_HTTP_MAX_OPEN_SOCKET``
+* ``CONFIG_HEXA_HTTP_MAX_URI_HANDLER_COUNT``
+
+These values control the HTTP server behavior, request limits, route capacity,
+connectivity, and browser compatibility.
+
+The defaults currently used by the project are:
+
+* HTTPS: enabled
+* max request length: 512 bytes
+* CORS: disabled by default
+* keep-alive: enabled
+* max sockets: 16
+* max URI handlers: 128
+
+OTA configuration
+=================
+
+The OTA system is configured by:
+
+* ``CONFIG_HEXA_OTA_SERVER_ADDRESS``
+
+This is the address used by the firmware update client to query the remote
+release server and fetch the correct image binary.
+
+Wi-Fi configuration
 ===================
 
-Motors
-------
-Configure the robotic actuators connected to the CAN bus.
+The Wi-Fi menu controls the station and access point behavior used by the board.
+This is the core network layer for the smart device and is used by the HTTP,
+OTA and dashboard flows.
 
-* **Power enable pin:** The GPIO pin used to toggle power to the motor drivers.
-* **Timeout delay ms:** The allowed communication timeout threshold (default: 50 ms).
-* **Number of motors:** The platform supports up to 8 simultaneous motors.
+Task configuration
+==================
 
-For each active motor slot (Motor 0 to 7), you can individually configure:
+The task section contains the runtime scheduling properties of the background
+workers, including:
 
-* **ID:** The CAN node ID (0x0 to 0x7FF).
-* **Type:** The motor driver protocol to use. Supported drivers are **ODrive**, **SMC**, and **T-Motor**.
-* **Receive ID:** The expected response ID (specifically required for T-Motor protocols).
-* **Is backwards:** A boolean flag to invert the motor's kinematic direction.
+* DNS task
+* WebSocket task
+* IMU task
+* control task
+* logger task
 
-IMU (Inertial Measurement Unit)
--------------------------------
-Configures the I2C bus used to communicate with the onboard IMU.
+The project relies on these values for task priorities, stack sizes, and loop
+frequencies. The scheduler uses these values to keep the high-priority control
+loops responsive and the telemetry updates smooth.
 
-* **SDA pin:** I2C Serial Data pin (default: 21).
-* **SCL pin:** I2C Serial Clock pin (default: 22).
+Motor configuration
+===================
 
-CAN Bus
--------
-Configures the Two-Wire Automotive Interface (TWAI) used for high-speed hardware communication.
+The motor system configuration includes actuator parameters and bus-related
+settings such as:
 
-* **Rx Pin / Tx Pin:** GPIO pins for the CAN transceiver (defaults: Rx=26, Tx=25).
-* **Baudrate (KHz):** CAN bus speed (default: 1000 KHz).
-* **Transmit Queue Len:** Size of the transmission buffer (default: 8).
+* power-enable pin
+* timeout delay
+* motor count
+* per-motor CAN ID
+* per-motor direction inversion
+* driver selection
 
-SD Card
--------
-Configures the SPI bus used for the MicroSD card reader, which holds web assets and logs.
+This determines how the CAN-based actuator stack is initialized and how many
+motors participate in control and status streaming.
 
-* **CS pin:** default 5
-* **MOSI pin:** default 23
-* **MISO pin:** default 19
-* **SCLK pin:** default 18
+IMU configuration
+=================
 
-Software & Network Configuration
-================================
+The IMU menu configures the I2C wiring and the sampling behavior. The main values
+are the SDA and SCL pins and the IMU polling frequency.
 
-Wi-Fi
------
-* **SSID & Password:** Default credentials for the ESP32's Access Point or Station mode.
-* **Channels:** Wi-Fi channel allocation (default: 6).
-* **Max Connections:** Maximum allowed simultaneous client connections (default: 3).
+SD-card configuration
+=====================
 
-HTTP Server
------------
-Configures the bounds and security of the embedded web server.
+The SD menu configures the SPI pins used by the card reader and therefore the
+storage location for logs and generated web assets.
 
-* **Use HTTPS:** Toggles SSL/TLS encryption (default: true).
-* **Max request length:** Maximum allowed payload size in bytes (default: 512).
-* **Allow CORS:** Enables Cross-Origin Resource Sharing for remote frontend development.
-* **Enable keep alive:** Keeps TCP connections open for subsequent requests to reduce latency.
-* **Max open sockets & URI handlers:** Resource allocation limits for the web server (defaults: 16 sockets, 128 handlers).
+Practical guidance
+==================
 
-OTA (Over-The-Air Updates)
---------------------------
-* **Server Address:** The IP address and port of the firmware distribution server (default: ``192.168.4.2:3000``).
+When adjusting configuration, the safest workflow is:
 
-RTOS Tasks
-==========
-Configure the FreeRTOS task priorities, stack sizes, and execution frequencies for the core software loops.
+1. change the relevant Kconfig value
+2. regenerate the build
+3. verify the subsystem boot sequence
+4. confirm that route registration and task behavior remain consistent
 
-* **DNS Task:** Handles local name resolution. You can customize the ``Domain Name`` here (default: ``hexa.lan``).
-* **WebSocket Task:** Streams live telemetry and handles real-time control (default frequency: 33 Hz).
-* **IMU Task:** Reads and processes sensor data (default frequency: 200 Hz).
-* **Control Task:** Executes the main robotic control loop and kinematic calculations.
+Kconfig values affect the firmware binary itself; after changing a critical
+setting, rebuild and reflash the board before testing the affected subsystem.
