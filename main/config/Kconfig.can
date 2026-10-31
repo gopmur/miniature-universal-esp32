@@ -5,6 +5,8 @@ config HEXA_CAN_COUNT
   int "Number of CAN interfaces"
   range 1 2
   default 2
+  help
+    Number of supported CAN interfaces
 
 menu "CAN 0"
   depends on HEXA_CAN_COUNT >= 1
@@ -12,6 +14,8 @@ menu "CAN 0"
 config HEXA_CAN_0_FDCAN
   bool "FDCAN"
   default n
+  help
+    Operate in FDCAN mode
 
 config HEXA_CAN_0_FDCAN_NORMALIZED
   int
@@ -61,6 +65,8 @@ menu "CAN 1"
 config HEXA_CAN_1_FDCAN
   bool "FDCAN"
   default n
+  help
+    Operate in FDCAN mode
 
 config HEXA_CAN_1_FDCAN_NORMALIZED
   int

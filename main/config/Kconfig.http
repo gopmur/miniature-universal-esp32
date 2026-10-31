@@ -3,19 +3,28 @@ menu "HTTP"
 config HEXA_HTTP_USE_HTTPS
   bool "Use HTTPS"
   default y
+  help
+    Enable encryption both for http and websocket
 
 config HEXA_HTTP_MAX_REQUEST_LEN
   int "Max request length"
   range 0 1024
   default 512
+  help
+    Maximum size of an allowed HTTP request body. Larger request will be ignored
+    to prevent heap exhaustion.
 
 config HEXA_HTTP_ALLOW_CORS
   bool "Allow CORS"
   default n
+  help
+    Enable this if you are hosting the dashboard otherwise keep it disabled.
 
 config HEXA_HTTP_KEEP_ALIVE
   bool "Enable keep alive"
   default y
+  help
+    Keep the http socket open after a request. (Can break some functionalities best to keep it disabled)
 
 config HEXA_HTTP_MAX_OPEN_SOCKET
   int "Maximum number of open sockets"
