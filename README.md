@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-install sphinx and sphinx-rtd-theme using pip
+install sphinx, sphinx-rtd-theme and sphinx-design using pip
 
 ```
-pip install sphinx sphinx-rtd-theme
+pip install sphinx sphinx-rtd-theme sphinx-design 
 ```
 
 ## Linux
