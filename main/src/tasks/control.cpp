@@ -1,8 +1,10 @@
 #include "tasks/control.hpp"
 #include <cmath>
 #include "controller.hpp"
+#include "helper/ds/period.hpp"
 #include "helper/formats.hpp"
 #include "jaythread/sync.hpp"
+#include "sdkconfig.h"
 #include "system_logger.hpp"
 #include "tasks/motor.hpp"
 
@@ -36,6 +38,8 @@ void ControlTask::main() {
   load_configs();
   ControllerInput input;
   ControllerOutput output;
+  auto freq = Period::from_hz(CONFIG_HEXA_TASKS_CONTROL_FREQ_HZ);
+  input.freq = freq;
   while (true) {
     if (prev_control_mod != control_mode) {
       reset();
@@ -70,6 +74,6 @@ void ControlTask::main() {
     for (int i = 0; i < motor_task->motor_count; i++) {
       motor_task->set_torque(i, output.torques[i]);
     }
-    Sync::sleep(10);
+    Sync::sleep(freq.ms());
   }
 }

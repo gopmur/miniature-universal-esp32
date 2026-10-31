@@ -3,9 +3,9 @@
 class Period {
   private:
   double _ns;
-  inline Period();
 
   public:
+  inline Period();
   inline static Period from_ns(double ns);
   inline static Period from_us(double us);
   inline static Period from_ms(double ms);
@@ -34,7 +34,7 @@ class Period {
   inline void ghz(double ghz);
 };
 
-inline Period::Period() {}
+inline Period::Period() : _ns(0) {}
 
 inline Period Period::from_ns(double ns) {
   Period p;
@@ -101,15 +101,15 @@ inline void Period::s(double s) {
 }
 
 inline void Period::hz(double hz) {
-  _ns = 1 / hz * 1'000'000'000;
+  _ns = 1'000'000'000 / hz;
 }
 
 inline void Period::khz(double khz) {
-  _ns = 1 / khz * 1'000'000;
+  _ns = 1'000'000 / khz;
 }
 
 inline void Period::mhz(double mhz) {
-  _ns = 1 / mhz * 1'000;
+  _ns = 1'000 / mhz;
 }
 
 inline void Period::ghz(double ghz) {
@@ -133,15 +133,15 @@ inline double Period::s() const {
 }
 
 inline double Period::hz() const {
-  return 1 / _ns / 1'000'000'000;
+  return 1'000'000'000 / _ns;
 }
 
 inline double Period::khz() const {
-  return 1 / _ns / 1'000'000;
+  return 1'000'000 / _ns;
 }
 
 inline double Period::mhz() const {
-  return 1 / _ns / 1'000;
+  return 1'000 / _ns;
 }
 
 inline double Period::ghz() const {

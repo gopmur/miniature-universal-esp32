@@ -16,8 +16,11 @@ class Nvs {
 
   public:
   void init(const char* name, float value);
+  void init(const char* name, uint32_t value);
   void set(const char* name, float value);
+  void set(const char* name, uint32_t value);
   float get_float(const char* name);
+  uint32_t get_uint32(const char* name);
   Nvs(const char* nvs_namespace, nvs_open_mode_t open_mode);
   ~Nvs();
 };

@@ -156,8 +156,3 @@ void ODriveMotorDriver::init() {
   LOGI("0x%02x zero pos completed", get_id());
   LOGI("0x%02x initialization completed", get_id());
 }
-
-void ODriveMotorDriver::set_torque(float torque) {
-  feedback.torque = torque;
-  AbstractMotorDriver::set_torque(torque);
-}

@@ -1,29 +1,14 @@
-#include <cmath>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
 #include "http.hpp"
 
 #include "esp_err.h"
 #include "esp_http_server.h"
-#include "esp_https_server.h"
+#include "esp_https_server.h" // IWYU pragma: keep
 #include "http_assets.hpp"
 
 #include "http/module.hpp"
 #include "sdkconfig.h"
 #include "system_logger.hpp"
 #include "tasks/ws.hpp"
-
-
-// // esp_err_t get_ota_status(httpd_req_t* req) {
-// //   set_header(req);
-// //   JsonObject resp_json;
-// //   resp_json.set("busy", ota_busy);
-// //   auto resp_str = resp_json.stringify();
-// //   httpd_resp_send(req, resp_str.c_str(), HTTPD_RESP_USE_STRLEN);
-// //   return ESP_OK;
-// // }
 
 
 extern WebSocketTask ws_task;

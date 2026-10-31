@@ -5,5 +5,5 @@
 
 struct CanPacket {
   twai_frame_header_t header;
-  std::array<uint8_t, 8> data;
+  std::array<uint8_t, 64> data;
 };

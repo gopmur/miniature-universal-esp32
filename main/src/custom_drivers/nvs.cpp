@@ -37,7 +37,10 @@ void Nvs::init(const char* name, float value) {
   if (!opened) {
     LOGE(
         "failed to init %s with value %f in namespace %s. this happened because the opening of the "
-        "namespace failed previously");
+        "namespace failed previously",
+        name,
+        value,
+        nvs_namespace.c_str());
     return;
   }
   size_t stored_size = 0;
@@ -63,6 +66,27 @@ void Nvs::init(const char* name, float value) {
   }
 }
 
+void Nvs::init(const char* name, uint32_t value) {
+  if (!opened) {
+    LOGE(
+        "failed to init %s with value %d in namespace %s. this happened because the opening of the "
+        "namespace failed previously",
+        name,
+        value,
+        nvs_namespace.c_str());
+    return;
+  }
+  uint32_t stored_value;
+  auto err = nvs_get_u32(nvs, name, &stored_value);
+  if (err != ESP_OK) {
+    LOGW("%s does not exist in namespace %s. initializing it with value %d",
+         name,
+         nvs_namespace.c_str(),
+         value);
+    set(name, value);
+  }
+}
+
 void Nvs::set(const char* name, float value) {
   if (!opened) {
     LOGE(
@@ -73,6 +97,17 @@ void Nvs::set(const char* name, float value) {
   auto err = nvs_set_blob(nvs, name, &value, sizeof(float));
   handle_set_err(name, err);
 }
+
+void Nvs::set(const char* name, uint32_t value) {
+  if (!opened) {
+    LOGE(
+        "failed to set %s with value %d in namespace %s. this happened because the opening of the "
+        "namespace failed previously");
+    return;
+  }
+  auto err = nvs_set_u32(nvs, name, value);
+  handle_set_err(name, err);
+};
 
 float Nvs::get_float(const char* name) {
   if (!opened) {
@@ -93,5 +128,20 @@ float Nvs::get_float(const char* name) {
   }
   float stored_value;
   nvs_get_blob(nvs, name, &stored_value, &stored_size);
+  return stored_value;
+}
+
+uint32_t Nvs::get_uint32(const char* name) {
+  if (!opened) {
+    LOGE(
+        "failed to get %s in namespace %s. this happened because the opening of the namespace "
+        "failed previously");
+    return 0;
+  }
+  uint32_t stored_value;
+  auto err = nvs_get_u32(nvs, name, &stored_value);
+  if (err != ESP_OK) {
+    LOGE("%s does not exist in namespace %s.", name, nvs_namespace.c_str());
+  }  
   return stored_value;
 }

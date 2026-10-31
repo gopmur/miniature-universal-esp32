@@ -1,8 +1,10 @@
 #pragma once
 
 #include "esp_twai_types.h"
+#include "system_logger.hpp"
 
 class TwaiCallback {
+  MAKE_LOGGABLE("twai_callback");
 
   public:
   static bool rx_done(twai_node_handle_t handle,

@@ -95,3 +95,13 @@ const char* get_motor_status_string(MotorStatus status) {
   }
   return "unkown";
 }
+
+const char* get_motor_direction_string(MotorDirection direction) {
+  switch (direction) {
+    case MotorDirection::FORWARD:
+      return "forward";
+    case MotorDirection::BACKWARD:
+      return "backward";
+  }
+  return "unknown";
+}

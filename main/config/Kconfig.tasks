@@ -4,7 +4,7 @@ menu "DNS"
 
 config HEXA_TASKS_DNS_PRIORITY
   int "Priority"
-  default 2
+  default 18
 
 config HEXA_TASKS_DNS_STACK_SIZE
   int "Stack Size"
@@ -55,8 +55,72 @@ config HEXA_TASKS_CONTROL_PRIORITY
   default 2
 
 config HEXA_TASKS_CONTROL_STACK_SIZE
-  int "Stack Size"
+  int "Stack size"
   default 4096
+
+config HEXA_TASKS_CONTROL_FREQ_HZ
+  int "Frequency (Hz)"
+  default 100
+
+endmenu
+
+menu "Motor"
+
+config HEXA_TASKS_MOTOR_PRIORITY
+  int "Priority"
+  default 18
+
+config HEXA_TASKS_MOTOR_STACK_SIZE
+  int "Stack size"
+  default 4096
+
+config HEXA_TASKS_MOTOR_FREQ_HZ
+  int "Frequency (Hz)"
+  default 100
+
+endmenu
+
+menu "Can recv"
+
+config HEXA_TASKS_CAN_RECV_PRIORITY
+  int "Priority"
+  default 18
+
+config HEXA_TASKS_CAN_RECV_STACK_SIZE
+  int "Stack size"
+  default 4096
+
+endmenu
+
+menu "Logger"
+
+config HEXA_TASKS_LOGGER_PRIORITY
+  int "Priority"
+  default 18
+
+config HEXA_TASKS_LOGGER_STACK_SIZE
+  int "Stack size"
+  default 4096
+
+config HEXA_TASKS_LOGGER_FREQ_HZ
+  int "Frequency (Hz)"
+  default 33
+
+endmenu
+
+menu "Monitor"
+
+config HEXA_TASKS_MONITOR_PRIORITY
+  int "Priority"
+  default 18
+
+config HEXA_TASKS_MONITOR_STACK_SIZE
+  int "Stack size"
+  default 4096
+
+config HEXA_TASKS_MONITOR_FREQ_MS
+  int "Period (ms)"
+  default 1000
 
 endmenu
 

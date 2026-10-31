@@ -6,6 +6,19 @@ float HexaSmartControlConfigs::get_velocity_threshold() {
   return velocity_threshold;
 }
 
+uint32_t HexaSmartControlConfigs::get_right_timeout() {
+  return right_timeout;
+}
+uint32_t HexaSmartControlConfigs::get_left_timeout() {
+  return left_timeout;
+}
+uint32_t HexaSmartControlConfigs::get_right_delay_timeout() {
+  return right_delay_timeout;
+}
+uint32_t HexaSmartControlConfigs::get_left_delay_timeout() {
+  return left_delay_timeout;
+}
+
 void HexaSmartControlConfigs::set_velocity_threshold(float velocity_threshold) {
   Nvs nvs(nvs_namespace, NVS_READWRITE);
   nvs.set(velocity_threshold_key, velocity_threshold);
@@ -14,12 +27,43 @@ void HexaSmartControlConfigs::set_velocity_threshold(float velocity_threshold) {
 
 void HexaSmartControlConfigs::init() {
   Nvs nvs(nvs_namespace, NVS_READWRITE);
-  nvs.init(velocity_threshold_key, 0.8);
+  nvs.init(velocity_threshold_key, 0.8f);
+  nvs.init(right_timeout_key, 300u);
+  nvs.init(left_timeout_key, 300u);
+  nvs.init(right_delay_timeout_key, 20u);
+  nvs.init(left_delay_timeout_key, 20u);
 }
 
 void HexaSmartControlConfigs::load() {
   Nvs nvs(nvs_namespace, NVS_READONLY);
   velocity_threshold = nvs.get_float(velocity_threshold_key);
+  right_timeout = nvs.get_uint32(right_timeout_key);
+  left_timeout = nvs.get_uint32(left_timeout_key);
+  right_delay_timeout = nvs.get_uint32(right_delay_timeout_key);
+  left_delay_timeout = nvs.get_uint32(left_delay_timeout_key);
+}
+
+void HexaSmartControlConfigs::set_right_timeout(uint32_t right_timeout) {
+  Nvs nvs(nvs_namespace, NVS_READWRITE);
+  nvs.set(right_timeout_key, right_timeout);
+  this->right_timeout = right_timeout;
+}
+
+void HexaSmartControlConfigs::set_left_timeout(uint32_t left_timeout) {
+  Nvs nvs(nvs_namespace, NVS_READWRITE);
+  nvs.set(left_timeout_key, left_timeout);
+  this->left_timeout = left_timeout;
+}
+
+void HexaSmartControlConfigs::set_right_delay_timeout(uint32_t right_delay_timeout) {
+  Nvs nvs(nvs_namespace, NVS_READWRITE);
+  nvs.set(right_delay_timeout_key, right_delay_timeout);
+  this->right_delay_timeout = right_delay_timeout;
+}
+void HexaSmartControlConfigs::set_left_delay_timeout(uint32_t left_delay_timeout) {
+  Nvs nvs(nvs_namespace, NVS_READWRITE);
+  nvs.set(left_delay_timeout_key, left_delay_timeout);
+  this->left_delay_timeout = left_delay_timeout;
 }
 
 float HexaSmartController::calculate_output(const std::vector<float>& x) {
@@ -89,10 +133,10 @@ HexaControllerOutput HexaSmartController::run(HexaControllerInput input) {
   }
   previous_left_state = left_state;
   previous_right_state = right_state;
-  fuzzy_timer_r++;
-  fuzzy_timer_l++;
-  right_delay_timer++;
-  left_delay_timer++;
+  fuzzy_timer_r += input.freq.ms();
+  fuzzy_timer_l += input.freq.ms();
+  right_delay_timer += input.freq.ms();
+  left_delay_timer += input.freq.ms();
   float torque_profile_right_value = torque_profile(fuzzy_timer_r, 50);
   float torque_profile_left_value = torque_profile(fuzzy_timer_l, 50);
   output.right_motor.torque = params.right.torque * torque_profile_right_value * right_state;

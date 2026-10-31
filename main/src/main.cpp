@@ -4,6 +4,9 @@
 #include <sys/unistd.h>
 #include <cstdio>
 
+#include "boost/preprocessor/cat.hpp"
+#include "boost/preprocessor/control/if.hpp"
+#include "boost/preprocessor/repetition/repeat.hpp"
 #include "callbacks/wifi_event_handler.hpp"
 #include "custom_drivers/can.hpp"
 #include "driver/gpio.h"
@@ -83,7 +86,32 @@ ControlTask* control_task;
 MotorTask* motor_task;
 LoggerTask* logger_task;
 MonitorTask* monitor_task;
-Can can;
+
+#define NEW_FDCAN(n)                                                              \
+  Can(BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_RX_PIN),                                 \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_TX_PIN),                                 \
+      Period::from_khz(BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_NOMINAL_BAUDRATE_KHZ)), \
+      Period::from_khz(BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_DATA_BAUDRATE_KHZ)),    \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_NOMINAL_SAMPLE_POINT_PERMILL),           \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_NOMINAL_SECONDARY_SAMPLE_POINT_PERMILL), \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_DATA_SAMPLE_POINT_PERMILL),              \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_DATA_SECONDARY_SAMPLE_POINT_PERMILL),    \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_TX_QUEUE_LEN))
+
+#define NEW_CLASSIC_CAN(n)                                                        \
+  Can(BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_RX_PIN),                                 \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_TX_PIN),                                 \
+      Period::from_khz(BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_NOMINAL_BAUDRATE_KHZ)), \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_NOMINAL_SAMPLE_POINT_PERMILL),           \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_NOMINAL_SECONDARY_SAMPLE_POINT_PERMILL), \
+      BOOST_PP_CAT(CONFIG_HEXA_CAN_, n##_TX_QUEUE_LEN))
+
+#define NEW_CAN(z, n, data)                                                       \
+  BOOST_PP_IF(BOOST_PP_CAT(BOOST_PP_CAT(CONFIG_HEXA_CAN_, n), _FDCAN_NORMALIZED), \
+              NEW_FDCAN(n),                                                       \
+              NEW_CLASSIC_CAN(n)),
+
+Can can[CONFIG_HEXA_CAN_COUNT] = {BOOST_PP_REPEAT(CONFIG_HEXA_CAN_COUNT, NEW_CAN, ~)};
 
 class App {
   MAKE_LOGGABLE("app");
@@ -164,7 +192,11 @@ class App {
     ESP_ERROR_CHECK(i2c_driver_install(I2C_NUM_0, i2c_config.mode, 0, 0, 0));
   }
 
-  void setup_twai() { can.init(); }
+  void setup_twai() {
+    for (size_t i = 0; i < CONFIG_HEXA_CAN_COUNT; i++) {
+      can[i].init();
+    }
+  }
 
   void setup_gpio() {
     gpio_config_t motor_power_switch = {
@@ -176,7 +208,7 @@ class App {
     };
 
     gpio_config(&motor_power_switch);
-    gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), 1);
+    gpio_set_level(static_cast<gpio_num_t>(CONFIG_HEXA_MOTOR_POWER_ENABLE_PIN), 0);
     LOGI("motors turned on");
   }
 
@@ -280,17 +312,24 @@ class App {
     logger_task = new LoggerTask();
     monitor_task = new MonitorTask();
 
-    motor_task->start("motor", 18, 4096);
-    can_recv_task.start("can_recv", 18, 4096);
-    dns_task->start("dns", 18, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
-    ws_task.start("ws", 18, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
+    motor_task->start("motor",
+                      CONFIG_HEXA_TASKS_MOTOR_PRIORITY,
+                      CONFIG_HEXA_TASKS_MOTOR_STACK_SIZE);
+    can_recv_task.start("can_recv",
+                        CONFIG_HEXA_TASKS_CAN_RECV_PRIORITY,
+                        CONFIG_HEXA_TASKS_CAN_RECV_STACK_SIZE);
+    dns_task->start("dns", CONFIG_HEXA_TASKS_DNS_PRIORITY, CONFIG_HEXA_TASKS_DNS_STACK_SIZE);
+    ws_task.start("ws", CONFIG_HEXA_TASKS_WS_PRIORITY, CONFIG_HEXA_TASKS_WS_STACK_SIZE);
     control_task->start("control",
-                        18,
+                        CONFIG_HEXA_TASKS_CONTROL_PRIORITY,
                         CONFIG_HEXA_TASKS_CONTROL_STACK_SIZE);
-    // logger_task->start("logger", 2, 4096);
-
-    imu_task->start("imu", 19, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
-    monitor_task->start("monitor", 18, 4096);
+    logger_task->start("logger",
+                       CONFIG_HEXA_TASKS_LOGGER_PRIORITY,
+                       CONFIG_HEXA_TASKS_LOGGER_STACK_SIZE);
+    imu_task->start("imu", CONFIG_HEXA_TASKS_IMU_PRIORITY, CONFIG_HEXA_TASKS_IMU_STACK_SIZE);
+    monitor_task->start("monitor",
+                        CONFIG_HEXA_TASKS_MONITOR_PRIORITY,
+                        CONFIG_HEXA_TASKS_MONITOR_STACK_SIZE);
   }
 
   void setup() {
@@ -303,7 +342,6 @@ class App {
     setup_wifi();
     setup_i2c();
     setup_twai();
-
     start_tasks();
 
     http_server.start();
