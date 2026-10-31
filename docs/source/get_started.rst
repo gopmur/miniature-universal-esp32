@@ -48,6 +48,31 @@ Clone the FUMCARE-RP repository into your workspace:
 2. Configure the Target
 -----------------------
 
+Set the compiler to Clang
+
+.. tab-set::
+
+   .. tab-item:: Linux/macOS
+      :sync: unix
+
+      .. code-block:: bash
+
+         export IDF_TOOLCHAIN=clang
+      
+   .. tab-item:: Windows (Powershell)
+      :sync: win
+
+      .. code-block:: powershell 
+         
+         $env:IDF_TOOLCHAIN = clang
+   
+   .. tab-item:: Windows (CMD)
+      :sync: win
+
+      .. code-block:: bat
+         
+         set IDF_TOOLCHAIN=clang
+
 Set your ESP-IDF environment to target the ESP32-C5 (or your current ESP-IDF compatible processor):
 
 .. code-block:: bash
