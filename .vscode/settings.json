@@ -40,6 +40,7 @@
     "rsource",
     "rssi",
     "SCLK",
+    "scofield",
     "sdcard",
     "sdmmc",
     "SDSPI",

@@ -2,6 +2,8 @@ menu "OTA"
 
 config HEXA_OTA_SERVER_ADDRESS
   string "Server Address"
-  default "192.168.4.2:3000"
+  default "eps32.scofield1.ir"
+  help
+    Address of the update server
 
 endmenu

@@ -26,5 +26,7 @@ config HEXA_IMU_I2C_ICM20948_AD1
   bool "AD1"
   default n
   depends on HEXA_IMU_TYPE_I2C_ICM20948
+  help
+    Enable if the I2C address is 0x68. Disable if the address is 0x69
 
 endmenu
